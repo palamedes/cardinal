@@ -1,6 +1,7 @@
 <%= turbo_frame_tag "modal" do %>
   <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
     <div class="modal card-detail">
+      <%= turbo_stream_from @card %>
       <header class="modal-header">
         <h1>
           <span class="card-number">#<%= @card.number %></span> <%= @card.title %>
@@ -23,21 +24,21 @@
             <% end %>
           </nav>
 
-          <% @events.each do |event| %>
-            <div class="event event-<%= event.kind %> actor-<%= event.actor %>">
-              <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>
-              <div class="event-body">
-                <% if event.text %>
-                  <%= simple_format event.text %>
-                <% else %>
-                  <code class="event-kind"><%= event.kind %></code>
-                <% end %>
-                <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
-              </div>
-            </div>
+          <% if @card.description.present? %>
+            <div class="event event-description"><%= simple_format @card.description %></div>
           <% end %>
-          <% if @events.empty? %>
-            <p class="empty">No events yet — this card hasn't been anywhere.</p>
+
+          <div id="card_events">
+            <%= render partial: "events/event", collection: @events %>
+            <% if @events.empty? %>
+              <p class="empty">No events yet — this card hasn't been anywhere.</p>
+            <% end %>
+          </div>
+
+          <%= form_with url: card_messages_path(@card), class: "message-form" do |f| %>
+            <%= f.text_area "message[text]", rows: 2, required: true,
+                  placeholder: @card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…" %>
+            <%= f.submit "Send" %>
           <% end %>
         </section>
 

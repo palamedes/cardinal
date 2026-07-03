@@ -210,3 +210,10 @@ button, input[type="submit"] {
 .actor-agent .event-body p { color: #b9c3d8; }
 
 .empty { color: var(--text-dim); font-style: italic; }
+
+.message-form { display: flex; gap: 8px; margin-top: 14px; align-items: flex-end; }
+.message-form textarea {
+  flex: 1; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); padding: 8px 10px; font: inherit; resize: vertical;
+}
+.actor-assistant .event-body p { color: #d8cfc0; }

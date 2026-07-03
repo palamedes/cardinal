@@ -20,5 +20,11 @@ class Event < ApplicationRecord
   scope :conversation, -> { where(kind: CONVERSATION_KINDS) }
   scope :activity, -> { where.not(kind: %w[tool_call tool_result]) }
 
+  # Live-append new events into any open card modal. User-authored events are
+  # skipped — they arrive via the form's own redirect re-render.
+  after_create_commit -> {
+    broadcast_append_to card, target: "card_events", partial: "events/event", locals: { event: self }
+  }, unless: -> { actor == "user" }
+
   def text = payload["text"]
 end
