@@ -44,6 +44,13 @@ module Rules
       # One-shot maintenance agent: a bounded Messages API call whose prompt
       # comes from the rule config. No workspace, no session, no tools.
       AiTaskJob.perform_later(card.id, rule["prompt"].to_s, rule["model"])
+    when "mark_pr_ready"
+      if card.pr_url.present?
+        card.log!("status_change", text: "Taking the PR out of draft…")
+        MarkPrReadyJob.perform_later(card.id)
+      else
+        card.log!("status_change", text: "No PR to mark ready")
+      end
     when "merge_pr"
       if card.pr_url.present?
         card.log!("status_change", text: "Shipping: merging #{card.pr_url}")

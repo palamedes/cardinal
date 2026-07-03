@@ -62,3 +62,25 @@ class RulesTest < ActiveSupport::TestCase
     assert_match(/Unknown column rule/, card.events.where(kind: "error").last.text)
   end
 end
+
+class MarkPrReadyRuleTest < ActiveSupport::TestCase
+  test "mark_pr_ready enqueues the job when the card has a PR" do
+    board = Board.create!(name: "Q", default_branch: "main")
+    qa = board.columns.create!(name: "QA", archetype: "review", position: 0,
+                               policy: { "on_entry" => [{ "action" => "mark_pr_ready" }] })
+    card = board.cards.create!(column: qa, title: "t", status: "in_review",
+                               pr_url: "https://github.com/o/r/pull/9")
+    assert_enqueued_with(job: MarkPrReadyJob, args: [card.id]) do
+      Rules.fire_entry(card, qa)
+    end
+  end
+
+  test "mark_pr_ready without a PR just logs" do
+    board = Board.create!(name: "Q2", default_branch: "main")
+    qa = board.columns.create!(name: "QA", archetype: "review", position: 0,
+                               policy: { "on_entry" => [{ "action" => "mark_pr_ready" }] })
+    card = board.cards.create!(column: qa, title: "t", status: "in_review")
+    assert_no_enqueued_jobs(only: MarkPrReadyJob) { Rules.fire_entry(card, qa) }
+    assert_match(/No PR/, card.events.last.text)
+  end
+end

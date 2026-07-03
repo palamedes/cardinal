@@ -12,6 +12,7 @@ module Rules
       - {"action": "ai_task", "prompt": "...", "model": "optional-model-id"} — a one-shot AI maintenance
         task; the prompt may use %{title}, %{description}, %{conversation}; its output is posted to the
         card timeline
+      - {"action": "mark_pr_ready"} — take the card's PR out of draft (ready for review on GitHub)
       - {"action": "merge_pr"} — mark the card's PR ready, squash-merge it, delete the branch
       - {"action": "set_status", "status": "..."} — force a card status
     DOC
@@ -44,7 +45,7 @@ module Rules
 
     def self.validate!(rules)
       raise Error, "Expected a JSON array of rules" unless rules.is_a?(Array)
-      known = %w[assistant_greeting start_agent_run ai_task merge_pr set_status]
+      known = %w[assistant_greeting start_agent_run ai_task mark_pr_ready merge_pr set_status]
       rules.each do |rule|
         raise Error, "Each rule must be an object with an \"action\"" unless rule.is_a?(Hash) && rule["action"].present?
         raise Error, "Unknown action #{rule["action"].inspect}" unless known.include?(rule["action"])

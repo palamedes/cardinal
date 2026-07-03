@@ -7,7 +7,9 @@ class MergePrJob < ApplicationJob
     card = Card.find(card_id)
     return if card.pr_url.blank? || card.pr_state == "merged"
 
-    run_step(card, ["gh", "pr", "ready", card.pr_url]) or return
+    # Best-effort undraft — a QA column may already have done it, and gh
+    # errors on an already-ready PR; the merge step is the real gate.
+    Open3.capture2e("gh", "pr", "ready", card.pr_url)
     run_step(card, ["gh", "pr", "merge", card.pr_url, "--squash", "--delete-branch"]) or return
 
     card.update!(pr_state: "merged")
