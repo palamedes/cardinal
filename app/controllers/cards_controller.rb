@@ -3,13 +3,16 @@ class CardsController < ApplicationController
 
   def new
     @board = Board.first!
+    @parent = @board.cards.find_by(id: params[:parent_id])
   end
 
   def create
     board = Board.first!
     column = board.columns.inbox.order(:position).first || board.columns.first
-    card = board.cards.create!(column:, **card_params)
-    card.log!("status_change", actor: "user", text: "Card created")
+    parent = board.cards.find_by(id: params.dig(:card, :parent_id))
+    card = board.cards.create!(column:, parent:, **card_params)
+    card.log!("status_change", actor: "user", text: parent ? "Card created as a child of ##{parent.number} #{parent.title}" : "Card created")
+    parent&.log!("status_change", actor: "user", text: "Child card added: #{card.title}")
     redirect_to root_path
   end
 

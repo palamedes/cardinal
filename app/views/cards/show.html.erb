@@ -83,6 +83,22 @@
             <% end %>
           </div>
 
+          <% if @card.parent || @card.children.any? %>
+            <h3>Related</h3>
+            <ul class="related-list">
+              <% if @card.parent %>
+                <li>↑ <%= link_to @card.parent.title, card_path(@card.parent), data: { turbo_frame: "modal" } %>
+                    <span class="hint"><%= @card.parent.status.humanize.downcase %></span></li>
+              <% end %>
+              <% @card.children.each do |child| %>
+                <li>↳ <%= link_to child.title, card_path(child), data: { turbo_frame: "modal" } %>
+                    <span class="hint"><%= child.status.humanize.downcase %></span></li>
+              <% end %>
+            </ul>
+          <% end %>
+          <%= link_to "+ Child card", new_card_path(parent_id: @card.id),
+                class: "child-card-link", data: { turbo_frame: "modal" } %>
+
           <% if @card.column.review? %>
             <h3>Review</h3>
             <% if @card.in_review? %>

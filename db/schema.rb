@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_03_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_000001) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -48,6 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000002) do
     t.datetime "created_at", null: false
     t.text "description"
     t.integer "number", null: false
+    t.integer "parent_id"
     t.integer "position", null: false
     t.string "pr_state"
     t.string "pr_url"
@@ -59,6 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000002) do
     t.index ["board_id"], name: "index_cards_on_board_id"
     t.index ["column_id", "position"], name: "index_cards_on_column_id_and_position"
     t.index ["column_id"], name: "index_cards_on_column_id"
+    t.index ["parent_id"], name: "index_cards_on_parent_id"
   end
 
   create_table "columns", force: :cascade do |t|
@@ -107,6 +109,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000002) do
   add_foreign_key "agent_sessions", "cards"
   add_foreign_key "artifacts", "runs"
   add_foreign_key "cards", "boards"
+  add_foreign_key "cards", "cards", column: "parent_id"
   add_foreign_key "cards", "columns"
   add_foreign_key "columns", "boards"
   add_foreign_key "events", "cards"

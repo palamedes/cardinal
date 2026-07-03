@@ -16,6 +16,9 @@ class Card < ApplicationRecord
 
   belongs_to :board
   belongs_to :column
+  belongs_to :parent, class_name: "Card", optional: true
+  has_many :children, class_name: "Card", foreign_key: :parent_id,
+                      dependent: :nullify, inverse_of: :parent
   has_many :events, -> { order(:created_at, :id) }, dependent: :destroy
   has_many :agent_sessions, dependent: :destroy
   has_many :runs, through: :agent_sessions
