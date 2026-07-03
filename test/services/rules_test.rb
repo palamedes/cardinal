@@ -46,7 +46,7 @@ class RulesTest < ActiveSupport::TestCase
   end
 
   test "string rules are normalized" do
-    col = column(@board, "inbox")
+    col = column(@board, "review") # inbox is never-AI; use an AI-capable column
     col.update!(policy: { "on_entry" => "assistant_greeting" })
     card = create_card(@board)
     assert_enqueued_with(job: AssistantReplyJob) do
