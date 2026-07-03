@@ -73,10 +73,16 @@ class CardsController < ApplicationController
   end
 
   def move
-    column = @card.board.columns.find(params[:column_id])
-    result = CardTransition.new(@card, to_column: column, position: params[:position]&.to_i).call
+    from_column = @card.column
+    to_column = @card.board.columns.find(params[:column_id])
+    result = CardTransition.new(@card, to_column: to_column, position: params[:position]&.to_i).call
     if result.success?
-      head :ok
+      # Fresh markup for the affected columns: Turbo suppresses this tab's own
+      # refresh broadcasts, so without this the dragged card keeps its stale
+      # face (no queued ghosting, no ticker bump) until a job-thread broadcast.
+      render turbo_stream: [from_column, to_column].uniq.map { |col|
+        turbo_stream.replace(helpers.dom_id(col), partial: "columns/column", locals: { column: col.reload })
+      }
     else
       render json: { error: result.error }, status: :unprocessable_entity
     end

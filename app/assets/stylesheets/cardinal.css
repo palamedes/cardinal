@@ -128,8 +128,16 @@ body.dragging .drop-hint { display: block; }
 }
 
 /* Status treatments (§6) */
-.card.status-working { border-color: var(--blue); animation: breathe 2.2s ease-in-out infinite; }
+.card.status-working { animation: breathe 2.2s ease-in-out infinite; }
 .card.status-queued { opacity: .65; border-style: dashed; }
+
+.working-line { color: var(--blue); }
+.spinner {
+  display: inline-block; width: 9px; height: 9px;
+  border: 2px solid var(--blue); border-top-color: transparent; border-radius: 50%;
+  animation: spin 0.9s linear infinite; vertical-align: -1px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .card.status-needs_input { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); }
 .card.status-needs_input .attention-text { color: var(--amber); font-weight: 600; }
 .card.status-blocked, .card.status-failed { border-color: var(--red); }
@@ -139,8 +147,8 @@ body.dragging .drop-hint { display: block; }
 .card.status-done, .card.status-archived { opacity: .55; }
 
 @keyframes breathe {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(107, 147, 201, .0); }
-  50%      { box-shadow: 0 0 0 3px rgba(107, 147, 201, .25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(107, 147, 201, 0); border-color: var(--border); }
+  50%      { box-shadow: 0 0 0 3px rgba(107, 147, 201, .3); border-color: var(--blue); }
 }
 
 /* ── Card modal ──────────────────────────────────────── */

@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 import Sortable from "sortablejs"
 
 // Drag-and-drop for a column's card list. Moving a card PATCHes /cards/:id/move;
@@ -32,12 +33,17 @@ export default class extends Controller {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "text/vnd.turbo-stream.html, application/json",
         "X-CSRF-Token": document.querySelector("meta[name='csrf-token']").content
       },
       body: JSON.stringify({ column_id: columnId, position: event.newIndex })
     })
 
-    if (!response.ok) {
+    if (response.ok) {
+      // Server-rendered truth for both columns: instant queued/working
+      // styling, ticker counts, queue positions.
+      Turbo.renderStreamMessage(await response.text())
+    } else {
       event.from.insertBefore(event.item, event.from.children[event.oldIndex])
       const body = await response.json().catch(() => ({}))
       if (body.error) alert(body.error)
