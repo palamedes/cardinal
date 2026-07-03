@@ -1,9 +1,9 @@
 <%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
-  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+  <div class="modal-backdrop" data-controller="modal" data-modal-sticky-value="true" data-action="click->modal#backdrop">
     <div class="modal modal-sm">
       <header class="modal-header">
         <h1>New card<% if @parent %> <span class="hint">— child of “<%= @parent.title %>”</span><% end %></h1>
-        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+        <button type="button" class="modal-close" data-action="modal#close" title="Cancel">✕</button>
       </header>
       <div class="modal-body">
         <%# _top: a full-page redirect after create — Turbo suppresses this
@@ -19,7 +19,10 @@
           <label>Description</label>
           <%= f.text_area "card[description]", rows: 8,
                 placeholder: "Goal, context, acceptance criteria — the planning assistant will help refine this." %>
-          <%= f.submit "Save" %>
+          <div class="card-edit-actions">
+            <button type="button" class="btn-cancel" data-action="modal#close">Cancel</button>
+            <%= f.submit "Save" %>
+          </div>
         <% end %>
       </div>
     </div>

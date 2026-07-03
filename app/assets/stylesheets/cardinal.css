@@ -285,6 +285,10 @@ body.dragging .drop-hint { display: block; }
   color: var(--text); padding: 6px 10px; font: inherit;
 }
 .card-edit input[type="submit"] { margin-top: 10px; align-self: flex-end; }
+.card-edit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.card-edit-actions input[type="submit"] { margin-top: 0; }
+.btn-cancel { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.btn-cancel:hover { color: var(--text); border-color: var(--text-dim); }
 
 .related-list { list-style: none; margin: 0 0 8px; padding: 0; font-size: 13px; }
 .related-list li { padding: 3px 0; }
