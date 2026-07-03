@@ -3,7 +3,11 @@ Rails.application.routes.draw do
 
   resource :board, only: :show
   resources :cards, only: [:new, :create, :show, :update] do
-    member { patch :move }
+    member do
+      patch :move
+      post :approve
+      post :request_changes
+    end
     resources :messages, only: [:create]
   end
   resources :columns, only: [:create, :edit]

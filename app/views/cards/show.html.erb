@@ -54,6 +54,25 @@
             <%= f.submit "Save" %>
           <% end %>
 
+          <% if @card.column.review? %>
+            <h3>Review</h3>
+            <% if @card.in_review? %>
+              <div class="panel-callout callout-plan">
+                <p><strong>Ready for your verdict.</strong><% if @card.pr_url %> Check the <%= link_to "pull request", @card.pr_url, target: "_blank" %> and the final report below.<% end %></p>
+                <%= button_to "✅ Approve", approve_card_path(@card), class: "approve-btn" %>
+              </div>
+              <%= form_with url: request_changes_card_path(@card), class: "card-edit" do |f| %>
+                <label>Request changes</label>
+                <%= f.text_area "card[feedback]", rows: 3, placeholder: "What's wrong or missing?" %>
+                <%= f.submit "Request changes" %>
+              <% end %>
+            <% elsif @card.approved? %>
+              <div class="panel-callout callout-plan"><p><strong>Approved.</strong> Drag the card to Done to merge and ship.</p></div>
+            <% elsif @card.changes_requested? %>
+              <div class="panel-callout callout-question"><p><strong>Changes requested.</strong> Drag the card back to an execution column for a revision run.</p></div>
+            <% end %>
+          <% end %>
+
           <h3>Work</h3>
           <% runs = @card.runs.order(:id) %>
           <% parked = runs.select(&:needs_input?).last %>

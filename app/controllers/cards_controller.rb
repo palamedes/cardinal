@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  before_action :set_card, only: [:show, :update, :move]
+  before_action :set_card, only: [:show, :update, :move, :approve, :request_changes]
 
   def new
   end
@@ -24,6 +24,26 @@ class CardsController < ApplicationController
   def update
     @card.update!(card_params)
     @card.log!("status_change", actor: "user", text: "Card details updated")
+    redirect_to card_path(@card)
+  end
+
+  # Review verdicts (§3, §14.2). Approve is reversible — the merge happens as
+  # Done's entry rule when the human drags the card there.
+  def approve
+    if @card.in_review?
+      @card.update!(status: "approved")
+      @card.log!("status_change", actor: "user", text: "Work approved — drag to Done to ship")
+    end
+    redirect_to card_path(@card)
+  end
+
+  def request_changes
+    feedback = params.require(:card)[:feedback]
+    if %w[in_review approved].include?(@card.status) && feedback.present?
+      @card.update!(status: "changes_requested")
+      @card.log!("user_message", actor: "user", text: "Changes requested:\n#{feedback}")
+      @card.log!("status_change", actor: "user", text: "Drag the card back to an execution column for a revision run")
+    end
     redirect_to card_path(@card)
   end
 

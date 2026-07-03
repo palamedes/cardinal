@@ -34,7 +34,12 @@ module Rules
       # comes from the rule config. No workspace, no session, no tools.
       AiTaskJob.perform_later(card.id, rule["prompt"].to_s, rule["model"])
     when "merge_pr"
-      card.log!("status_change", text: "Card finalized#{" — PR merge pending git integration" if card.pr_url}")
+      if card.pr_url.present?
+        card.log!("status_change", text: "Shipping: merging #{card.pr_url}")
+        MergePrJob.perform_later(card.id)
+      else
+        card.log!("status_change", text: "Card finalized (no PR to merge)")
+      end
     when "set_status"
       card.update!(status: rule["status"]) if Card::STATUSES.include?(rule["status"])
     else
