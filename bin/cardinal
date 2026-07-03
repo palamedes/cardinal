@@ -57,7 +57,9 @@ else
     echo "cardinal ▸ no Claude account is linked to this board yet"
     echo "cardinal ▸ opening the account link — pick the account this board should work as"
     mkdir -p "$AUTH_DIR" && chmod 700 "$AUTH_DIR"
-    RAW="$(CLAUDE_CONFIG_DIR="$AUTH_DIR" claude setup-token)" || {
+    # tee /dev/tty: setup-token is interactive (shows a URL, waits for a
+    # pasted code) — the user must SEE it while we capture the token.
+    RAW="$(CLAUDE_CONFIG_DIR="$AUTH_DIR" claude setup-token | tee /dev/tty)" || {
       echo "cardinal: account link failed — try again, or CARDINAL_INHERIT_AUTH=1 to use the machine login" >&2
       exit 1
     }
