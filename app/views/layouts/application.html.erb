@@ -15,6 +15,23 @@
 
     <%= yield :head %>
 
+    <%# Apply the saved theme before first paint to avoid a flash of dark. Dark is the
+        default. Turbo morph refreshes reconcile <html> against the server markup (which
+        has no data-theme), so re-apply after each render to keep the choice sticky. %>
+    <script>
+      (function () {
+        function applyTheme() {
+          if (localStorage.getItem("theme") === "light") {
+            document.documentElement.setAttribute("data-theme", "light")
+          } else {
+            document.documentElement.removeAttribute("data-theme")
+          }
+        }
+        applyTheme()
+        document.addEventListener("turbo:render", applyTheme)
+      })()
+    </script>
+
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">

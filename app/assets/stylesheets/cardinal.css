@@ -12,6 +12,24 @@
   --blue: #6b93c9;
 }
 
+/* Light theme — light greys, dark grey text. Applied via data-theme="light"
+   on <html> (see the theme controller + head boot script). Only the palette
+   and a few hardcoded dark-specific colors below need to flip; every surface
+   drives its colors through these variables. */
+[data-theme="light"] {
+  --bg: #eceef1;
+  --surface: #f6f7f9;
+  --surface-2: #ffffff;
+  --border: #d3d7de;
+  --text: #23262c;
+  --text-dim: #646b78;
+  --accent: #c1443f;        /* cardinal red */
+  --amber: #b5791b;
+  --green: #3f8a50;
+  --red: #c23b30;
+  --blue: #4d76ad;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -35,6 +53,12 @@ a { color: var(--blue); text-decoration: none; }
 .topbar h1 { font-size: 16px; margin: 0; font-weight: 600; }
 .topbar h1 .sep { color: var(--accent); margin: 0 4px; }
 .topbar-right { display: flex; align-items: center; gap: 14px; }
+
+.theme-toggle {
+  background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-dim); font-weight: 600; padding: 5px 10px; line-height: 1;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--text-dim); }
 
 .attention summary {
   cursor: pointer;
@@ -121,6 +145,8 @@ button, input[type="submit"] {
 }
 .column-execution { background: #20222c; border-color: #3a3f52; }
 .column-review    { background: #24211c; border-color: #4a4232; }
+[data-theme="light"] .column-execution { background: #eef1f8; border-color: #ccd3e6; }
+[data-theme="light"] .column-review    { background: #f6f1e6; border-color: #e3d7bf; }
 .column-header { display: flex; justify-content: space-between; align-items: center; }
 .column-header h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 2px 4px 8px; color: var(--text-dim); }
 .gear { cursor: pointer; color: var(--text-dim); }
@@ -204,6 +230,7 @@ body.dragging .drop-hint { display: block; }
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
 }
+[data-theme="light"] .modal { box-shadow: 0 20px 60px rgba(0, 0, 0, .18); }
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 18px; border-bottom: 1px solid var(--border);
@@ -317,6 +344,7 @@ body.dragging .drop-hint { display: block; }
 .event-kind { color: var(--text-dim); font-size: 12px; }
 .event-description { background: var(--surface); border-radius: 8px; border-bottom: 0; }
 .actor-agent .event-body p { color: #b9c3d8; }
+[data-theme="light"] .actor-agent .event-body p { color: #3a4a63; }
 
 .empty { color: var(--text-dim); font-style: italic; }
 
@@ -343,6 +371,7 @@ body.dragging .drop-hint { display: block; }
   border-radius: 8px; color: var(--text); padding: 8px 10px; font: inherit; resize: vertical;
 }
 .actor-assistant .event-body p { color: #d8cfc0; }
+[data-theme="light"] .actor-assistant .event-body p { color: #5a4e3c; }
 
 .run-list { list-style: none; padding: 0; margin: 0 0 10px; }
 .run-list .run { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--surface-2); font-size: 13px; }
@@ -412,3 +441,6 @@ body.dragging .drop-hint { display: block; }
   box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
   pointer-events: none;
 }
+
+/* Light overrides for components added on main after the theme branch was cut */
+[data-theme="light"] .card-footer { background: #e2e5ea; border-top-color: rgba(0, 0, 0, .1); }
