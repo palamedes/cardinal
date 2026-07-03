@@ -6,6 +6,31 @@ class Column < ApplicationRecord
 
   enum :archetype, ARCHETYPES.index_by(&:itself)
 
+  # Archetypes are TEMPLATES, not magic: choosing one stamps concrete,
+  # editable values into the policy fields. Nothing falls back to these at
+  # runtime — what the gear modal shows is everything there is.
+  ARCHETYPE_TEMPLATES = {
+    "inbox"     => {},
+    "planning"  => {
+      "on_entry"      => [{ "action" => "assistant_greeting" }],
+      "on_entry_text" => "The planning assistant reads the card and opens the discussion.",
+      "instructions"  => "Drive toward crisp acceptance criteria. Open with the 2-3 sharpest questions."
+    },
+    "execution" => {
+      "on_entry"      => [{ "action" => "start_agent_run" }],
+      "on_entry_text" => "Assign a dedicated worker agent to the card and start a run."
+    },
+    "review"    => {},
+    "terminal"  => {
+      "on_entry"      => [{ "action" => "merge_pr" }],
+      "on_entry_text" => "Merge the card's PR and ship it."
+    }
+  }.freeze
+
+  before_create :seed_archetype_template
+
+  def archetype_template = ARCHETYPE_TEMPLATES.fetch(archetype, {})
+
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
@@ -22,12 +47,20 @@ class Column < ApplicationRecord
     color if color.to_s.match?(/\A#\h{6}\z/)
   end
 
+  # Does any AI service this column? Explicit per-column switch (default ON
+  # for back-compat); the inbox/Tasks intake is never AI, unconditionally.
+  # When false the column is inert AI-wise: no assistant, no worker runs,
+  # no ai_task rules — cards there are human work.
+  def ai?
+    return false if inbox?
+    policy["ai"] != false
+  end
+
   # Which columns may move cards INTO this one (§ accept policy, card #15).
-  # Stored as an array of column-id strings; blank = accept from anywhere, so
-  # existing boards keep their unrestricted behavior.
+  # Stored as an array of column-id strings. EXPLICIT ONLY: an empty list
+  # means this column accepts from nowhere — there is no permissive default.
   def accepts?(source_column)
-    ids = Array(accepts_from).map(&:to_s).reject(&:blank?)
-    ids.empty? || ids.include?(source_column.id.to_s)
+    Array(accepts_from).map(&:to_s).include?(source_column.id.to_s)
   end
 
   # Rows rendered under the cards (card #18). Footer config is an array of
@@ -47,6 +80,7 @@ class Column < ApplicationRecord
   # run parked and already has its answer recorded resumes instead of
   # starting fresh.
   def kick_queue
+    return unless ai?
     return if at_wip_limit?
     next_card = cards.where(status: "queued").order(:position).first
     return unless next_card
@@ -89,6 +123,37 @@ class Column < ApplicationRecord
     end
   end
 
+  # The built-in role contract for AI servicing this archetype — shown
+  # read-only in the gear modal so the Instructions field is understood as
+  # ADDING to this, never replacing it. Enforced in code, not editable.
+  BUILT_IN_ROLES = {
+    "planning"  => "Plans only, never implements: read-only tools (physically cannot change files), " \
+                   "drives toward a Ready-for-execution brief, and hands off — approval means " \
+                   "\"finalize the brief\", not \"do it\".",
+    "execution" => "Full toolset in an isolated checkout of the card's branch. Commits as it goes but " \
+                   "never pushes (the runner pushes); merges the default branch itself on conflict; " \
+                   "parks with a QUESTION: when genuinely blocked; ends with a final report."
+  }.freeze
+
+  def built_in_role = BUILT_IN_ROLES[archetype]
+
+  # What "Use AI" concretely means here — the §5 tier distinction, visible.
+  AI_MODES = {
+    "planning"  => "a shared planning assistant joins each card's conversation",
+    "execution" => "a dedicated worker agent is assigned to each card",
+    "review"    => "allow AI on-entry rules (ai_task) in this column",
+    "terminal"  => "allow AI on-entry rules (ai_task) in this column"
+  }.freeze
+
+  def ai_mode_description = AI_MODES[archetype]
+
+  # Stamp template values into any policy field the creator left blank.
+  def seed_archetype_template
+    archetype_template.each do |key, value|
+      policy[key] = value if policy[key].blank?
+    end
+  end
+
   # One-line consequence shown while dragging a card over this column (§14.1).
   def drag_hint
     case archetype
@@ -96,7 +161,7 @@ class Column < ApplicationRecord
     when "planning"  then "The board assistant will join the discussion"
     when "execution" then "An agent will be assigned and start work"
     when "review"    then "Work stops — ready for your verdict"
-    when "terminal"  then "Ships it — PR merged, branch deleted"
+    when "terminal"  then "Closes it — PR merged and branch deleted, if there is one"
     end
   end
 

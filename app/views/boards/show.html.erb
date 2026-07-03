@@ -59,8 +59,9 @@
       <summary>+ Column</summary>
       <%= form_with url: columns_path, class: "new-column-form" do |f| %>
         <%= f.text_field "column[name]", placeholder: "Column name", required: true %>
+<%# Inbox is the board's single intake — it can't be created a second time (card #17). %>
         <%= f.select "column[archetype]",
-              Column::ARCHETYPES.map { |a| [a.capitalize, a] }, selected: "inbox" %>
+              (Column::ARCHETYPES - %w[inbox]).map { |a| [a.capitalize, a] }, selected: "planning" %>
         <%= f.submit "Add" %>
       <% end %>
     </details>

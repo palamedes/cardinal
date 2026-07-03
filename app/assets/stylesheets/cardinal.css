@@ -296,6 +296,8 @@ body.dragging .drop-hint { display: block; }
   color: var(--text); padding: 6px 10px; font: inherit;
 }
 .card-edit input[type="submit"] { margin-top: 10px; align-self: flex-end; }
+.card-edit .locked-field { margin: 4px 0 0; font-size: 12px; word-break: break-all; }
+.card-edit .locked-field code { font-family: ui-monospace, monospace; color: var(--text); }
 .card-edit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .card-edit-actions input[type="submit"] { margin-top: 0; }
 .btn-cancel { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
@@ -509,3 +511,24 @@ body.dragging .drop-hint { display: block; }
 
 /* Light overrides for components added on main after the theme branch was cut */
 [data-theme="light"] .card-footer { background: #e2e5ea; border-top-color: rgba(0, 0, 0, .1); }
+
+/* Accept-policy visibility while dragging + rejected-drop flash */
+.column.drop-blocked { opacity: .35; filter: grayscale(.5) brightness(.7); transition: opacity .15s, filter .15s; }
+.column.drop-blocked .drop-hint { color: var(--red); }
+.column.drop-blocked .drop-hint::before { content: "✗ won't accept from here — "; }
+
+.hidden { display: none !important; }
+
+/* The reveal wrappers must be invisible to the form's flex layout — their
+   children should behave as direct .card-edit flex items (full width). */
+.card-edit [data-controller="reveal"],
+.card-edit [data-reveal-target="panel"] { display: contents; }
+.card-edit textarea, .card-edit input[type="text"] { width: 100%; }
+
+.default-rule.active-rule { border-left-color: var(--green); }
+
+.archetype-locked {
+  font-size: 13px; color: var(--text-dim); margin: 0;
+  padding: 6px 10px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px;
+}

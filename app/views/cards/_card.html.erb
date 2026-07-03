@@ -10,7 +10,7 @@
     <% if card.queued? %>
       <% ahead = card.column.cards.where(status: "queued").where("position < ?", card.position).count %>
       <p class="card-progress">⏳ queued<%= ahead.positive? ? " — #{ahead} ahead" : " — next up" %></p>
-    <% elsif card.working? %>
+    <% elsif card.working? && card.column.ai? %>
       <p class="card-progress working-line"><span class="spinner"></span> <%= card.latest_progress || "agent starting…" %></p>
     <% elsif card.latest_progress && card.running? %>
       <p class="card-progress">▸ <%= card.latest_progress %></p>
@@ -23,7 +23,7 @@
     <% end %>
     <div class="card-meta">
       <% card.tags.each do |tag| %><span class="tag"><%= tag %></span><% end %>
-      <% if card.running? && card.column.model %>
+      <% if card.running? && card.column.ai? && card.column.model %>
         <span class="chip agent-chip">🤖 <%= card.column.model_short %><%= " · #{card.column.effort}" if card.column.effort %></span>
       <% end %>
       <% if card.awaiting_assistant? %>

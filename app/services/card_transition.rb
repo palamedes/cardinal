@@ -79,7 +79,7 @@ class CardTransition
     case @to.archetype
     when "inbox"     then "draft"
     when "planning"  then "discussing"
-    when "execution" then "queued"
+    when "execution" then @to.ai? ? "queued" : "working" # no AI = a human is on it
     when "review"    then "in_review"
     when "terminal"  then "done"
     end

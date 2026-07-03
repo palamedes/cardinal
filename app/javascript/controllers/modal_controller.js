@@ -29,6 +29,8 @@ export default class extends Controller {
   }
 
   close() {
+    // Let autosave forms flush any pending debounce before the frame clears.
+    document.dispatchEvent(new CustomEvent("cardinal:modal-closing"))
     const frame = this.element.closest("turbo-frame")
     frame.removeAttribute("src")
     frame.innerHTML = ""

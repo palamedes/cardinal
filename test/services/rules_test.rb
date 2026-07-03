@@ -36,7 +36,7 @@ class RulesTest < ActiveSupport::TestCase
 
   test "custom ai_task rule enqueues a maintenance agent" do
     col = column(@board, "planning")
-    col.update!(policy: { "on_entry" => [{ "action" => "ai_task", "prompt" => "Summarize %{title}" }] })
+    col.update!(policy: col.policy.merge("on_entry" => [{ "action" => "ai_task", "prompt" => "Summarize %{title}" }]))
     card = create_card(@board)
     assert_enqueued_with(job: AiTaskJob) do
       Rules.fire_entry(card, col)
@@ -46,8 +46,8 @@ class RulesTest < ActiveSupport::TestCase
   end
 
   test "string rules are normalized" do
-    col = column(@board, "inbox")
-    col.update!(policy: { "on_entry" => "assistant_greeting" })
+    col = column(@board, "review") # inbox is never-AI; use an AI-capable column
+    col.update!(policy: col.policy.merge("on_entry" => "assistant_greeting"))
     card = create_card(@board)
     assert_enqueued_with(job: AssistantReplyJob) do
       Rules.fire_entry(card, col)
@@ -56,7 +56,7 @@ class RulesTest < ActiveSupport::TestCase
 
   test "unknown rule logs an error event instead of raising" do
     col = column(@board, "inbox")
-    col.update!(policy: { "on_entry" => [{ "action" => "explode" }] })
+    col.update!(policy: col.policy.merge("on_entry" => [{ "action" => "explode" }]))
     card = create_card(@board)
     assert_nothing_raised { Rules.fire_entry(card, col) }
     assert_match(/Unknown column rule/, card.events.where(kind: "error").last.text)
@@ -82,5 +82,20 @@ class MarkPrReadyRuleTest < ActiveSupport::TestCase
     card = board.cards.create!(column: qa, title: "t", status: "in_review")
     assert_no_enqueued_jobs(only: MarkPrReadyJob) { Rules.fire_entry(card, qa) }
     assert_match(/No PR/, card.events.last.text)
+  end
+end
+
+class RulesDescribeTest < ActiveSupport::TestCase
+  test "compiled rules describe themselves in English" do
+    rules = [{ "action" => "mark_pr_ready" },
+             { "action" => "ai_task", "prompt" => "Suggest tags for %{title}" }]
+    desc = Rules.describe(rules)
+    assert_match(/take the PR out of draft; then run a one-shot AI task/, desc)
+    assert_match(/Suggest tags/, desc)
+  end
+
+  test "describe handles string and hash shorthands" do
+    assert_equal "merge the PR and ship", Rules.describe("merge_pr")
+    assert_equal "assign a worker agent and start a run", Rules.describe({ "action" => "start_agent_run" })
   end
 end

@@ -1,22 +1,29 @@
 <%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
   <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
-    <div class="modal modal-sm">
+    <div class="modal modal-sm" data-controller="autosave">
       <header class="modal-header">
-        <h1>⚙ <%= @column.name %> <span class="chip"><%= @column.archetype %></span></h1>
+        <h1>⚙ <%= @column.name %> <span class="chip"><%= @column.archetype %></span>
+            <span class="autosave-status" data-autosave-target="status"></span></h1>
         <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
       </header>
       <div class="modal-body">
-        <% if @json_error %><p class="form-error"><%= @json_error %></p><% end %>
+        <div id="column-form-errors"><% if @json_error %><p class="form-error"><%= @json_error %></p><% end %></div>
 
-        <%= form_with model: @column, class: "card-edit" do |f| %>
+        <%= form_with model: @column, class: "card-edit",
+              data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
+          <%= hidden_field_tag :autosave, "1" %>
           <div class="field-row">
             <div>
               <label>Name <%= info_tip("The column's display name on the board.") %></label>
               <%= f.text_field :name, required: true %>
             </div>
             <div>
-              <label>Archetype <%= info_tip("What kind of stage this is. Inbox: parking lot, no AI. Planning: a shared assistant discusses cards with you. Execution: each card gets its own worker agent that does the work. Review: work stops for your verdict. Terminal: finalizes the card (Done merges the PR).") %></label>
-              <%= f.select :archetype, Column::ARCHETYPES.map { |a| [a.capitalize, a] } %>
+              <label>Archetype <%= info_tip("What kind of stage this is. Planning: a shared assistant discusses cards with you. Execution: each card gets its own worker agent that does the work. Review: work stops for your verdict. Terminal: finalizes the card (Done merges the PR). Inbox isn't selectable — the board has exactly one, the far-left intake.") %></label>
+              <% if @column.inbox? %>
+                <p class="archetype-locked">Inbox — the board's single intake (fixed)</p>
+              <% else %>
+                <%= f.select :archetype, (Column::ARCHETYPES - ["inbox"]).map { |a| [a.capitalize, a] } %>
+              <% end %>
             </div>
             <div>
               <label>Arrivals <%= info_tip("Where cards land when dragged into this column. 'Top' makes it a feed — newest first, no matter where you drop (the Done default). Reordering inside the column stays manual.") %></label>
@@ -34,7 +41,7 @@
           <% siblings = @column.board.columns.where.not(id: @column.id).order(:position) %>
           <% if siblings.any? %>
             <% allowed = Array(@column.accepts_from).map(&:to_s) %>
-            <label>Accepts moves from <%= info_tip("Which columns may drag cards directly into this one — the workflow rail. Leave all unchecked to accept from anywhere. Check specific columns to force a path (e.g. Execution accepts only from Planning, so cards can't skip triage).") %></label>
+            <label>Accepts moves from (inbound) <%= info_tip("INBOUND rule: which columns may drag cards INTO this one. EXPLICIT ONLY — nothing checked means nothing may enter (there is no accept-from-anywhere). It does not control where this column's cards may go; set that on the destinations.") %></label>
             <div class="accepts-from">
               <% siblings.each do |sib| %>
                 <label class="check-row inline">
@@ -45,68 +52,91 @@
             </div>
           <% end %>
 
-          <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — the planning assistant's or worker agent's standing orders (e.g. \"follow the repo style guide, always write tests\").") %></label>
-          <%= f.text_area :instructions, rows: 3, value: @column.instructions %>
+          <%# The Tasks/inbox column is the board's intake — cards park here untouched,
+              so none of the AI-work or on-entry settings below apply to it (card #17). %>
+          <% if @column.inbox? %>
+            <p class="default-rule">This column never uses AI — it's the board's intake.</p>
+          <% else %>
+          <div data-controller="reveal">
+            <label class="check-row">
+              <%= hidden_field_tag "column[ai]", "0", id: nil %>
+              <%= check_box_tag "column[ai]", "1", @column.ai?, data: { reveal_target: "toggle", action: "change->reveal#sync" } %>
+              🤖 Use AI in this column — <%= @column.ai_mode_description %>
+              <%= info_tip("Off = this column is fully inert AI-wise: no assistant, no worker agents, no AI rules. Cards here are human work (a card dragged into a non-AI work column reads as being worked by a person). Non-AI on-entry rules like merge_pr still run.") %>
+            </label>
 
-          <div class="field-row">
-            <div>
-              <label>Model <%= info_tip("Which Claude model works cards in this column. Haiku for cheap chat and maintenance, Sonnet for most real work, Opus/Fable when the work is hard and worth it.") %></label>
-              <%= f.select :model, model_options(@column.model), selected: @column.model.to_s %>
+            <div data-reveal-target="panel">
+            <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — added ON TOP of the built-in role shown below (which is enforced in code and can't be edited away).") %></label>
+            <% if @column.built_in_role %>
+              <p class="default-rule">Built-in role: <%= @column.built_in_role %></p>
+            <% end %>
+            <%= f.text_area :instructions, rows: 3, value: @column.instructions,
+                  placeholder: "Your additions — e.g. “always press for acceptance criteria”, “follow the repo style guide”…" %>
+
+            <div class="field-row">
+              <div>
+                <label>Model <%= info_tip("Which Claude model works cards in this column. Haiku for cheap chat and maintenance, Sonnet for most real work, Opus/Fable when the work is hard and worth it.") %></label>
+                <%= f.select :model, model_options(@column.model), selected: @column.model.to_s %>
+              </div>
+              <div>
+                <label>Effort <%= info_tip("How hard the model thinks per step. Higher = smarter but slower and pricier. Max is supported on Sonnet/Opus tiers only.") %></label>
+                <%= f.select :effort, [["(default)", ""], "low", "medium", "high", "max"], selected: @column.effort %>
+              </div>
             </div>
-            <div>
-              <label>Effort <%= info_tip("How hard the model thinks per step. Higher = smarter but slower and pricier. Max is supported on Sonnet/Opus tiers only.") %></label>
-              <%= f.select :effort, [["(default)", ""], "low", "medium", "high", "max"], selected: @column.effort %>
+
+            <div class="field-row">
+              <div>
+                <label>Concurrency <%= info_tip("WIP limit: how many cards may be actively worked at once here. Extra cards queue in order; drag to reprioritize.") %></label>
+                <%= f.number_field :concurrency_limit, value: @column.concurrency_limit, min: 1, placeholder: "∞" %>
+              </div>
+              <div>
+                <label>Max turns <%= info_tip("Check-in cadence and loop guard: after this many actions the agent pauses, saves progress, and asks whether to continue (one reply = fresh budget). Catches busy-but-stuck loops a wall-clock timeout can't. Not a work limit.") %></label>
+                <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "80" %>
+              </div>
+              <div>
+                <label>Timeout (min) <%= info_tip("Wall-clock limit per run segment. The agent process is killed when it expires — never a runaway.") %></label>
+                <%= f.number_field :timeout_minutes, value: @column.timeout_minutes, min: 1, placeholder: "30" %>
+              </div>
             </div>
+
+            <label class="check-row">
+              <%= f.check_box :plan_approval, checked: ActiveModel::Type::Boolean.new.cast(@column.plan_approval) %>
+              Require plan approval before the agent makes changes
+              <%= info_tip("The agent's first pass is read-only: it explores and proposes a plan, then waits. You approve with one click or reply to redirect. Your main safety rail.") %>
+            </label>
+
+            </div>
+
+            <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior shown below.") %></label>
+            <p class="default-rule">Archetype template: <%= Rules::DEFAULT_DESCRIPTIONS[@column.archetype] %></p>
+            <% if @column.policy["on_entry"].present? %>
+              <p class="default-rule active-rule">Currently active: <%= Rules.describe(@column.policy["on_entry"]) %><%= " — from your English rules below" if @column.policy["on_entry_text"].present? %></p>
+            <% end %>
+            <%= f.text_area :on_entry_text, rows: 3,
+                  value: @column.policy["on_entry_text"],
+                  placeholder: "Describe what should happen when a card arrives — replaces the active behavior shown above. Blank = archetype default." %>
+
+            <details class="advanced-rules">
+              <summary>Advanced: compiled rules (JSON)</summary>
+              <p class="hint">Applied only when the English box above is empty. Current compiled form:</p>
+              <%= f.text_area :on_entry_json, rows: 4, class: "mono",
+                    value: @column.policy["on_entry"] ? JSON.pretty_generate(@column.policy["on_entry"]) : "",
+                    placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
+            </details>
           </div>
-
-          <div class="field-row">
-            <div>
-              <label>Concurrency <%= info_tip("WIP limit: how many cards may be actively worked at once here. Extra cards queue in order; drag to reprioritize.") %></label>
-              <%= f.number_field :concurrency_limit, value: @column.concurrency_limit, min: 1, placeholder: "∞" %>
-            </div>
-            <div>
-              <label>Max turns <%= info_tip("Check-in cadence and loop guard: after this many actions the agent pauses, saves progress, and asks whether to continue (one reply = fresh budget). Catches busy-but-stuck loops a wall-clock timeout can't. Not a work limit.") %></label>
-              <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "80" %>
-            </div>
-            <div>
-              <label>Timeout (min) <%= info_tip("Wall-clock limit per run segment. The agent process is killed when it expires — never a runaway.") %></label>
-              <%= f.number_field :timeout_minutes, value: @column.timeout_minutes, min: 1, placeholder: "30" %>
-            </div>
-          </div>
-
-          <label class="check-row">
-            <%= f.check_box :plan_approval, checked: ActiveModel::Type::Boolean.new.cast(@column.plan_approval) %>
-            Require plan approval before the agent makes changes
-            <%= info_tip("The agent's first pass is read-only: it explores and proposes a plan, then waits. You approve with one click or reply to redirect. Your main safety rail.") %>
-          </label>
-
-          <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior shown below.") %></label>
-          <% if @column.policy["on_entry_text"].blank? && @column.policy["on_entry"].blank? %>
-            <p class="default-rule">Default: <%= Rules::DEFAULT_DESCRIPTIONS[@column.archetype] %></p>
           <% end %>
-          <%= f.text_area :on_entry_text, rows: 3,
-                value: @column.policy["on_entry_text"],
-                placeholder: "Describe what should happen instead of the default…" %>
-
-          <details class="advanced-rules">
-            <summary>Advanced: compiled rules (JSON)</summary>
-            <p class="hint">Applied only when the English box above is empty. Current compiled form:</p>
-            <%= f.text_area :on_entry_json, rows: 4, class: "mono",
-                  value: @column.policy["on_entry"] ? JSON.pretty_generate(@column.policy["on_entry"]) : "",
-                  placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
-          </details>
 
           <label>Footer <%= info_tip("A summary strip under the cards. One row per line as \"Label | compute\", where compute is sum_cost (total run cost), sum_tokens (total input+output tokens), count_cards, or blank for a static label. Example: \"Total cost: | sum_cost\".") %></label>
           <%= f.text_area :footer_text, rows: 3, class: "mono",
                 value: footer_config_text(@column),
                 placeholder: "Total cost: | sum_cost" %>
-
-          <%= f.submit "Save" %>
         <% end %>
 
         <details class="advanced-rules panel-advanced">
           <summary>Advanced</summary>
-          <% if @column.cards.none? %>
+          <% if @column.inbox? %>
+            <p class="hint">The Tasks column is the board's intake — cards enter the flow here to be triaged. It can't be deleted.</p>
+          <% elsif @column.cards.none? %>
             <p class="hint">Deleting removes this column and its policy. Cards are unaffected — the column must already be empty.</p>
             <%= button_to "🗑 Delete column", column_path(@column), method: :delete, class: "cancel-btn delete-column",
                   form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess",

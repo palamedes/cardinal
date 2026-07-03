@@ -31,6 +31,7 @@ module RunSweeper
   # state writes.
   def self.repair_stuck_cards
     Card.where(status: "working").find_each do |card|
+      next unless card.column.ai? # non-AI columns: "working" means a human is
       next if card.runs.where(status: %w[queued running needs_input]).any? { |r| r.needs_input? || alive?(r) }
       card.update!(status: "failed")
       card.log!("error", text: "Card was stuck working with no live run; marked failed.")

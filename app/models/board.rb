@@ -1,18 +1,52 @@
 class Board < ApplicationRecord
+  # Captured from the author's live board (2026-07-05) — the battle-tested
+  # layout. accepts_from is stored as NAMES here and resolved to column ids
+  # by install_default_columns! (ids don't exist until creation).
   DEFAULT_COLUMNS = [
-    { name: "Tasks",       archetype: "inbox",     policy: {} },
-    { name: "Planning",    archetype: "planning",  policy: { "model" => "claude-haiku-4-5-20251001" } },
+    { name: "Tasks",       archetype: "inbox",
+      policy: { "plan_approval" => false,
+                "accepts_from_names" => ["Planning", "Review", "QA", "Done"] } },
+    { name: "Planning",    archetype: "planning",
+      policy: { "ai" => true, "model" => "claude-haiku-4-5-20251001", "plan_approval" => false,
+                "on_entry" => [{ "action" => "assistant_greeting" }],
+                "on_entry_text" => "The planning assistant reads the card and opens the discussion.",
+                "accepts_from_names" => ["Tasks", "In Progress", "Review", "QA"] } },
     { name: "In Progress", archetype: "execution",
-      policy: { "model" => "claude-sonnet-4-6", "effort" => "high", "concurrency_limit" => 3,
-                "plan_approval" => true, "max_turns" => 80, "timeout_minutes" => 30,
-                "on_entry" => [{ "action" => "start_agent_run" }] } },
-    { name: "Review",      archetype: "review",    policy: {} },
-    { name: "QA",          archetype: "review",
-      policy: { "on_entry" => [{ "action" => "mark_pr_ready" }],
+      policy: { "ai" => true, "model" => "claude-opus-4-8", "effort" => "high",
+                "concurrency_limit" => 3, "plan_approval" => true,
+                "budget_per_run_cents" => 200, "timeout_minutes" => 90, "max_turns" => 80,
+                "tools" => %w[read edit run_commands git_commit_push],
+                "on_entry" => [{ "action" => "start_agent_run" }],
+                "accepts_from_names" => ["Planning", "Review", "QA"],
+                "instructions" => "Follow repo conventions. Write tests when the repo has a suite." } },
+    { name: "Review",      archetype: "review",
+      policy: { "ai" => true, "plan_approval" => false,
+                "accepts_from_names" => ["In Progress", "QA"],
+                "on_entry" => [{ "action" => "mark_pr_ready" }],
                 "on_entry_text" => "Take the PR out of draft — mark it ready for review on GitHub." } },
+    { name: "QA",          archetype: "review",
+      policy: { "ai" => true, "plan_approval" => false,
+                "accepts_from_names" => ["Review"],
+                "on_entry" => [{ "action" => "mark_pr_ready" }] } },
     { name: "Done",        archetype: "terminal",
-      policy: { "on_entry" => [{ "action" => "merge_pr" }], "arrivals" => "top" } }
+      policy: { "ai" => false, "plan_approval" => false, "arrivals" => "top",
+                "accepts_from_names" => ["Review", "QA", "Planning"],
+                "on_entry" => [{ "action" => "merge_pr" }] } }
   ].freeze
+
+  # Create the default columns, then resolve accepts_from_names -> ids.
+  def install_default_columns!
+    DEFAULT_COLUMNS.each_with_index do |attrs, index|
+      columns.create!(name: attrs[:name], archetype: attrs[:archetype], position: index,
+                      policy: attrs[:policy].except("accepts_from_names"))
+    end
+    DEFAULT_COLUMNS.each do |attrs|
+      names = attrs[:policy]["accepts_from_names"] or next
+      col = columns.find_by!(name: attrs[:name])
+      ids = columns.where(name: names).pluck(:id).map(&:to_s)
+      col.update!(policy: col.policy.merge("accepts_from" => ids))
+    end
+  end
 
   has_many :columns, -> { order(:position) }, dependent: :destroy
   has_many :cards, dependent: :destroy
@@ -34,9 +68,7 @@ class Board < ApplicationRecord
       default_branch: branch_ok.success? && branch.strip.present? ? branch.strip : "main",
       local_path: repo_path
     )
-    DEFAULT_COLUMNS.each_with_index do |attrs, index|
-      board.columns.create!(position: index, **attrs)
-    end
+    board.install_default_columns!
     board
   end
 

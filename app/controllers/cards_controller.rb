@@ -49,6 +49,10 @@ class CardsController < ApplicationController
   def update
     attrs = card_params
     attrs.delete(:title) if params[:autosave] && attrs[:title].blank? # mid-edit blank, not a delete
+    # branch_name and pr_url lock once set (by the user or the agent) — never
+    # let a later edit clobber a value that work may already depend on.
+    attrs.delete(:branch_name) if @card.branch_name.present?
+    attrs.delete(:pr_url) if @card.pr_url.present?
     @card.update!(attrs)
     log_changelog!
 
@@ -102,7 +106,7 @@ class CardsController < ApplicationController
   end
 
   def card_params
-    attrs = params.require(:card).permit(:title, :description, :tags)
+    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url)
     attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
     attrs.to_h.symbolize_keys
   end
@@ -110,7 +114,7 @@ class CardsController < ApplicationController
   # Changelog in the activity timeline (the mechanism already exists). A burst
   # of autosaves coalesces into one entry instead of one per pause-in-typing.
   def log_changelog!
-    changed = @card.previous_changes.keys & %w[title description tags]
+    changed = @card.previous_changes.keys & %w[title description tags branch_name pr_url]
     return if changed.empty?
 
     last = @card.events.order(:id).last

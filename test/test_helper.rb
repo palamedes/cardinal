@@ -13,6 +13,12 @@ class ActiveSupport::TestCase
       board.columns.create!(name: arch.capitalize, archetype: arch, position: i,
                             policy: arch == "execution" ? { "concurrency_limit" => 2 } : {})
     end
+    # Explicit full-mesh rails: accepts_from is explicit-only now (blank =
+    # accepts nothing); tests that exercise restrictions override per-column.
+    ids = board.columns.pluck(:id).map(&:to_s)
+    board.columns.each do |col|
+      col.update!(policy: col.policy.merge("accepts_from" => ids - [col.id.to_s]))
+    end
     board
   end
 
