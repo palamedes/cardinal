@@ -2,6 +2,7 @@ class CardsController < ApplicationController
   before_action :set_card, only: [:show, :update, :move, :approve, :destroy]
 
   def new
+    @board = Board.first!
   end
 
   def create

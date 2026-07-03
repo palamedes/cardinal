@@ -1,0 +1,12 @@
+<%# locals: board, tags (currently selected) %>
+<div data-controller="tags">
+  <%= hidden_field_tag "card[tags]", tags.join(", "), data: { tags_target: "field" } %>
+  <div class="tag-chips" data-tags-target="chips">
+    <% (board.tag_pool | tags).each do |tag| %>
+      <button type="button" class="tag-chip <%= "on" if tags.include?(tag) %>"
+              data-tag="<%= tag %>" data-action="tags#toggle"><%= tag %></button>
+    <% end %>
+  </div>
+  <input type="text" class="new-tag-input" placeholder="+ new tag (Enter)"
+         data-tags-target="newTag" data-action="keydown->tags#keydown">
+</div>

@@ -13,8 +13,8 @@
               data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess" } do |f| %>
           <label>Title</label>
           <%= f.text_field "card[title]", required: true, autofocus: true, placeholder: "What needs doing?" %>
-          <label>Tags <span class="hint">(comma separated)</span></label>
-          <%= f.text_field "card[tags]", placeholder: "backend, ui, …" %>
+          <label>Tags</label>
+          <%= render "cards/tag_picker", board: @board, tags: [] %>
           <label>Description</label>
           <%= f.text_area "card[description]", rows: 8,
                 placeholder: "Goal, context, acceptance criteria — the planning assistant will help refine this." %>

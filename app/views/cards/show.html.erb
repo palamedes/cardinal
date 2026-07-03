@@ -76,8 +76,8 @@
               <%= hidden_field_tag :autosave, "1" %>
               <label>Title</label>
               <%= f.text_field :title, required: true %>
-              <label>Tags <span class="hint">(comma separated)</span></label>
-              <%= f.text_field :tags, value: @card.tags.join(", ") %>
+              <label>Tags</label>
+              <%= render "cards/tag_picker", board: @card.board, tags: @card.tags %>
               <label>Description</label>
               <%= f.text_area :description, rows: 6 %>
             <% end %>

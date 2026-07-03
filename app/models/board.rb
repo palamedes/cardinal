@@ -45,6 +45,11 @@ class Board < ApplicationRecord
     url.sub(%r{\A(\w+://)[^@/]+@}, '\1')
   end
 
+  # Every tag in use on this board — the pool the tag picker offers.
+  def tag_pool
+    cards.pluck(:tags).flatten.compact.uniq.sort
+  end
+
   # Cards currently waiting on the human, ordered by urgency — feeds the
   # attention inbox in the board header.
   def attention_cards
