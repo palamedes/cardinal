@@ -55,7 +55,27 @@
           <% end %>
 
           <h3>Work</h3>
-          <p class="empty">Plan progress, artifacts, and run controls appear here once the runner lands.</p>
+          <% runs = @card.runs.order(:id) %>
+          <% if runs.any? %>
+            <ul class="run-list">
+              <% runs.each do |run| %>
+                <li class="run run-<%= run.status %>">
+                  <span>Run #<%= run.id %> — <%= run.status %></span>
+                  <% if run.finished? && run.cost.positive? %>
+                    <span class="hint"><%= run.output_tokens %> out · $<%= run.cost.round(2) %></span>
+                  <% end %>
+                  <% if run.running? %>
+                    <%= button_to "✖ Cancel", cancel_run_path(run), class: "cancel-btn" %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+            <% if @card.pr_url %>
+              <p>🌿 <%= link_to "View pull request", @card.pr_url, target: "_blank" %> (<%= @card.pr_state %>)</p>
+            <% end %>
+          <% else %>
+            <p class="empty">No runs yet — drag the card into an execution column to assign an agent.</p>
+          <% end %>
         </aside>
       </div>
     </div>

@@ -48,18 +48,7 @@ class CardTransition
   end
 
   def enter_policy!
-    case @to.archetype
-    when "planning"
-      @card.log!("assistant_message", actor: "assistant",
-                 text: "I'm here to help shape this card. What's the goal, and how will we know it's done?")
-    when "execution"
-      @card.update!(branch_name: @card.branch_name.presence || @card.default_branch_name)
-      @card.log!("status_change", text: "Queued for execution on #{@card.branch_name}")
-      # ProvisionAgentJob.perform_later(@card) — arrives with the runner.
-    when "terminal"
-      @card.log!("status_change", text: "Card finalized")
-      # Merge-on-Done-entry (§12.4 decision) arrives with the git integration.
-    end
+    Rules.fire_entry(@card, @to)
   end
 
   def entry_status

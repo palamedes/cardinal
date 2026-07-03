@@ -9,7 +9,14 @@ class Column < ApplicationRecord
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
-                 :tools, :on_entry, :on_success
+                 :max_turns, :tools, :on_entry, :on_success
+
+  # Start the next queued card when a run slot frees up.
+  def kick_queue
+    return if at_wip_limit?
+    next_card = cards.where(status: "queued").order(:position).first
+    StartRunJob.perform_later(next_card.id) if next_card
+  end
 
   # "claude-sonnet-4-6" → "sonnet", for compact chips on card faces.
   def model_short

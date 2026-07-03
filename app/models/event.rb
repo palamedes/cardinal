@@ -26,5 +26,9 @@ class Event < ApplicationRecord
     broadcast_append_to card, target: "card_events", partial: "events/event", locals: { event: self }
   }, unless: -> { actor == "user" }
 
+  # Progress lines render on the card face (§6) — nudge the board to morph.
+  after_create_commit -> { card.broadcast_refresh_to card.board },
+                      if: -> { %w[progress run_started run_finished].include?(kind) }
+
   def text = payload["text"]
 end

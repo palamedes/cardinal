@@ -10,10 +10,11 @@ defaults = [
   { name: "Planning",    archetype: "planning",  policy: { "model" => "claude-haiku-4-5-20251001" } },
   { name: "In Progress", archetype: "execution",
     policy: { "model" => "claude-sonnet-4-6", "effort" => "high", "concurrency_limit" => 3, "plan_approval" => true,
-              "budget_per_run_cents" => 200, "timeout_minutes" => 30,
+              "budget_per_run_cents" => 200, "timeout_minutes" => 30, "max_turns" => 25,
+              "on_entry" => [{ "action" => "start_agent_run" }],
               "tools" => %w[read edit run_commands git_commit_push] } },
   { name: "Review",      archetype: "review",    policy: {} },
-  { name: "Done",        archetype: "terminal",  policy: { "on_entry" => "merge_pr" } }
+  { name: "Done",        archetype: "terminal",  policy: { "on_entry" => [{ "action" => "merge_pr" }] } }
 ]
 
 defaults.each_with_index do |attrs, index|

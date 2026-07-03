@@ -634,3 +634,43 @@ any-repo/
 - **Card branches remain the collaboration surface.** Your board is private, but the work
   it produces ships as ordinary branches and PRs — teammates see the output, not the board.
 
+
+---
+
+## 17. Column rules & the three tiers of AI (adopted 2026-07-03)
+
+A column's `on_entry` policy is a **list of rule actions** fired whenever a card lands in
+it (dispatched by `Rules.fire_entry`; `on_exit` later). Archetypes only supply *defaults* —
+`planning` → `assistant_greeting`, `execution` → `start_agent_run`, `terminal` →
+`merge_pr`. Any column can carry any rules, so behavior stays data, not code (§1).
+
+This gives Cardinal three cleanly separated tiers of AI:
+
+| Tier | Construct | Lifetime | Cost profile |
+|---|---|---|---|
+| **Planning assistant** | `AssistantReplyJob` — replies when the user writes on a planning-column card | one reply | cheap model, no tools |
+| **Maintenance agents** | `ai_task` rules → `AiTaskJob` — one bounded Claude call with a prompt template (`%{title}`, `%{description}`, `%{conversation}`), output posted to the timeline | one call | cheap, no workspace, no tools |
+| **Worker agent** | `start_agent_run` rule → `StartRunJob` → `Agent::Runner` — the card's dedicated agent | AgentSession + Runs | full workspace + tools |
+
+Example maintenance rules (all just `{action: "ai_task", prompt: "..."}` in a column's
+`on_entry`): auto-tag a card on capture, distill the planning conversation into a brief on
+entry to execution, sanity-check acceptance criteria before an agent is assigned.
+
+### Runner implementation (v1, shipped)
+
+`Agent::Runner` drives one Run: provisions an `Agent::Workspace` (today: isolated local
+clone under `.cardinal/workspaces/card-N` with origin pointed at the board repo — the
+cage-container strategy slots in behind the same interface once Cardinal runs where Docker
+is available), spawns **`claude -p` with `--output-format stream-json`** (the Agent SDK
+headless runtime) using the column's model/max_turns/timeout, translates the stream into
+timeline events (`progress`, `tool_call`, `final_report`), then pushes the branch and
+opens a **draft PR via `gh`**. Credentials (`GH_TOKEN` etc.) are stripped from the agent's
+environment — the runner does the pushing, the agent only commits. Cancel = TERM the
+recorded PID. WIP limits enforced at job start; a finishing run kicks the next queued card.
+
+Proven end-to-end 2026-07-03: card #4 ("Document what a Cardinal worker agent is") →
+queued → working → work_complete, one scoped commit, draft PR #2, $0.08 on Sonnet.
+
+Known gaps (next passes): `needs_input` round-trips (session resume), plan-approval gate,
+run heartbeats + a sweeper for dead runners (an interrupted dev process left a stuck
+"running" run — the failure mode §11 predicted), per-card cage containers, merge-on-Done.

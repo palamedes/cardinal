@@ -217,3 +217,11 @@ button, input[type="submit"] {
   border-radius: 8px; color: var(--text); padding: 8px 10px; font: inherit; resize: vertical;
 }
 .actor-assistant .event-body p { color: #d8cfc0; }
+
+.run-list { list-style: none; padding: 0; margin: 0 0 10px; }
+.run-list .run { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--surface-2); font-size: 13px; }
+.run-running { color: var(--blue); }
+.run-succeeded { color: var(--green); }
+.run-failed, .run-cancelled { color: var(--red); }
+.cancel-btn { font-size: 11px; padding: 3px 8px; background: var(--red); }
+.event-final_report .event-body { background: rgba(95, 174, 111, .07); border-radius: 8px; padding: 8px 10px; }
