@@ -70,18 +70,15 @@
             <h3>Review</h3>
             <% if @card.in_review? %>
               <div class="panel-callout callout-plan">
-                <p><strong>Ready for your verdict.</strong><% if @card.pr_url %> Check the <%= link_to "pull request", @card.pr_url, target: "_blank" %> and the final report below.<% end %></p>
+                <p><strong>Your verdict.</strong><% if @card.pr_url %> Check the <%= link_to "pull request", @card.pr_url, target: "_blank" %> and the final report in the timeline.<% end %>
+                Approve, or just say what's wrong in the conversation — that marks it changes-requested,
+                and dragging the card back to a work column carries your feedback into the next run.</p>
                 <%= button_to "✅ Approve", approve_card_path(@card), class: "approve-btn" %>
               </div>
-              <%= form_with url: request_changes_card_path(@card), class: "card-edit" do |f| %>
-                <label>Request changes</label>
-                <%= f.text_area "card[feedback]", rows: 3, placeholder: "What's wrong or missing?" %>
-                <%= f.submit "Request changes" %>
-              <% end %>
             <% elsif @card.approved? %>
               <div class="panel-callout callout-plan"><p><strong>Approved.</strong> Drag the card to Done to merge and ship.</p></div>
             <% elsif @card.changes_requested? %>
-              <div class="panel-callout callout-question"><p><strong>Changes requested.</strong> Drag the card back to an execution column for a revision run.</p></div>
+              <div class="panel-callout callout-question"><p><strong>Changes requested.</strong> Drag the card back to an execution column for a revision run — your conversation feedback rides along.</p></div>
             <% end %>
           <% end %>
 

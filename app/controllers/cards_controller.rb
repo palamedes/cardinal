@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  before_action :set_card, only: [:show, :update, :move, :approve, :request_changes, :destroy]
+  before_action :set_card, only: [:show, :update, :move, :approve, :destroy]
 
   def new
   end
@@ -58,16 +58,6 @@ class CardsController < ApplicationController
     if @card.in_review?
       @card.update!(status: "approved")
       @card.log!("status_change", actor: "user", text: "Work approved — drag to Done to ship")
-    end
-    redirect_to card_path(@card)
-  end
-
-  def request_changes
-    feedback = params.require(:card)[:feedback]
-    if %w[in_review approved].include?(@card.status) && feedback.present?
-      @card.update!(status: "changes_requested")
-      @card.log!("user_message", actor: "user", text: "Changes requested:\n#{feedback}")
-      @card.log!("status_change", actor: "user", text: "Drag the card back to an execution column for a revision run")
     end
     redirect_to card_path(@card)
   end

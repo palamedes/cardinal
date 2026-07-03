@@ -6,7 +6,6 @@ Rails.application.routes.draw do
     member do
       patch :move
       post :approve
-      post :request_changes
     end
     resources :messages, only: [:create]
   end
