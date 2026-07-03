@@ -52,4 +52,22 @@ class ColumnsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert Column.exists?(@col.id)
   end
+
+  # Card #17: the Tasks/inbox column is the board's single intake — a second one
+  # can't be created, even from a crafted request asking for the inbox archetype.
+  test "create refuses to add a second inbox column" do
+    assert_no_difference -> { @board.columns.inbox.count } do
+      post columns_path, params: { column: { name: "Intake 2", archetype: "inbox" } }
+    end
+    created = @board.columns.order(:position).last
+    assert_not_equal "inbox", created.archetype
+    assert_equal "Intake 2", created.name
+  end
+
+  test "create still adds a normal execution column" do
+    assert_difference -> { @board.columns.count }, 1 do
+      post columns_path, params: { column: { name: "Build", archetype: "execution" } }
+    end
+    assert_equal "execution", @board.columns.order(:position).last.archetype
+  end
 end

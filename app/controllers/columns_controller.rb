@@ -4,9 +4,13 @@ class ColumnsController < ApplicationController
   def create
     board = Board.first!
     attrs = params.require(:column).permit(:name, :archetype)
+    # Inbox is the board's single intake and can't be created a second time
+    # (card #17) — refuse it even from a crafted request, and default any
+    # blank/invalid archetype to a non-special stage rather than inbox.
+    archetype = (attrs[:archetype].presence_in(Column::ARCHETYPES - %w[inbox])) || "planning"
     board.columns.create!(
       name: attrs[:name],
-      archetype: attrs[:archetype].presence_in(Column::ARCHETYPES) || "inbox",
+      archetype: archetype,
       position: (board.columns.maximum(:position) || -1) + 1,
       policy: {}
     )
