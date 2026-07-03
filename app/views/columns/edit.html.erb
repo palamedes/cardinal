@@ -18,6 +18,10 @@
               <label>Archetype <%= info_tip("What kind of stage this is. Inbox: parking lot, no AI. Planning: a shared assistant discusses cards with you. Execution: each card gets its own worker agent that does the work. Review: work stops for your verdict. Terminal: finalizes the card (Done merges the PR).") %></label>
               <%= f.select :archetype, Column::ARCHETYPES.map { |a| [a.capitalize, a] } %>
             </div>
+            <div>
+              <label>Arrivals <%= info_tip("Where cards land when dragged into this column. 'Top' makes it a feed — newest first, no matter where you drop (the Done default). Reordering inside the column stays manual.") %></label>
+              <%= f.select :arrivals, [["Where dropped", ""], ["Top of column", "top"], ["Bottom of column", "bottom"]], selected: @column.arrivals %>
+            </div>
             <div class="color-cell">
               <label>Background <%= info_tip("Custom background color for this column on the board. Uncheck to fall back to the archetype's default tint.") %></label>
               <span class="color-row">

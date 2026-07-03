@@ -21,7 +21,7 @@ class ColumnsController < ApplicationController
     attrs = params.require(:column).permit(
       :name, :archetype, :instructions, :model, :effort,
       :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval,
-      :on_entry_text, :on_entry_json, :color, :custom_color
+      :on_entry_text, :on_entry_json, :color, :custom_color, :arrivals
     )
 
     policy = @column.policy.dup
@@ -31,6 +31,7 @@ class ColumnsController < ApplicationController
       policy[k] = attrs[k].present? ? attrs[k].to_i : nil
     end
     policy["plan_approval"] = attrs[:plan_approval] == "1"
+    policy["arrivals"] = attrs[:arrivals].presence_in(%w[top bottom])
 
     # Rules: plain English is the source of truth (compiled on change); the
     # advanced JSON editor applies only when the English box is empty.

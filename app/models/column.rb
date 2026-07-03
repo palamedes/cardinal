@@ -9,7 +9,7 @@ class Column < ApplicationRecord
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
-                 :max_turns, :tools, :on_entry, :on_success, :color
+                 :max_turns, :tools, :on_entry, :on_success, :color, :arrivals
 
   # Only ever emit a validated hex color into inline styles.
   def safe_color

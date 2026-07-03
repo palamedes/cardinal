@@ -55,6 +55,12 @@ class CardTransition
   end
 
   def place_in_column!
+    # Column arrivals policy: force where newcomers land, regardless of the
+    # drop position. (Reordering within the column stays free-form.)
+    case @to.arrivals
+    when "top"    then @position = 0
+    when "bottom" then @position = nil
+    end
     @position ||= (@to.cards.maximum(:position) || -1) + 1
     @to.cards.where("position >= ?", @position).update_all("position = position + 1")
     @card.update!(column: @to, position: @position, status: entry_status)

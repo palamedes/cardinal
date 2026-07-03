@@ -10,7 +10,8 @@ class Board < ApplicationRecord
     { name: "QA",          archetype: "review",
       policy: { "on_entry" => [{ "action" => "mark_pr_ready" }],
                 "on_entry_text" => "Take the PR out of draft — mark it ready for review on GitHub." } },
-    { name: "Done",        archetype: "terminal",  policy: { "on_entry" => [{ "action" => "merge_pr" }] } }
+    { name: "Done",        archetype: "terminal",
+      policy: { "on_entry" => [{ "action" => "merge_pr" }], "arrivals" => "top" } }
   ].freeze
 
   has_many :columns, -> { order(:position) }, dependent: :destroy
