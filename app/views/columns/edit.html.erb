@@ -86,7 +86,8 @@
           <% if @column.cards.none? %>
             <p class="hint">Deleting removes this column and its policy. Cards are unaffected — the column must already be empty.</p>
             <%= button_to "🗑 Delete column", column_path(@column), method: :delete, class: "cancel-btn delete-column",
-                  form: { data: { turbo_frame: "_top", turbo_confirm: "Delete the \"#{@column.name}\" column and its policy?" } } %>
+                  form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess",
+                                  turbo_confirm: "Delete the \"#{@column.name}\" column and its policy?" } } %>
           <% else %>
             <p class="hint">This column still has <%= pluralize(@column.cards.count, "card") %> — move them before it can be deleted.</p>
           <% end %>

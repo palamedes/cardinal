@@ -137,7 +137,8 @@
             <p class="hint">Deleting removes the card and its entire history (events, runs, workspace). The remote branch and PR, if any, are left untouched.</p>
             <%= button_to "🗑 Delete card", card_path(@card), method: :delete,
                   class: "cancel-btn delete-card",
-                  form: { data: { turbo_frame: "_top", turbo_confirm: "Delete ##{@card.number} \"#{@card.title}\" and its entire history? This cannot be undone." } },
+                  form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess",
+                                  turbo_confirm: "Delete ##{@card.number} \"#{@card.title}\" and its entire history? This cannot be undone." } },
                   disabled: @card.working? %>
           </details>
         </aside>

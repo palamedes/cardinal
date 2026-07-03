@@ -9,7 +9,8 @@
         <%# _top: a full-page redirect after create — Turbo suppresses this
             tab's own refresh broadcast, so a frame-scoped response would
             leave the board stale behind the modal. %>
-        <%= form_with url: cards_path, class: "card-edit", data: { turbo_frame: "_top" } do |f| %>
+        <%= form_with url: cards_path, class: "card-edit",
+              data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess" } do |f| %>
           <label>Title</label>
           <%= f.text_field "card[title]", required: true, autofocus: true, placeholder: "What needs doing?" %>
           <label>Tags <span class="hint">(comma separated)</span></label>
