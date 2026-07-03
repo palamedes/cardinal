@@ -15,7 +15,7 @@ class BoardBootstrapTest < ActiveSupport::TestCase
       board = Board.bootstrap!(dir)
       assert_equal File.basename(dir), board.name
       assert_equal "git@example.com:o/r.git", board.repo_url
-      assert_equal %w[inbox planning execution review terminal], board.columns.pluck(:archetype)
+      assert_equal %w[inbox planning execution review review terminal], board.columns.pluck(:archetype)
       assert_equal dir, board.local_path
     end
   end

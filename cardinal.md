@@ -39,8 +39,8 @@ Suggested column archetypes (a column has exactly one):
 | `review`    | human                  | agent stops; card presents outputs for verdict |
 | `terminal`  | nobody                 | archive/lock the conversation          |
 
-The default board ships as: **Ideas (inbox) → Planning (planning) → In Progress (execution)
-→ Review (review) → Done (terminal)**.
+The default board ships as: **Tasks (inbox) → Planning (planning) → In Progress (execution)
+→ Review (review) → QA (review; on entry the PR leaves draft) → Done (terminal)**.
 
 **Every column gets a gear icon** that opens a settings modal — this is the entire admin
 surface for the policy object: column name, archetype, instructions (a system-prompt

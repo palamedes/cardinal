@@ -7,6 +7,9 @@ class Board < ApplicationRecord
                 "plan_approval" => true, "max_turns" => 25, "timeout_minutes" => 30,
                 "on_entry" => [{ "action" => "start_agent_run" }] } },
     { name: "Review",      archetype: "review",    policy: {} },
+    { name: "QA",          archetype: "review",
+      policy: { "on_entry" => [{ "action" => "mark_pr_ready" }],
+                "on_entry_text" => "Take the PR out of draft — mark it ready for review on GitHub." } },
     { name: "Done",        archetype: "terminal",  policy: { "on_entry" => [{ "action" => "merge_pr" }] } }
   ].freeze
 
