@@ -11,11 +11,20 @@ class Column < ApplicationRecord
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
                  :max_turns, :tools, :on_entry, :on_success
 
-  # Start the next queued card when a run slot frees up.
+  # Start the next queued card when a run slot frees up. A queued card whose
+  # run parked and already has its answer recorded resumes instead of
+  # starting fresh.
   def kick_queue
     return if at_wip_limit?
     next_card = cards.where(status: "queued").order(:position).first
-    StartRunJob.perform_later(next_card.id) if next_card
+    return unless next_card
+
+    parked = next_card.runs.where(status: "needs_input").order(:id).last
+    if parked&.briefing&.key?("pending_resume")
+      ResumeRunJob.perform_later(parked.id, "")
+    else
+      StartRunJob.perform_later(next_card.id)
+    end
   end
 
   # "claude-sonnet-4-6" → "sonnet", for compact chips on card faces.

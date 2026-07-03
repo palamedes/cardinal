@@ -246,6 +246,9 @@ body.dragging .drop-hint { display: block; }
 .mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .form-error { color: var(--red); font-size: 13px; }
 .delete-column { margin-top: 14px; }
+.delete-card { margin: 4px 0 16px; opacity: .7; }
+.delete-card:hover { opacity: 1; }
+.delete-card[disabled] { opacity: .3; cursor: not-allowed; }
 .advanced-rules { margin: 8px 0; }
 .advanced-rules summary { cursor: pointer; font-size: 12px; color: var(--text-dim); }
 .advanced-rules textarea { width: 100%; }

@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  before_action :set_card, only: [:show, :update, :move, :approve, :request_changes]
+  before_action :set_card, only: [:show, :update, :move, :approve, :request_changes, :destroy]
 
   def new
   end
@@ -9,7 +9,20 @@ class CardsController < ApplicationController
     column = board.columns.inbox.order(:position).first || board.columns.first
     card = board.cards.create!(column:, **card_params)
     card.log!("status_change", actor: "user", text: "Card created")
-    redirect_to card_path(card)
+    redirect_to root_path
+  end
+
+  # Rarely needed, deliberately buried in the card modal. A working card must
+  # be cancelled first — no killing live agents by deleting their card.
+  def destroy
+    if @card.working?
+      redirect_to card_path(@card)
+      return
+    end
+    workspace_path = Agent::Workspace::Local.new(@card).path
+    @card.destroy!
+    FileUtils.rm_rf(workspace_path)
+    redirect_to root_path
   end
 
   def show

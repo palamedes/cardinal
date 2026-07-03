@@ -2,7 +2,7 @@ Rails.application.routes.draw do
   root "boards#show"
 
   resource :board, only: :show
-  resources :cards, only: [:new, :create, :show, :update] do
+  resources :cards, only: [:new, :create, :show, :update, :destroy] do
     member do
       patch :move
       post :approve
