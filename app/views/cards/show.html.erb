@@ -16,7 +16,7 @@
       </header>
 
       <div class="detail-panes">
-        <section class="timeline">
+        <section class="timeline" data-controller="scroll">
           <nav class="zoom-tabs">
             <% %w[conversation activity debug].each do |zoom| %>
               <%= link_to zoom.capitalize, card_path(@card, zoom: zoom),
@@ -24,7 +24,7 @@
             <% end %>
           </nav>
 
-          <div class="timeline-scroll" data-controller="scroll">
+          <div class="timeline-scroll" data-scroll-target="scroller">
             <% if @card.description.present? %>
               <div class="event event-description"><%= simple_format @card.description %></div>
             <% end %>
@@ -44,10 +44,13 @@
             <% end %>
           </div>
 
+          <button type="button" class="new-messages-pill" data-scroll-target="pill"
+                  data-action="scroll#jump">↓ New messages</button>
+
           <%= form_with url: card_messages_path(@card), class: "message-form" do |f| %>
             <%= f.text_area "message[text]", rows: 2, required: true,
-                  placeholder: @card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…" %>
-            <%= f.submit "Send" %>
+                  data: { controller: "composer", action: "keydown->composer#keydown" },
+                  placeholder: (@card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…") + " (Enter sends, Shift+Enter for a new line)" %>
           <% end %>
         </section>
 
