@@ -36,3 +36,5 @@ bin/rails server
 ```
 
 Then open http://localhost:3000 (or set `PORT`).
+
+*Drag it to Done.*
