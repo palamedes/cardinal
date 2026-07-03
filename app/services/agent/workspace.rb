@@ -46,14 +46,32 @@ module Agent
           git!(ROOT, "clone", "--quiet", (card.board.local_path.presence || Rails.root).to_s, path.to_s)
           git!(path, "remote", "set-url", "origin", card.board.repo_url) if card.board.repo_url.present?
         end
+        salvage_dirty_tree!
         git!(path, "fetch", "--quiet", "origin")
         if git?(path, "rev-parse", "--verify", "origin/#{card.branch_name}")
           git!(path, "checkout", "--quiet", card.branch_name)
           git!(path, "reset", "--quiet", "--hard", "origin/#{card.branch_name}")
+        elsif git?(path, "rev-parse", "--verify", card.branch_name)
+          # Local-only branch (e.g. WIP salvaged but never pushed): keep it.
+          git!(path, "checkout", "--quiet", card.branch_name)
         else
           git!(path, "checkout", "--quiet", "-B", card.branch_name, "origin/#{card.board.default_branch}")
         end
         self
+      end
+
+      # A killed run can leave uncommitted edits that block checkout and would
+      # otherwise be silently destroyed. Commit them as WIP on the branch and
+      # push (best effort) so the interrupted work survives onto the PR.
+      def salvage_dirty_tree!
+        return if git_out(path, "status", "--porcelain").strip.empty?
+        git!(path, "add", "-A")
+        git!(path, "commit", "--quiet", "-m", "WIP: salvage uncommitted work from an interrupted run")
+        begin
+          push!
+        rescue RuntimeError
+          nil # offline is fine — the local-branch checkout path keeps the WIP
+        end
       end
 
       # How the runner should spawn the agent process for this workspace.
