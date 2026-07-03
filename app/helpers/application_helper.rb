@@ -26,6 +26,14 @@ module ApplicationHelper
     MARKDOWN.render(text.to_s).html_safe
   end
 
+  # Render a column's stored footer config (array of {label, compute} hashes)
+  # back into the "Label | compute" line format the gear textarea edits.
+  def footer_config_text(column)
+    Array(column.footer).map do |row|
+      [row["label"], row["compute"].presence].compact.join(" | ")
+    end.join("\n")
+  end
+
   def info_tip(text)
     tag.span("i", class: "info",
              data: { controller: "tooltip", tooltip_text_value: text,

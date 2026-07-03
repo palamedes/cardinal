@@ -22,4 +22,15 @@
       <%= render "cards/card", card: card %>
     <% end %>
   </div>
+  <% rows = column.footer_rows %>
+  <% if rows.any? %>
+    <footer class="column-footer">
+      <% rows.each do |row| %>
+        <div class="footer-row">
+          <span class="footer-label"><%= row[:label] %></span>
+          <span class="footer-value"><%= row[:value] %></span>
+        </div>
+      <% end %>
+    </footer>
+  <% end %>
 </section>

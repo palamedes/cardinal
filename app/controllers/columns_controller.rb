@@ -26,7 +26,7 @@ class ColumnsController < ApplicationController
       :name, :archetype, :instructions, :model, :effort,
       :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval,
       :on_entry_text, :on_entry_json, :color, :custom_color, :arrivals, :ai,
-      accepts_from: []
+      :footer_text, accepts_from: []
     )
 
     policy = @column.policy.dup
@@ -72,6 +72,14 @@ class ColumnsController < ApplicationController
     elsif !@archetype_changed
       policy.delete("on_entry")
       policy.delete("on_entry_text")
+    end
+
+    # Footer (card #18): one row per line as "Label | compute". A blank compute
+    # is a static label; a compute must be one Column knows how to aggregate.
+    begin
+      policy["footer"] = parse_footer(attrs[:footer_text])
+    rescue ArgumentError => e
+      return column_error(e.message)
     end
 
     @column.update!(
@@ -125,6 +133,22 @@ class ColumnsController < ApplicationController
   end
 
   private
+
+  # "Label | compute" lines → [{"label" =>, "compute" =>}]. Returns nil when
+  # empty so the key is dropped by policy.compact. Raises ArgumentError on an
+  # unknown compute key, mirroring the on_entry validation path.
+  def parse_footer(text)
+    rows = text.to_s.lines.filter_map do |line|
+      next if line.strip.blank?
+      label, compute = line.split("|", 2).map(&:strip)
+      compute = compute.to_s
+      if compute.present? && !Column::FOOTER_COMPUTES.include?(compute)
+        raise ArgumentError, "Footer compute \"#{compute}\" is not one of: #{Column::FOOTER_COMPUTES.join(', ')}"
+      end
+      { "label" => label.to_s, "compute" => compute.presence }.compact
+    end
+    rows.presence
+  end
 
   def set_column = @column = Column.find(params[:id])
 end

@@ -23,6 +23,29 @@ class ColumnsControllerTest < ActionDispatch::IntegrationTest
     assert_nil @col.reload.safe_color
   end
 
+  test "update parses footer lines into label/compute rows" do
+    patch column_path(@col), params: { column: { name: "Tasks", archetype: "inbox",
+                                                 footer_text: "Total cost: | sum_cost\nStatic label" } }
+    assert_equal [
+      { "label" => "Total cost:", "compute" => "sum_cost" },
+      { "label" => "Static label" }
+    ], @col.reload.footer
+  end
+
+  test "update rejects an unknown footer compute without corrupting policy" do
+    @col.update!(policy: { "footer" => [{ "label" => "Cards:", "compute" => "count_cards" }] })
+    patch column_path(@col), params: { column: { name: "Tasks", archetype: "inbox",
+                                                 footer_text: "Bogus | sum_bananas" } }
+    assert_response :unprocessable_entity
+    assert_equal [{ "label" => "Cards:", "compute" => "count_cards" }], @col.reload.footer
+  end
+
+  test "blank footer text clears the footer" do
+    @col.update!(policy: { "footer" => [{ "label" => "Cards:", "compute" => "count_cards" }] })
+    patch column_path(@col), params: { column: { name: "Tasks", archetype: "inbox", footer_text: "" } }
+    assert_nil @col.reload.footer
+  end
+
   # Card #17: the Tasks/inbox column is the board's intake — the AI-work and
   # on-entry settings don't apply, and it can never be deleted.
   test "inbox edit form hides AI-work and on-entry settings, and the delete button" do

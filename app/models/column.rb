@@ -35,7 +35,12 @@ class Column < ApplicationRecord
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
                  :max_turns, :tools, :on_entry, :on_success, :color, :arrivals,
-                 :accepts_from
+                 :accepts_from, :footer
+
+  # Aggregations a footer row may compute over the column's cards (card #18).
+  # A compute key not listed here renders blank, so config that outruns the
+  # code degrades gracefully instead of erroring.
+  FOOTER_COMPUTES = %w[sum_cost sum_tokens count_cards].freeze
 
   # Only ever emit a validated hex color into inline styles.
   def safe_color
@@ -56,6 +61,19 @@ class Column < ApplicationRecord
   # means this column accepts from nowhere — there is no permissive default.
   def accepts?(source_column)
     Array(accepts_from).map(&:to_s).include?(source_column.id.to_s)
+  end
+
+  # Rows rendered under the cards (card #18). Footer config is an array of
+  # {"label" => "Total cost:", "compute" => "sum_cost"} hashes; each row pairs
+  # static label text with an optional computed aggregate over this column's
+  # cards. Returns [] when unconfigured, so existing columns render no footer.
+  def footer_rows
+    Array(footer).filter_map do |row|
+      label = row["label"].to_s
+      value = footer_value(row["compute"])
+      next if label.blank? && value.blank?
+      { label:, value: }
+    end
   end
 
   # Start the next queued card when a run slot frees up. A queued card whose
@@ -88,6 +106,21 @@ class Column < ApplicationRecord
 
   def at_wip_limit?
     execution? && concurrency_limit.present? && running_count >= concurrency_limit.to_i
+  end
+
+  # Aggregate a single footer row over the runs/cards in this column (card #18).
+  # Unknown keys return "" so the row shows just its static label.
+  def footer_value(compute)
+    case compute.to_s
+    when "sum_cost"
+      "$%.2f" % column_runs.sum(:cost)
+    when "sum_tokens"
+      ActiveSupport::NumberHelper.number_to_delimited(column_runs.sum("input_tokens + output_tokens"))
+    when "count_cards"
+      cards.count.to_s
+    else
+      ""
+    end
   end
 
   # The built-in role contract for AI servicing this archetype — shown
@@ -130,5 +163,12 @@ class Column < ApplicationRecord
     when "review"    then "Work stops — ready for your verdict"
     when "terminal"  then "Closes it — PR merged and branch deleted, if there is one"
     end
+  end
+
+  private
+
+  # Every run belonging to a card in this column, for footer aggregation.
+  def column_runs
+    Run.joins(agent_session: :card).where(cards: { column_id: id })
   end
 end
