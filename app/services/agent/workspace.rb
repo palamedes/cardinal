@@ -123,7 +123,10 @@ module Agent
                   "-w", WORKDIR]
         # Value-embedded because the runner nils the key in the client env
         # (visible in ps on the host — acceptable for the experimental tier).
+        # Instance OAuth token (cardinal up account link) or raw API key —
+        # whichever this instance runs on.
         docker += ["-e", "ANTHROPIC_API_KEY=#{ENV["ANTHROPIC_API_KEY"]}"] if ENV["ANTHROPIC_API_KEY"].present?
+        docker += ["-e", "CLAUDE_CODE_OAUTH_TOKEN=#{ENV["CLAUDE_CODE_OAUTH_TOKEN"]}"] if ENV["CLAUDE_CODE_OAUTH_TOKEN"].present?
         [docker + [image] + cmd, {}]
       end
 
