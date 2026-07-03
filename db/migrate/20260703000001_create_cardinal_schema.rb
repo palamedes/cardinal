@@ -12,7 +12,7 @@ class CreateCardinalSchema < ActiveRecord::Migration[8.1]
       t.string :name, null: false
       t.integer :position, null: false
       t.string :archetype, null: false, default: "inbox"
-      t.jsonb :policy, null: false, default: {}
+      t.json :policy, null: false, default: {}
       t.timestamps
     end
     add_index :columns, [:board_id, :position]
@@ -23,7 +23,7 @@ class CreateCardinalSchema < ActiveRecord::Migration[8.1]
       t.integer :number, null: false
       t.string :title, null: false
       t.text :description
-      t.string :tags, array: true, null: false, default: []
+      t.json :tags, null: false, default: []
       t.integer :position, null: false
       t.string :status, null: false, default: "draft"
       t.string :branch_name
@@ -39,14 +39,14 @@ class CreateCardinalSchema < ActiveRecord::Migration[8.1]
       t.string :status, null: false, default: "provisioning"
       t.string :workspace_ref
       t.string :model
-      t.jsonb :config, null: false, default: {}
+      t.json :config, null: false, default: {}
       t.timestamps
     end
 
     create_table :runs do |t|
       t.references :agent_session, null: false, foreign_key: true
       t.string :status, null: false, default: "queued"
-      t.jsonb :briefing, null: false, default: {}
+      t.json :briefing, null: false, default: {}
       t.text :result_summary
       t.integer :input_tokens, null: false, default: 0
       t.integer :output_tokens, null: false, default: 0
@@ -62,7 +62,7 @@ class CreateCardinalSchema < ActiveRecord::Migration[8.1]
       t.references :run, foreign_key: true
       t.string :kind, null: false
       t.string :actor, null: false, default: "system"
-      t.jsonb :payload, null: false, default: {}
+      t.json :payload, null: false, default: {}
       t.timestamps
     end
     add_index :events, [:card_id, :created_at]
@@ -71,7 +71,7 @@ class CreateCardinalSchema < ActiveRecord::Migration[8.1]
       t.references :run, null: false, foreign_key: true
       t.string :kind, null: false
       t.string :name, null: false
-      t.jsonb :payload, null: false, default: {}
+      t.json :payload, null: false, default: {}
       t.timestamps
     end
   end

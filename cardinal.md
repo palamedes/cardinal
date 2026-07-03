@@ -325,7 +325,7 @@ drag to Review → request a change → drag back → second run fixes it → ap
 ```
 Browser (Hotwire: Turbo Streams + Stimulus; board DnD via SortableJS)
    │  websocket (ActionCable / SolidCable)
-Rails app ── Postgres (system of record: boards, columns, cards, events, runs…)
+Rails app ── SQLite in .cardinal/ (system of record: boards, columns, cards, events, runs…)
    │
 Job backend (SolidQueue or Sidekiq) ── RunnerJob per Run
    │
@@ -373,8 +373,9 @@ interaction gets genuinely app-like later; don't start there.
 
 ### Why this holds up
 
-Postgres as the single system of record (events included) keeps MVP ops trivial — no Redis
-required if SolidQueue/SolidCable are used. The event table will grow; it's append-only and
+A single SQLite file in `.cardinal/` as the system of record (events included) keeps ops at
+zero — no database server, no Redis; SolidQueue/SolidCable ride on the same engine, and the
+whole instance is one directory (§16). The event table will grow; it's append-only and
 easily partitioned/archived later. The runner/SDK boundary means the "AI part" is swappable
 without touching the product model.
 
@@ -384,8 +385,7 @@ without touching the product model.
 
 (Resolved questions move to the decision log, §15.)
 
-1. **Datastore for the portable instance:** SQLite file inside `.cardinal/` (recommended)
-   vs. Postgres-per-container. Walkthrough delivered 2026-07-03; awaiting final call.
+_None currently — next open items will come out of implementation._
 
 ---
 
@@ -574,6 +574,15 @@ admin surface.
   Hotwire + Postgres (SolidQueue/SolidCable). Cards get tags/descriptions now, richer
   metadata later; multi-board (one repo per board) is post-MVP. Next step agreed: nail
   down UI/UX and workflow before scaffolding (§14 drafted).
+- **2026-07-03 (night)** — Portable instances (§16) adopted enthusiastically: `cardinal up`
+  in any repo, engine in a cage-style container alongside the running app. `.cardinal/` is
+  **local-only** (hidden via `.git/info/exclude` at spin-up, never committed) — boards are
+  personal; Cardinal is a local tool, not an app you sign into. **Datastore switched from
+  Postgres to SQLite** living at `.cardinal/cardinal.db` — zero service dependency, no
+  collision with the host app's own database, one-directory portability; verified running
+  with Postgres stopped. UI: near-fullscreen card modal with editing, new-card modal from
+  full-width column button, gear icons wired to stub policy modals, Ideas→Tasks,
+  model/effort chips, full-height columns, + Column button.
 - **2026-07-03 (later)** — Five review/git seam questions resolved per recommendation:
   (1) plan-approval gate defaults ON for columns with write tools, per-column toggleable;
   (2) human-drags-only is a product principle for MVP — no auto-advance;

@@ -8,6 +8,6 @@ class Board < ApplicationRecord
   # attention inbox in the board header.
   def attention_cards
     cards.where(status: %w[needs_input failed work_complete])
-         .order(Arel.sql("array_position(ARRAY['needs_input','failed','work_complete'], status)"), updated_at: :asc)
+         .order(Arel.sql("CASE status WHEN 'needs_input' THEN 0 WHEN 'failed' THEN 1 ELSE 2 END"), updated_at: :asc)
   end
 end

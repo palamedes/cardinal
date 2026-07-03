@@ -11,12 +11,9 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_catalog.plpgsql"
-
   create_table "agent_sessions", force: :cascade do |t|
-    t.bigint "card_id", null: false
-    t.jsonb "config", default: {}, null: false
+    t.integer "card_id", null: false
+    t.json "config", default: {}, null: false
     t.datetime "created_at", null: false
     t.string "model"
     t.string "status", default: "provisioning", null: false
@@ -29,8 +26,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
     t.datetime "created_at", null: false
     t.string "kind", null: false
     t.string "name", null: false
-    t.jsonb "payload", default: {}, null: false
-    t.bigint "run_id", null: false
+    t.json "payload", default: {}, null: false
+    t.integer "run_id", null: false
     t.datetime "updated_at", null: false
     t.index ["run_id"], name: "index_artifacts_on_run_id"
   end
@@ -44,9 +41,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
   end
 
   create_table "cards", force: :cascade do |t|
-    t.bigint "board_id", null: false
+    t.integer "board_id", null: false
     t.string "branch_name"
-    t.bigint "column_id", null: false
+    t.integer "column_id", null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.integer "number", null: false
@@ -54,7 +51,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
     t.string "pr_state"
     t.string "pr_url"
     t.string "status", default: "draft", null: false
-    t.string "tags", default: [], null: false, array: true
+    t.json "tags", default: [], null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["board_id", "number"], name: "index_cards_on_board_id_and_number", unique: true
@@ -65,10 +62,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
 
   create_table "columns", force: :cascade do |t|
     t.string "archetype", default: "inbox", null: false
-    t.bigint "board_id", null: false
+    t.integer "board_id", null: false
     t.datetime "created_at", null: false
     t.string "name", null: false
-    t.jsonb "policy", default: {}, null: false
+    t.json "policy", default: {}, null: false
     t.integer "position", null: false
     t.datetime "updated_at", null: false
     t.index ["board_id", "position"], name: "index_columns_on_board_id_and_position"
@@ -77,11 +74,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
 
   create_table "events", force: :cascade do |t|
     t.string "actor", default: "system", null: false
-    t.bigint "card_id", null: false
+    t.integer "card_id", null: false
     t.datetime "created_at", null: false
     t.string "kind", null: false
-    t.jsonb "payload", default: {}, null: false
-    t.bigint "run_id"
+    t.json "payload", default: {}, null: false
+    t.integer "run_id"
     t.datetime "updated_at", null: false
     t.index ["card_id", "created_at"], name: "index_events_on_card_id_and_created_at"
     t.index ["card_id"], name: "index_events_on_card_id"
@@ -89,8 +86,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
   end
 
   create_table "runs", force: :cascade do |t|
-    t.bigint "agent_session_id", null: false
-    t.jsonb "briefing", default: {}, null: false
+    t.integer "agent_session_id", null: false
+    t.json "briefing", default: {}, null: false
     t.decimal "cost", precision: 10, scale: 4, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "finished_at"
