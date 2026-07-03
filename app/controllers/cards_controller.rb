@@ -37,7 +37,19 @@ class CardsController < ApplicationController
   def update
     @card.update!(card_params)
     @card.log!("status_change", actor: "user", text: "Card details updated")
-    redirect_to card_path(@card)
+    respond_to do |format|
+      # Explicitly patch the board face in this tab too — Turbo suppresses a
+      # tab's own refresh broadcasts, so the morph won't cover the originator.
+      format.turbo_stream do
+        @zoom = "conversation"
+        @events = @card.events.conversation
+        render turbo_stream: [
+          turbo_stream.replace(helpers.dom_id(@card), partial: "cards/card", locals: { card: @card }),
+          turbo_stream.replace("modal", template: "cards/show", formats: [:html])
+        ]
+      end
+      format.html { redirect_to card_path(@card) }
+    end
   end
 
   # Review verdicts (§3, §14.2). Approve is reversible — the merge happens as

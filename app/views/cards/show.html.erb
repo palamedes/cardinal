@@ -54,11 +54,6 @@
             <%= f.submit "Save" %>
           <% end %>
 
-          <%= button_to "🗑 Delete card", card_path(@card), method: :delete,
-                class: "cancel-btn delete-card",
-                form: { data: { turbo_frame: "_top", turbo_confirm: "Delete ##{@card.number} \"#{@card.title}\" and its entire history? This cannot be undone." } },
-                disabled: @card.working? %>
-
           <% if @card.column.review? %>
             <h3>Review</h3>
             <% if @card.in_review? %>
@@ -111,6 +106,15 @@
           <% else %>
             <p class="empty">No runs yet — drag the card into an execution column to assign an agent.</p>
           <% end %>
+
+          <details class="advanced-rules panel-advanced">
+            <summary>Advanced</summary>
+            <p class="hint">Deleting removes the card and its entire history (events, runs, workspace). The remote branch and PR, if any, are left untouched.</p>
+            <%= button_to "🗑 Delete card", card_path(@card), method: :delete,
+                  class: "cancel-btn delete-card",
+                  form: { data: { turbo_frame: "_top", turbo_confirm: "Delete ##{@card.number} \"#{@card.title}\" and its entire history? This cannot be undone." } },
+                  disabled: @card.working? %>
+          </details>
         </aside>
       </div>
     </div>

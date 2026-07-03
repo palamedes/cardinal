@@ -188,7 +188,7 @@ body.dragging .drop-hint { display: block; }
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
   color: var(--text); padding: 6px 10px; font: inherit;
 }
-.card-edit input[type="submit"] { margin-top: 10px; align-self: flex-start; }
+.card-edit input[type="submit"] { margin-top: 10px; align-self: flex-end; }
 
 .detail-panes { display: flex; gap: 16px; padding: 16px; align-items: flex-start; }
 .timeline { flex: 2; }
@@ -246,6 +246,7 @@ body.dragging .drop-hint { display: block; }
 .mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .form-error { color: var(--red); font-size: 13px; }
 .delete-column { margin-top: 14px; }
+.panel-advanced { margin-top: 18px; border-top: 1px solid var(--surface-2); padding-top: 10px; }
 .delete-card { margin: 4px 0 16px; opacity: .7; }
 .delete-card:hover { opacity: 1; }
 .delete-card[disabled] { opacity: .3; cursor: not-allowed; }
