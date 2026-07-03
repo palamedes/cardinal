@@ -5,7 +5,7 @@
         <h1>
           <%= @card.title %>
           <span class="chip status-chip status-<%= @card.status %>"><%= @card.status.humanize %></span>
-          <span class="card-number-sub">#<%= @card.number %></span>
+          <span class="card-number-sub" title="Card number — how branches, PRs, and other cards refer to this card">#<%= @card.number %></span>
         </h1>
         <div class="modal-header-right">
           <% if @card.branch_name %>
