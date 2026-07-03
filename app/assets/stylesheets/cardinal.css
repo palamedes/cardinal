@@ -505,3 +505,13 @@ body.dragging .drop-hint { display: block; }
 
 /* Light overrides for components added on main after the theme branch was cut */
 [data-theme="light"] .card-footer { background: #e2e5ea; border-top-color: rgba(0, 0, 0, .1); }
+
+/* Accept-policy visibility while dragging + rejected-drop flash */
+.column.drop-blocked { opacity: .45; }
+.column.drop-blocked .drop-hint { color: var(--red); }
+.column.drop-blocked .drop-hint::before { content: "✗ won't accept from here — "; }
+.card.move-bounced { animation: bounce-flash .9s ease-out; }
+@keyframes bounce-flash {
+  0%, 60% { border-color: var(--red); box-shadow: 0 0 0 2px var(--red); }
+  100%    { border-color: var(--border); box-shadow: none; }
+}

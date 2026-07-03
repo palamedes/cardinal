@@ -34,7 +34,7 @@
           <% siblings = @column.board.columns.where.not(id: @column.id).order(:position) %>
           <% if siblings.any? %>
             <% allowed = Array(@column.accepts_from).map(&:to_s) %>
-            <label>Accepts moves from <%= info_tip("Which columns may drag cards directly into this one — the workflow rail. Leave all unchecked to accept from anywhere. Check specific columns to force a path (e.g. Execution accepts only from Planning, so cards can't skip triage).") %></label>
+            <label>Accepts moves from (inbound) <%= info_tip("INBOUND rule: which columns may drag cards INTO this one. It does not control where this column's cards may go — set that on the destination columns. Leave all unchecked to accept from anywhere. Example: check only Planning on In Progress so work can't skip triage.") %></label>
             <div class="accepts-from">
               <% siblings.each do |sib| %>
                 <label class="check-row inline">
