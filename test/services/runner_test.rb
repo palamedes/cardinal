@@ -91,3 +91,33 @@ class RunnerTest < ActiveSupport::TestCase
     assert_equal 10, @run.output_tokens
   end
 end
+
+class RunnerBriefingTest < ActiveSupport::TestCase
+  setup do
+    @board = create_board
+    @card = create_card(@board, "execution", status: "queued", branch_name: "cardinal/9-t",
+                        description: "Do the thing")
+    @run = create_run(@card, status: "queued")
+  end
+
+  test "planning conversation flows into both prompts" do
+    @card.log!("user_message", actor: "user", text: "must support dark mode")
+    runner = Agent::Runner.new(@run)
+    assert_match(/must support dark mode/, runner.send(:briefing_prompt))
+    assert_match(/must support dark mode/, runner.send(:plan_prompt))
+  end
+
+  test "a ready-for-execution brief is promoted to its own section" do
+    @card.log!("assistant_message", actor: "assistant", text: "Chatter about stuff")
+    @card.log!("assistant_message", actor: "assistant",
+               text: "Ready for execution: add a dark mode toggle to settings; acceptance: persists per user.")
+    prompt = Agent::Runner.new(@run).send(:briefing_prompt)
+    assert_match(/## Brief from planning/, prompt)
+    assert_match(/dark mode toggle to settings/, prompt)
+  end
+
+  test "no brief section when planning never converged" do
+    @card.log!("assistant_message", actor: "assistant", text: "Just chatting")
+    assert_no_match(/Brief from planning/, Agent::Runner.new(@run).send(:briefing_prompt))
+  end
+end

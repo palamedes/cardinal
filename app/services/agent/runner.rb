@@ -252,6 +252,7 @@ module Agent
         ## Brief
         #{card.description.presence || "(no description — infer scope from the title and conversation)"}
 
+        #{"## Brief from planning (authoritative — refined with the user)\n#{planning_brief}\n" if planning_brief}
         ## Card conversation so far
         #{conversation_excerpt.presence || "(none)"}
 
@@ -268,6 +269,7 @@ module Agent
         ## Brief
         #{card.description.presence || "(no description — infer scope from the title and conversation)"}
 
+        #{"## Brief from planning (authoritative — refined with the user)\n#{planning_brief}\n" if planning_brief}
         ## Card conversation so far
         #{conversation_excerpt.presence || "(none)"}
 
@@ -276,6 +278,15 @@ module Agent
         (files you'll touch, approach, how you'll verify) and stop. The user will approve
         or redirect before any changes are made.
       PROMPT
+    end
+
+    # The planning assistant's distilled "Ready for execution" brief, if the
+    # conversation produced one — the most load-bearing artifact of planning.
+    def planning_brief
+      return @planning_brief if defined?(@planning_brief)
+      @planning_brief = card.events.where(kind: "assistant_message")
+                            .order(:id).filter_map(&:text).reverse
+                            .find { |t| t.match?(/ready for execution/i) }
     end
 
     def conversation_excerpt
