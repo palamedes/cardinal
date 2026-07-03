@@ -1,7 +1,8 @@
 <section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>">
   <header class="column-header">
     <h2><%= column.name %></h2>
-    <span class="gear" title="Column settings (coming soon)">⚙</span>
+    <%= link_to "⚙", edit_column_path(column), class: "gear", title: "Column settings",
+                data: { turbo_frame: "modal" } %>
   </header>
   <% if column.execution? %>
     <p class="ticker">
@@ -20,9 +21,7 @@
     <% end %>
   </div>
   <% if column.inbox? %>
-    <%= form_with url: cards_path, class: "new-card" do |f| %>
-      <%= f.text_field "card[title]", placeholder: "New card…", required: true %>
-      <%= f.submit "+ Card" %>
-    <% end %>
+    <%= link_to "+ New Card", new_card_path, class: "new-card-btn",
+                data: { turbo_frame: "modal" } %>
   <% end %>
 </section>

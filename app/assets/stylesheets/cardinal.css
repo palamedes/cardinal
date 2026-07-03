@@ -50,12 +50,14 @@ a { color: var(--blue); text-decoration: none; }
 }
 .attention li { padding: 4px 0; }
 
-.new-card { display: flex; gap: 6px; margin-top: 8px; }
-.new-card input[type="text"] {
-  background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
-  color: var(--text); padding: 6px 10px; flex: 1; min-width: 0;
+.new-card-btn {
+  display: block; text-align: center; margin-top: 8px; padding: 9px;
+  border: 1px dashed var(--border); border-radius: 8px;
+  color: var(--text-dim); font-weight: 600;
 }
-.new-card input[type="submit"], button, input[type="submit"] {
+.new-card-btn:hover { color: var(--text); border-color: var(--text-dim); background: var(--surface-2); }
+
+button, input[type="submit"] {
   background: var(--accent); color: #fff; border: 0; border-radius: 6px;
   padding: 6px 12px; cursor: pointer; font-weight: 600;
 }
@@ -167,6 +169,13 @@ a { color: var(--blue); text-decoration: none; }
   font-size: 15px; line-height: 1; padding: 7px 10px;
 }
 .modal-close:hover { color: var(--text); }
+.modal-sm { max-width: 580px; height: auto; max-height: 88vh; }
+.modal-body { padding: 16px 18px; }
+.modal-body h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); margin: 16px 0 6px; }
+.modal pre {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; font-size: 12px; overflow-x: auto; color: var(--text);
+}
 .git-line { margin: 0; font-size: 12px; color: var(--text-dim); }
 .status-chip { margin-left: 8px; }
 

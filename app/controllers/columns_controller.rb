@@ -10,4 +10,8 @@ class ColumnsController < ApplicationController
     )
     redirect_to root_path
   end
+
+  def edit
+    @column = Column.find(params[:id])
+  end
 end

@@ -1,12 +1,15 @@
 class CardsController < ApplicationController
   before_action :set_card, only: [:show, :update, :move]
 
+  def new
+  end
+
   def create
     board = Board.first!
     column = board.columns.inbox.order(:position).first || board.columns.first
-    card = board.cards.create!(column:, title: params.require(:card)[:title])
+    card = board.cards.create!(column:, **card_params)
     card.log!("status_change", actor: "user", text: "Card created")
-    redirect_to root_path
+    redirect_to card_path(card)
   end
 
   def show
@@ -19,9 +22,7 @@ class CardsController < ApplicationController
   end
 
   def update
-    attrs = params.require(:card).permit(:title, :description, :tags)
-    attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
-    @card.update!(attrs)
+    @card.update!(card_params)
     @card.log!("status_change", actor: "user", text: "Card details updated")
     redirect_to card_path(@card)
   end
@@ -40,5 +41,11 @@ class CardsController < ApplicationController
 
   def set_card
     @card = Card.find(params[:id])
+  end
+
+  def card_params
+    attrs = params.require(:card).permit(:title, :description, :tags)
+    attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
+    attrs.to_h.symbolize_keys
   end
 end

@@ -1,0 +1,21 @@
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal modal-sm">
+      <header class="modal-header">
+        <h1>⚙ <%= @column.name %> <span class="chip"><%= @column.archetype %></span></h1>
+        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+      </header>
+      <div class="modal-body">
+        <p class="empty">
+          Column controls land here as they're decided (cardinal.md §14.3) — instructions,
+          model & effort, concurrency limit, tool permissions, plan approval, budgets,
+          and entry/exit automations.
+        </p>
+        <% if @column.policy.present? %>
+          <h3>Current policy</h3>
+          <pre><%= JSON.pretty_generate(@column.policy) %></pre>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,22 @@
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal modal-sm">
+      <header class="modal-header">
+        <h1>New card</h1>
+        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+      </header>
+      <div class="modal-body">
+        <%= form_with url: cards_path, class: "card-edit" do |f| %>
+          <label>Title</label>
+          <%= f.text_field "card[title]", required: true, autofocus: true, placeholder: "What needs doing?" %>
+          <label>Tags <span class="hint">(comma separated)</span></label>
+          <%= f.text_field "card[tags]", placeholder: "backend, ui, …" %>
+          <label>Description</label>
+          <%= f.text_area "card[description]", rows: 8,
+                placeholder: "Goal, context, acceptance criteria — the planning assistant will help refine this." %>
+          <%= f.submit "Save" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
