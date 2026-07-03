@@ -1,43 +1,64 @@
-# Cardinal 🐦‍🔥
+# Cardinal AI 🐦‍🔥
 
 **A Kanban board where dragging a card to "In Progress" hires an AI to actually do the task.**
 
-Cardinal is a Kanban board where the cards do the work. It's a little tool you fire up
-inside any code repo, and it gives you a board like Trello — but the columns aren't just
-labels, they're rules. The far-left column is where you dump ideas. The next one has an AI
-assistant that helps you think each idea through. And when you drag a card into
-"In Progress," that card *becomes* its own AI agent — it spins up in a sandbox, writes the
-code on its own branch, reports its progress right on the card, and asks you questions when
-it's stuck. When it's done, you drag the card to Review, look at the pull request it made,
-and either send it back with notes or drag it to Done — which merges the code.
+Cardinal AI puts a board on any of your projects. You write down what needs doing, chat
+with an assistant to sharpen the idea, and then drag the card forward — at which point an
+AI agent picks it up, does the work on its own branch, asks you questions when it's stuck,
+and hands you a pull request to review. Approve it, drag the card to Done, and the work is
+merged. You never leave the board.
 
-It's not an app you sign up for. It's more like having a small dev team living in your
-repo, and the board is how you manage them. Dragging a card left to right literally *is*
-assigning the work, supervising it, and shipping it.
+## What you need
 
-## Status
+- **Ruby 3.2 or newer** (`ruby -v` to check)
+- **The Claude CLI**, signed in — this is the AI: `npm install -g @anthropic-ai/claude-code`, then `claude` once to log in
+- **git**, and for pull requests the **GitHub CLI** (`gh auth login`)
 
-Early but real: the full card lifecycle works end to end. Cards become agents in
-execution columns (plan approval → work → questions back to you → draft PR), you review
-and request changes (revision runs on the same branch), and dragging to Done squash-merges
-the PR. Column rules, one-shot AI maintenance agents, a policy editor behind every
-column's gear icon, run heartbeats + sweeping, and `cardinal up` for spinning a board up
-inside any repo. PRs #2 and #3 of this very repo were written by Cardinal cards. The
-design document — architecture, decisions, roadmap — lives in [cardinal.md](cardinal.md).
-
-## Stack
-
-Rails 8.1 · Ruby 3.4 · SQLite (the whole instance lives in `.cardinal/`) · Hotwire.
-No database server, no Redis, no sign-in.
-
-## Running it
+## Install
 
 ```sh
-bundle install
-bin/rails db:prepare db:seed
-bin/rails server
+gem install cardinal-ai
 ```
 
-Then open http://localhost:3000 (or set `PORT`).
+## Use it
 
-*Drag it to Done.*
+Go to any project that lives in git, and start Cardinal:
+
+```sh
+cd your-project
+cardinal
+```
+
+The first time, a browser window asks **which Claude account this board should work as** —
+pick one, and it's remembered for this project only. Then open **http://localhost:4000**.
+
+That's the whole setup. Now:
+
+1. **Add a card** for something you want done, in plain English.
+2. **Drag it to Planning** — an assistant reads your card *and your code*, then asks the
+   questions that make the task clear. Chat until it feels right.
+3. **Drag it to In Progress** — an agent studies the repo and proposes a plan. One click
+   to approve. Then it works: you can watch its progress live on the card, and it will
+   stop and ask you if it hits a real decision.
+4. **Review** — read the final report and the pull request. Say what's wrong in the
+   card's conversation to send it back, or approve.
+5. **QA** — the pull request goes live for formal review on GitHub.
+6. **Drag to Done** — the pull request merges. Shipped.
+
+Every column has a ⚙ gear where you can change the rules — which AI model works there,
+how many cards can run at once, spending limits, and what happens when a card arrives
+(written in plain English; Cardinal figures out the rest).
+
+## Good to know
+
+- Everything Cardinal knows about a project lives in a `.cardinal/` folder inside it,
+  invisible to git. Delete the folder and Cardinal was never there.
+- Each project's board can use a **different Claude account** (`cardinal login` to switch,
+  `cardinal logout` to unlink).
+- Agents can only push to their own card branches — merging is always your drag.
+- AI usage bills the Claude account you linked, the same as using Claude Code.
+
+## For developers
+
+The architecture and design history live in [cardinal.md](cardinal.md). The engine is a
+Rails 8 app — clone, `bundle install`, `bin/rails test`. MIT licensed.
