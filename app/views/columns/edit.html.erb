@@ -50,7 +50,18 @@
 
           <%# The Tasks/inbox column is the board's intake — cards park here untouched,
               so none of the AI-work or on-entry settings below apply to it (card #17). %>
-          <% unless @column.inbox? %>
+          <% if @column.inbox? %>
+            <p class="default-rule">This column never uses AI — it's the board's intake.</p>
+          <% else %>
+          <div data-controller="reveal">
+            <label class="check-row">
+              <%= hidden_field_tag "column[ai]", "0", id: nil %>
+              <%= check_box_tag "column[ai]", "1", @column.ai?, data: { reveal_target: "toggle", action: "change->reveal#sync" } %>
+              🤖 Use AI in this column — <%= @column.ai_mode_description %>
+              <%= info_tip("Off = this column is fully inert AI-wise: no assistant, no worker agents, no AI rules. Cards here are human work (a card dragged into a non-AI work column reads as being worked by a person). Non-AI on-entry rules like merge_pr still run.") %>
+            </label>
+
+            <div data-reveal-target="panel">
             <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — added ON TOP of the built-in role shown below (which is enforced in code and can't be edited away).") %></label>
             <% if @column.built_in_role %>
               <p class="default-rule">Built-in role: <%= @column.built_in_role %></p>
@@ -90,6 +101,8 @@
               <%= info_tip("The agent's first pass is read-only: it explores and proposes a plan, then waits. You approve with one click or reply to redirect. Your main safety rail.") %>
             </label>
 
+            </div>
+
             <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior shown below.") %></label>
             <% if @column.policy["on_entry_text"].blank? && @column.policy["on_entry"].blank? %>
               <p class="default-rule">Default: <%= Rules::DEFAULT_DESCRIPTIONS[@column.archetype] %></p>
@@ -105,6 +118,7 @@
                     value: @column.policy["on_entry"] ? JSON.pretty_generate(@column.policy["on_entry"]) : "",
                     placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
             </details>
+          </div>
           <% end %>
         <% end %>
 

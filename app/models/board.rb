@@ -1,9 +1,9 @@
 class Board < ApplicationRecord
   DEFAULT_COLUMNS = [
     { name: "Tasks",       archetype: "inbox",     policy: {} },
-    { name: "Planning",    archetype: "planning",  policy: { "model" => "claude-haiku-4-5-20251001" } },
+    { name: "Planning",    archetype: "planning",  policy: { "ai" => true, "model" => "claude-haiku-4-5-20251001" } },
     { name: "In Progress", archetype: "execution",
-      policy: { "model" => "claude-sonnet-4-6", "effort" => "high", "concurrency_limit" => 3,
+      policy: { "ai" => true, "model" => "claude-sonnet-4-6", "effort" => "high", "concurrency_limit" => 3,
                 "plan_approval" => true, "max_turns" => 80, "timeout_minutes" => 30,
                 "on_entry" => [{ "action" => "start_agent_run" }] } },
     { name: "Review",      archetype: "review",    policy: {} },

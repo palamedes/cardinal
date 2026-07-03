@@ -512,3 +512,5 @@ body.dragging .drop-hint { display: block; }
 .column.drop-blocked { opacity: .45; }
 .column.drop-blocked .drop-hint { color: var(--red); }
 .column.drop-blocked .drop-hint::before { content: "✗ won't accept from here — "; }
+
+.hidden { display: none !important; }

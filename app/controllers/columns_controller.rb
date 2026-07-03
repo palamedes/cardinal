@@ -25,7 +25,7 @@ class ColumnsController < ApplicationController
     attrs = params.require(:column).permit(
       :name, :archetype, :instructions, :model, :effort,
       :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval,
-      :on_entry_text, :on_entry_json, :color, :custom_color, :arrivals,
+      :on_entry_text, :on_entry_json, :color, :custom_color, :arrivals, :ai,
       accepts_from: []
     )
 
@@ -37,6 +37,7 @@ class ColumnsController < ApplicationController
     end
     policy["plan_approval"] = attrs[:plan_approval] == "1"
     policy["arrivals"] = attrs[:arrivals].presence_in(%w[top bottom])
+    policy["ai"] = (attrs[:ai] == "1") if attrs.key?(:ai) # inbox forms omit it — never AI anyway
     # Accept policy (card #15): store allowed source column ids as strings;
     # blank means accept from any column (backward-compatible default).
     policy["accepts_from"] = attrs[:accepts_from].to_a.map(&:to_s).reject(&:blank?).presence

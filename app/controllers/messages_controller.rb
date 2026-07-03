@@ -18,7 +18,7 @@ class MessagesController < ApplicationController
       card.log!("status_change", actor: "user", text: "Changes requested — drag the card back to a work column when ready")
     else
       card.log!("user_message", actor: "user", text: text)
-      AssistantReplyJob.perform_later(card) if card.column.planning?
+      AssistantReplyJob.perform_later(card) if card.column.planning? && card.column.ai?
     end
     redirect_to card_path(card)
   end

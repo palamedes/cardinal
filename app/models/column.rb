@@ -17,6 +17,15 @@ class Column < ApplicationRecord
     color if color.to_s.match?(/\A#\h{6}\z/)
   end
 
+  # Does any AI service this column? Explicit per-column switch (default ON
+  # for back-compat); the inbox/Tasks intake is never AI, unconditionally.
+  # When false the column is inert AI-wise: no assistant, no worker runs,
+  # no ai_task rules — cards there are human work.
+  def ai?
+    return false if inbox?
+    policy["ai"] != false
+  end
+
   # Which columns may move cards INTO this one (§ accept policy, card #15).
   # Stored as an array of column-id strings; blank = accept from anywhere, so
   # existing boards keep their unrestricted behavior.
@@ -29,6 +38,7 @@ class Column < ApplicationRecord
   # run parked and already has its answer recorded resumes instead of
   # starting fresh.
   def kick_queue
+    return unless ai?
     return if at_wip_limit?
     next_card = cards.where(status: "queued").order(:position).first
     return unless next_card
@@ -69,6 +79,16 @@ class Column < ApplicationRecord
   }.freeze
 
   def built_in_role = BUILT_IN_ROLES[archetype]
+
+  # What "Use AI" concretely means here — the §5 tier distinction, visible.
+  AI_MODES = {
+    "planning"  => "a shared planning assistant joins each card's conversation",
+    "execution" => "a dedicated worker agent is assigned to each card",
+    "review"    => "allow AI on-entry rules (ai_task) in this column",
+    "terminal"  => "allow AI on-entry rules (ai_task) in this column"
+  }.freeze
+
+  def ai_mode_description = AI_MODES[archetype]
 
   # One-line consequence shown while dragging a card over this column (§14.1).
   def drag_hint

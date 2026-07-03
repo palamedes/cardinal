@@ -30,7 +30,14 @@ module Rules
     rules.map { |r| r.is_a?(String) ? { "action" => r } : r }.each(&block)
   end
 
+  AI_ACTIONS = %w[assistant_greeting start_agent_run ai_task].freeze
+
   def self.apply(rule, card, column)
+    if AI_ACTIONS.include?(rule["action"]) && !column.ai?
+      card.log!("status_change", text: "AI is off for #{column.name} — skipped #{rule["action"]}")
+      return
+    end
+
     case rule["action"]
     when "assistant_greeting"
       # Contextual opener: the assistant reads the card and asks targeted
