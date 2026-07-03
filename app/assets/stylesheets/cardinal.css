@@ -514,3 +514,9 @@ body.dragging .drop-hint { display: block; }
 .column.drop-blocked .drop-hint::before { content: "✗ won't accept from here — "; }
 
 .hidden { display: none !important; }
+
+/* The reveal wrappers must be invisible to the form's flex layout — their
+   children should behave as direct .card-edit flex items (full width). */
+.card-edit [data-controller="reveal"],
+.card-edit [data-reveal-target="panel"] { display: contents; }
+.card-edit textarea, .card-edit input[type="text"] { width: 100%; }
