@@ -31,6 +31,20 @@
             </div>
           </div>
 
+          <% siblings = @column.board.columns.where.not(id: @column.id).order(:position) %>
+          <% if siblings.any? %>
+            <% allowed = Array(@column.accepts_from).map(&:to_s) %>
+            <label>Accepts moves from <%= info_tip("Which columns may drag cards directly into this one — the workflow rail. Leave all unchecked to accept from anywhere. Check specific columns to force a path (e.g. Execution accepts only from Planning, so cards can't skip triage).") %></label>
+            <div class="accepts-from">
+              <% siblings.each do |sib| %>
+                <label class="check-row inline">
+                  <%= check_box_tag "column[accepts_from][]", sib.id, allowed.include?(sib.id.to_s) %>
+                  <%= sib.name %>
+                </label>
+              <% end %>
+            </div>
+          <% end %>
+
           <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — the planning assistant's or worker agent's standing orders (e.g. \"follow the repo style guide, always write tests\").") %></label>
           <%= f.text_area :instructions, rows: 3, value: @column.instructions %>
 

@@ -67,6 +67,47 @@ class CardTransitionTest < ActiveSupport::TestCase
   end
 end
 
+class AcceptPolicyTest < ActiveSupport::TestCase
+  setup do
+    @board = create_board
+    @inbox = column(@board, "inbox")
+    @planning = column(@board, "planning")
+    @execution = column(@board, "execution")
+  end
+
+  test "empty accepts_from allows moves from any column (backward-compatible)" do
+    card = create_card(@board, "inbox")
+    result = CardTransition.new(card, to_column: @execution).call
+    assert result.success?, "unrestricted column rejected a move: #{result.error}"
+    assert_equal @execution, card.reload.column
+  end
+
+  test "a disallowed source is rejected with a descriptive error and no move" do
+    @execution.update!(policy: { "accepts_from" => [@planning.id.to_s] })
+    card = create_card(@board, "inbox")
+    result = CardTransition.new(card, to_column: @execution).call
+    assert_not result.success?
+    assert_match(/cannot move directly/, result.error)
+    assert_equal @inbox, card.reload.column
+  end
+
+  test "a rejected move logs a move_rejected event and no column_move" do
+    @execution.update!(policy: { "accepts_from" => [@planning.id.to_s] })
+    card = create_card(@board, "inbox")
+    CardTransition.new(card, to_column: @execution).call
+    assert_equal 1, card.events.where(kind: "move_rejected").count
+    assert_equal 0, card.events.where(kind: "column_move").count
+  end
+
+  test "an allowed source passes the accept policy" do
+    @execution.update!(policy: { "accepts_from" => [@planning.id.to_s] })
+    card = create_card(@board, "planning")
+    result = CardTransition.new(card, to_column: @execution).call
+    assert result.success?, "allowed source rejected: #{result.error}"
+    assert_equal @execution, card.reload.column
+  end
+end
+
 class ArrivalsPolicyTest < ActiveSupport::TestCase
   setup do
     @board = create_board

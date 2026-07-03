@@ -3,6 +3,11 @@
     <span><%= event.payload["from"] %> → <%= event.payload["to"] %></span>
     <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
   </div>
+<% elsif event.kind == "move_rejected" %>
+  <div class="move-rejected-row">
+    <span>⤺ <%= event.text %></span>
+    <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
+  </div>
 <% else %>
   <div class="event event-<%= event.kind %> actor-<%= event.actor %>">
     <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>

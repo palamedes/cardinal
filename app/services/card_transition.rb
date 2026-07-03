@@ -20,6 +20,9 @@ class CardTransition
       # An agent process is live — no silent kills (§3). Cancel it first.
       return failure("##{@card.number} has an active run — cancel it before moving the card")
     end
+    # Accept policy (card #15): the destination decides which columns may feed
+    # it, forcing cards through a defined workflow rather than any-to-any drops.
+    return rejected! unless @to.accepts?(@from)
 
     Card.transaction do
       leave_policy!
@@ -80,6 +83,14 @@ class CardTransition
     when "review"    then "in_review"
     when "terminal"  then "done"
     end
+  end
+
+  # A drop the destination's accept policy forbids: nothing moves, but the
+  # attempt is logged to the card's timeline so the bounce isn't silent.
+  def rejected!
+    @card.log!("move_rejected", actor: @actor, from: @from.name, to: @to.name,
+               text: "Blocked: #{@from.name} can't move directly to #{@to.name}")
+    failure("#{@from.name} cannot move directly to #{@to.name}")
   end
 
   def failure(message) = Result.new(success?: false, card: @card, error: message)

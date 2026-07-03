@@ -1,7 +1,7 @@
 class Event < ApplicationRecord
   KINDS = %w[
     user_message agent_message assistant_message
-    status_change column_move plan_proposed plan_approved
+    status_change column_move move_rejected plan_proposed plan_approved
     question answer progress
     tool_call tool_result artifact_created
     run_started run_finished final_report error
@@ -9,7 +9,8 @@ class Event < ApplicationRecord
 
   # Which timeline zoom level an event first appears at (§7).
   CONVERSATION_KINDS = %w[user_message agent_message assistant_message question answer
-                          plan_proposed plan_approved final_report error column_move].freeze
+                          plan_proposed plan_approved final_report error
+                          column_move move_rejected].freeze
 
   belongs_to :card
   belongs_to :run, optional: true
