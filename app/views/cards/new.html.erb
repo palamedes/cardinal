@@ -19,6 +19,11 @@
           <label>Description</label>
           <%= f.text_area "card[description]", rows: 8,
                 placeholder: "Goal, context, acceptance criteria — the planning assistant will help refine this." %>
+          <label>Branch <span class="hint">— optional</span></label>
+          <%= f.text_field "card[branch_name]", placeholder: "cardinal/#{@board.cards.maximum(:number).to_i + 1}-feature-name" %>
+          <label>Pull request <span class="hint">— optional</span></label>
+          <%= f.text_field "card[pr_url]", placeholder: "https://github.com/owner/repo/pull/123" %>
+          <p class="hint">Leave blank and the agent picks a branch. Set either to point work at an existing branch or PR.</p>
           <div class="card-edit-actions">
             <button type="button" class="btn-cancel" data-action="modal#close">Cancel</button>
             <%= f.submit "Save" %>
