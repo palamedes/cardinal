@@ -56,6 +56,20 @@ class Column < ApplicationRecord
     execution? && concurrency_limit.present? && running_count >= concurrency_limit.to_i
   end
 
+  # The built-in role contract for AI servicing this archetype — shown
+  # read-only in the gear modal so the Instructions field is understood as
+  # ADDING to this, never replacing it. Enforced in code, not editable.
+  BUILT_IN_ROLES = {
+    "planning"  => "Plans only, never implements: read-only tools (physically cannot change files), " \
+                   "drives toward a Ready-for-execution brief, and hands off — approval means " \
+                   "\"finalize the brief\", not \"do it\".",
+    "execution" => "Full toolset in an isolated checkout of the card's branch. Commits as it goes but " \
+                   "never pushes (the runner pushes); merges the default branch itself on conflict; " \
+                   "parks with a QUESTION: when genuinely blocked; ends with a final report."
+  }.freeze
+
+  def built_in_role = BUILT_IN_ROLES[archetype]
+
   # One-line consequence shown while dragging a card over this column (§14.1).
   def drag_hint
     case archetype

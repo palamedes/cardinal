@@ -1,4 +1,5 @@
-<section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>"<%= " style=\"background-color: #{column.safe_color}\"".html_safe if column.safe_color %>>
+<section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>"
+         data-col-id="<%= column.id %>" data-accepts="<%= Array(column.accepts_from).join(",") %>"<%= " style=\"background-color: #{column.safe_color}\"".html_safe if column.safe_color %>>
   <header class="column-header">
     <span class="column-title">
       <h2><%= column.name %></h2>

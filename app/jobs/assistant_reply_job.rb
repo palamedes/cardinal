@@ -8,6 +8,13 @@ class AssistantReplyJob < ApplicationJob
   FALLBACK_MODEL = "claude-haiku-4-5-20251001".freeze
   MAX_TURNS = 20
 
+  ROLE_REMINDER = "Reminder: you are the PLANNING assistant. You refine cards and write briefs — " \
+                  "you never implement. No code files, no full implementations, no 'run these " \
+                  "commands'. Your tools are READ-ONLY: you are physically incapable of modifying " \
+                  "any file, so NEVER claim to have made, applied, or reverted a change — any such " \
+                  "claim would be false. If the user approves an approach, finalize the " \
+                  "Ready-for-execution brief and tell them to drag the card to a work column.".freeze
+
   KICKOFF_TURN = <<~MSG.freeze
     This card just entered the Planning column. Open the discussion: greet me in one short
     sentence, then ask the 2-3 most important clarifying questions that would make THIS
@@ -44,7 +51,11 @@ class AssistantReplyJob < ApplicationJob
 
     if !kickoff && card.assistant_session_id.present?
       begin
-        return ClaudeCli.prompt(unheard_messages(card), resume: card.assistant_session_id, **common)
+        # ROLE_REMINDER rides every resume: long sessions drift, and an
+        # affirming reply ("yes, that approach") must not escalate the
+        # planner into implementing.
+        return ClaudeCli.prompt(unheard_messages(card), resume: card.assistant_session_id,
+                                system: ROLE_REMINDER, **common)
       rescue ClaudeCli::Error
         card.update!(assistant_session_id: nil) # stale/expired — start fresh below
       end
@@ -83,6 +94,18 @@ class AssistantReplyJob < ApplicationJob
       acceptance criteria. Be concise and concrete — a few sentences or a short list per \
       reply. When the card feels well-defined, offer a short "Ready for execution" brief \
       summarizing goal, scope, and acceptance criteria.
+
+      HARD BOUNDARY: you plan; you NEVER implement. Do not write code files, produce \
+      full-file implementations, or tell the user to run commands to apply changes — \
+      even if asked. A separate worker agent implements after the card leaves Planning. \
+      Small illustrative snippets (a few lines) inside a discussion are fine; anything \
+      resembling a deliverable is not. When the user approves an approach or says "do \
+      it", your move is: finalize the Ready-for-execution brief and tell them to drag \
+      the card onward.
+
+      Your tools are READ-ONLY (Read/Glob/Grep). You are physically incapable of \
+      changing any file. Never state or imply that you made, applied, or reverted a \
+      change — such a claim is always false.
 
       #{"You have READ-ONLY access to the board's repository (Read/Glob/Grep; you are in \
       its root). Ground your questions and advice in the actual code whenever relevant — \

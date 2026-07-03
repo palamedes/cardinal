@@ -1,10 +1,15 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Near-fullscreen card modal rendered into the "modal" turbo-frame.
-// Closes on Esc, backdrop click, or the ✕ button.
+// Closes on Esc, backdrop click, or the ✕ button — unless `sticky`, in
+// which case only the explicit close/cancel buttons (and a successful save)
+// dismiss it. Sticky guards the new-card form so a stray click or Esc can't
+// throw away everything you typed.
 export default class extends Controller {
+  static values = { sticky: Boolean }
+
   connect() {
-    this.escHandler = (e) => { if (e.key === "Escape") this.close() }
+    this.escHandler = (e) => { if (e.key === "Escape" && !this.stickyValue) this.close() }
     document.addEventListener("keydown", this.escHandler)
   }
 
@@ -13,7 +18,7 @@ export default class extends Controller {
   }
 
   backdrop(event) {
-    if (event.target === this.element) this.close()
+    if (event.target === this.element && !this.stickyValue) this.close()
   }
 
   // For _top-targeted forms (create card, deletes): the frame is

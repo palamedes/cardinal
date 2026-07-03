@@ -20,12 +20,31 @@ export default class extends Controller {
       group: "cards",
       animation: 150,
       ghostClass: "card-ghost",
-      onStart: () => document.body.classList.add("dragging"),
+      onStart: () => {
+        document.body.classList.add("dragging")
+        this.markBlockedColumns()
+      },
       onEnd: (event) => {
         document.body.classList.remove("dragging")
+        this.clearBlockedColumns()
         this.move(event)
       }
     })
+  }
+
+  // Accept policies made visible: while dragging, columns that won't take a
+  // card from THIS column gray out with a blocked hint. Server still rules.
+  markBlockedColumns() {
+    const sourceId = this.element.dataset.columnId
+    document.querySelectorAll(".column").forEach(section => {
+      const accepts = section.dataset.accepts
+      if (!accepts || section.dataset.colId === sourceId) return
+      if (!accepts.split(",").includes(sourceId)) section.classList.add("drop-blocked")
+    })
+  }
+
+  clearBlockedColumns() {
+    document.querySelectorAll(".column.drop-blocked").forEach(s => s.classList.remove("drop-blocked"))
   }
 
   disconnect() {
