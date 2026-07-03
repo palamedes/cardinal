@@ -11,45 +11,40 @@
         <%= form_with model: @column, class: "card-edit" do |f| %>
           <div class="field-row">
             <div>
-              <label>Name</label>
+              <label>Name <%= info_tip("The column's display name on the board.") %></label>
               <%= f.text_field :name, required: true %>
             </div>
             <div>
-              <label>Archetype</label>
+              <label>Archetype <%= info_tip("What kind of stage this is. Inbox: parking lot, no AI. Planning: a shared assistant discusses cards with you. Execution: each card gets its own worker agent that does the work. Review: work stops for your verdict. Terminal: finalizes the card (Done merges the PR).") %></label>
               <%= f.select :archetype, Column::ARCHETYPES.map { |a| [a.capitalize, a] } %>
             </div>
           </div>
 
-          <label>Instructions <span class="hint">(given to any agent working in this column)</span></label>
+          <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — the planning assistant's or worker agent's standing orders (e.g. \"follow the repo style guide, always write tests\").") %></label>
           <%= f.text_area :instructions, rows: 3, value: @column.instructions %>
 
           <div class="field-row">
             <div>
-              <label>Model</label>
-              <%= f.text_field :model, value: @column.model, list: "model-options", placeholder: "inherit" %>
-              <datalist id="model-options">
-                <option value="claude-sonnet-4-6"></option>
-                <option value="claude-haiku-4-5-20251001"></option>
-                <option value="claude-opus-4-8"></option>
-              </datalist>
+              <label>Model <%= info_tip("Which Claude model works cards in this column. Haiku for cheap chat and maintenance, Sonnet for most real work, Opus/Fable when the work is hard and worth it.") %></label>
+              <%= f.select :model, model_options(@column.model), selected: @column.model.to_s %>
             </div>
             <div>
-              <label>Effort</label>
+              <label>Effort <%= info_tip("How hard the model thinks per step. Higher = smarter but slower and pricier. Max is supported on Sonnet/Opus tiers only.") %></label>
               <%= f.select :effort, [["(default)", ""], "low", "medium", "high", "max"], selected: @column.effort %>
             </div>
           </div>
 
           <div class="field-row">
             <div>
-              <label>Concurrency</label>
+              <label>Concurrency <%= info_tip("WIP limit: how many cards may be actively worked at once here. Extra cards queue in order; drag to reprioritize.") %></label>
               <%= f.number_field :concurrency_limit, value: @column.concurrency_limit, min: 1, placeholder: "∞" %>
             </div>
             <div>
-              <label>Max turns</label>
+              <label>Max turns <%= info_tip("Budget: the most conversation/tool turns an agent may take per run segment before it's stopped.") %></label>
               <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "25" %>
             </div>
             <div>
-              <label>Timeout (min)</label>
+              <label>Timeout (min) <%= info_tip("Wall-clock limit per run segment. The agent process is killed when it expires — never a runaway.") %></label>
               <%= f.number_field :timeout_minutes, value: @column.timeout_minutes, min: 1, placeholder: "30" %>
             </div>
           </div>
@@ -57,12 +52,21 @@
           <label class="check-row">
             <%= f.check_box :plan_approval, checked: ActiveModel::Type::Boolean.new.cast(@column.plan_approval) %>
             Require plan approval before the agent makes changes
+            <%= info_tip("The agent's first pass is read-only: it explores and proposes a plan, then waits. You approve with one click or reply to redirect. Your main safety rail.") %>
           </label>
 
-          <label>On-entry rules <span class="hint">(JSON — see cardinal.md §17; blank = archetype default)</span></label>
-          <%= f.text_area :on_entry_json, rows: 4, class: "mono",
-                value: @column.policy["on_entry"] ? JSON.pretty_generate(@column.policy["on_entry"]) : "",
-                placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
+          <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior.") %></label>
+          <%= f.text_area :on_entry_text, rows: 3,
+                value: @column.policy["on_entry_text"],
+                placeholder: "e.g. Summarize the planning conversation into a brief, then start the worker agent." %>
+
+          <details class="advanced-rules">
+            <summary>Advanced: compiled rules (JSON)</summary>
+            <p class="hint">Applied only when the English box above is empty. Current compiled form:</p>
+            <%= f.text_area :on_entry_json, rows: 4, class: "mono",
+                  value: @column.policy["on_entry"] ? JSON.pretty_generate(@column.policy["on_entry"]) : "",
+                  placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
+          </details>
 
           <%= f.submit "Save" %>
         <% end %>

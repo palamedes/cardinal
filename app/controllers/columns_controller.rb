@@ -20,7 +20,8 @@ class ColumnsController < ApplicationController
   def update
     attrs = params.require(:column).permit(
       :name, :archetype, :instructions, :model, :effort,
-      :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval, :on_entry_json
+      :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval,
+      :on_entry_text, :on_entry_json
     )
 
     policy = @column.policy.dup
@@ -30,15 +31,29 @@ class ColumnsController < ApplicationController
     end
     policy["plan_approval"] = attrs[:plan_approval] == "1"
 
-    if attrs[:on_entry_json].present?
+    # Rules: plain English is the source of truth (compiled on change); the
+    # advanced JSON editor applies only when the English box is empty.
+    if attrs[:on_entry_text].present?
+      if attrs[:on_entry_text].strip != policy["on_entry_text"].to_s.strip
+        begin
+          policy["on_entry"] = Rules::Compiler.compile(attrs[:on_entry_text])
+        rescue Rules::Compiler::Error => e
+          @json_error = e.message
+          return render :edit, status: :unprocessable_entity
+        end
+      end
+      policy["on_entry_text"] = attrs[:on_entry_text].strip
+    elsif attrs[:on_entry_json].present?
       begin
         policy["on_entry"] = JSON.parse(attrs[:on_entry_json])
+        policy.delete("on_entry_text")
       rescue JSON::ParserError => e
         @json_error = "on_entry is not valid JSON: #{e.message.truncate(120)}"
         return render :edit, status: :unprocessable_entity
       end
     else
       policy.delete("on_entry")
+      policy.delete("on_entry_text")
     end
 
     @column.update!(

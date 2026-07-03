@@ -246,3 +246,26 @@ body.dragging .drop-hint { display: block; }
 .mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .form-error { color: var(--red); font-size: 13px; }
 .delete-column { margin-top: 14px; }
+.advanced-rules { margin: 8px 0; }
+.advanced-rules summary { cursor: pointer; font-size: 12px; color: var(--text-dim); }
+.advanced-rules textarea { width: 100%; }
+
+/* (i) tooltips */
+.info {
+  cursor: help; position: relative; display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 14px; height: 14px; margin-left: 5px;
+  border: 1px solid var(--border); border-radius: 50%;
+  color: var(--text-dim); font-size: 10px; font-style: italic; font-weight: 600;
+  text-transform: none; vertical-align: middle;
+}
+.info:hover { color: var(--text); border-color: var(--text-dim); }
+.info:hover::after {
+  content: attr(data-tip);
+  position: absolute; left: 50%; bottom: 140%; transform: translateX(-50%);
+  width: 240px; z-index: 40;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; color: var(--text);
+  font-size: 12px; font-style: normal; font-weight: 400;
+  letter-spacing: 0; text-transform: none; line-height: 1.4; white-space: normal;
+}

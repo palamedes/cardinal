@@ -98,6 +98,7 @@ module Agent
         cmd += ["--max-turns", (column.max_turns.presence || 25).to_s]
       end
       cmd += ["--model", column.model] if column.model.present?
+      cmd += ["--effort", column.effort] if column.effort.present?
       cmd += ["--resume", run.external_session_id] if resuming && run.external_session_id.present?
 
       result = {}
