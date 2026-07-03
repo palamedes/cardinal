@@ -52,7 +52,7 @@
             </div>
             <div>
               <label>Max turns <%= info_tip("Check-in cadence and loop guard: after this many actions the agent pauses, saves progress, and asks whether to continue (one reply = fresh budget). Catches busy-but-stuck loops a wall-clock timeout can't. Not a work limit.") %></label>
-              <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "25" %>
+              <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "80" %>
             </div>
             <div>
               <label>Timeout (min) <%= info_tip("Wall-clock limit per run segment. The agent process is killed when it expires — never a runaway.") %></label>
