@@ -1,22 +1,45 @@
 #!/usr/bin/env bash
 # cardinal — spin up a Cardinal board for the repo you're standing in (§16).
 #
-#   cd ~/Projects/some-repo && cardinal        # or `cardinal up`
+#   cardinal            # or `cardinal up` — first run links a Claude account
+#   cardinal login      # redo the account link (switch accounts)
+#   cardinal logout     # unlink this instance's account
 #
-# The board, its database, and all agent workspaces live in ./.cardinal/,
-# which is hidden from the host repo via .git/info/exclude (never committed).
-# Symlink this script onto your PATH:  ln -s <cardinal-repo>/bin/cardinal ~/bin/
+# Each instance carries its OWN Claude identity: the first `up` walks the
+# OAuth round trip (browser account picker) and stores the token in
+# ./.cardinal/claude/ — so different repos can run on different accounts.
+# Escape hatch: CARDINAL_INHERIT_AUTH=1 uses the machine's claude login.
+#
+# The board, database, auth, and agent workspaces all live in ./.cardinal/,
+# hidden from the host repo via .git/info/exclude (never committed).
 set -euo pipefail
 
 CARDINAL_HOME="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
 TARGET="$(pwd)"
-
-[ "${1:-up}" = "up" ] || { echo "usage: cardinal [up]"; exit 1; }
+AUTH_DIR="$TARGET/.cardinal/claude"
+TOKEN_FILE="$AUTH_DIR/oauth-token"
+CMD="${1:-up}"
 
 if [ ! -d "$TARGET/.git" ]; then
   echo "cardinal: $TARGET is not a git repository" >&2
   exit 1
 fi
+
+case "$CMD" in
+  logout)
+    rm -rf "$AUTH_DIR"
+    echo "cardinal ▸ account unlinked for $(basename "$TARGET")"
+    exit 0
+    ;;
+  login)
+    rm -f "$TOKEN_FILE"
+    ;;
+  up) ;;
+  *)
+    echo "usage: cardinal [up|login|logout]" >&2
+    exit 1
+    ;;
+esac
 
 # Hide .cardinal/ from the host repo without touching its .gitignore —
 # info/exclude is per-clone and invisible to collaborators.
@@ -24,6 +47,29 @@ EXCLUDE="$TARGET/.git/info/exclude"
 mkdir -p "$(dirname "$EXCLUDE")"
 grep -qx "\.cardinal/" "$EXCLUDE" 2>/dev/null || echo ".cardinal/" >> "$EXCLUDE"
 mkdir -p "$TARGET/.cardinal"
+
+# ── Per-instance Claude identity ─────────────────────────────────────────────
+if [ "${CARDINAL_INHERIT_AUTH:-}" = "1" ]; then
+  echo "cardinal ▸ using this machine's claude login (CARDINAL_INHERIT_AUTH=1)"
+  export CARDINAL_AUTH="inherited"
+else
+  if [ ! -s "$TOKEN_FILE" ]; then
+    echo "cardinal ▸ no Claude account is linked to this board yet"
+    echo "cardinal ▸ opening the account link — pick the account this board should work as"
+    mkdir -p "$AUTH_DIR" && chmod 700 "$AUTH_DIR"
+    RAW="$(CLAUDE_CONFIG_DIR="$AUTH_DIR" claude setup-token)" || {
+      echo "cardinal: account link failed — try again, or CARDINAL_INHERIT_AUTH=1 to use the machine login" >&2
+      exit 1
+    }
+    TOKEN="$(printf '%s' "$RAW" | grep -oE 'sk-ant-[A-Za-z0-9_-]+' | tail -1)"
+    [ -n "$TOKEN" ] || { echo "cardinal: no token in setup output" >&2; exit 1; }
+    printf '%s' "$TOKEN" > "$TOKEN_FILE" && chmod 600 "$TOKEN_FILE"
+    echo "cardinal ▸ account linked (stored in .cardinal/claude/, local-only)"
+  fi
+  export CLAUDE_CONFIG_DIR="$AUTH_DIR"
+  export CLAUDE_CODE_OAUTH_TOKEN="$(cat "$TOKEN_FILE")"
+  export CARDINAL_AUTH="dedicated"
+fi
 
 export CARDINAL_TARGET_REPO="$TARGET"
 export CARDINAL_DATA_DIR="$TARGET/.cardinal"

@@ -102,6 +102,8 @@ module Agent
       cmd += ["--resume", run.external_session_id] if resuming && run.external_session_id.present?
 
       result = {}
+      @base_in, @base_out = run.input_tokens, run.output_tokens
+      @seg_in = @seg_out = 0
       env = STRIP_ENV.index_with { nil }
       spawn_cmd, spawn_opts = workspace.agent_spawn(cmd)
       Open3.popen3(env, *spawn_cmd, **spawn_opts) do |stdin, stdout, stderr, wait|
@@ -118,7 +120,11 @@ module Agent
         last_beat = Time.current
         stdout.each_line do |line|
           if Time.current - last_beat > HEARTBEAT_EVERY
-            run.update_column(:heartbeat_at, Time.current)
+            # Heartbeat + live token tally: tokens survive even if this
+            # segment is killed before its result event.
+            run.update_columns(heartbeat_at: Time.current,
+                               input_tokens: @base_in + @seg_in,
+                               output_tokens: @base_out + @seg_out)
             last_beat = Time.current
           end
           begin
@@ -146,6 +152,10 @@ module Agent
           card.log!("progress", actor: "agent", run: run, text: "Agent session started (#{json["model"]})")
         end
       when "assistant"
+        if (usage = json.dig("message", "usage"))
+          @seg_in += usage["input_tokens"].to_i
+          @seg_out += usage["output_tokens"].to_i
+        end
         Array(json.dig("message", "content")).each do |block|
           case block["type"]
           when "text"
@@ -240,11 +250,17 @@ module Agent
       card.log!("error", run: run, text: "Run failed: #{error.message.truncate(500)}")
     end
 
-    # Cost/tokens accumulate across segments of the same run (plan + execute + resumes).
+    # Cost/tokens accumulate across segments of the same run (plan + execute +
+    # resumes). Tokens were live-tallied during the stream; the result event's
+    # figures are authoritative when present, the live tally is the fallback
+    # for killed segments (which never emit a result).
     def accumulate_usage(result)
+      base_in = @base_in || run.input_tokens
+      base_out = @base_out || run.output_tokens
       run.update!(cost: run.cost + (result[:cost] || 0),
-                  input_tokens: run.input_tokens + (result[:input_tokens] || 0),
-                  output_tokens: run.output_tokens + (result[:output_tokens] || 0))
+                  input_tokens: base_in + (result[:input_tokens] || @seg_in || 0),
+                  output_tokens: base_out + (result[:output_tokens] || @seg_out || 0))
+      @base_in = @base_out = @seg_in = @seg_out = nil
     end
 
     def remember_base_sha(workspace)
