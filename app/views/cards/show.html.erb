@@ -4,8 +4,9 @@
       <%= turbo_stream_from @card %>
       <header class="modal-header">
         <h1>
-          <span class="card-number">#<%= @card.number %></span> <%= @card.title %>
+          <%= @card.title %>
           <span class="chip status-chip status-<%= @card.status %>"><%= @card.status.humanize %></span>
+          <span class="card-number-sub">#<%= @card.number %></span>
         </h1>
         <div class="modal-header-right">
           <% if @card.branch_name %>

@@ -1,7 +1,7 @@
 <article class="card status-<%= card.status %>" id="<%= dom_id(card) %>" data-card-id="<%= card.id %>">
   <%= link_to card_path(card), class: "card-link", data: { turbo_frame: "modal" } do %>
     <div class="card-title">
-      <span class="card-number">#<%= card.number %></span> <%= card.title %>
+      <%= card.title %>
       <span class="status-glyph"><%= { "working" => "⚡", "needs_input" => "❓", "failed" => "✖",
                                        "work_complete" => "✅", "done" => "✓", "queued" => "⏳",
                                        "discussing" => "💬", "in_review" => "👁", "approved" => "👍",
