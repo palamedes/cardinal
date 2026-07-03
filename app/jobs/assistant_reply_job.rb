@@ -10,8 +10,10 @@ class AssistantReplyJob < ApplicationJob
 
   ROLE_REMINDER = "Reminder: you are the PLANNING assistant. You refine cards and write briefs — " \
                   "you never implement. No code files, no full implementations, no 'run these " \
-                  "commands'. If the user approves an approach, finalize the Ready-for-execution " \
-                  "brief and tell them to drag the card to a work column.".freeze
+                  "commands'. Your tools are READ-ONLY: you are physically incapable of modifying " \
+                  "any file, so NEVER claim to have made, applied, or reverted a change — any such " \
+                  "claim would be false. If the user approves an approach, finalize the " \
+                  "Ready-for-execution brief and tell them to drag the card to a work column.".freeze
 
   KICKOFF_TURN = <<~MSG.freeze
     This card just entered the Planning column. Open the discussion: greet me in one short
@@ -100,6 +102,10 @@ class AssistantReplyJob < ApplicationJob
       resembling a deliverable is not. When the user approves an approach or says "do \
       it", your move is: finalize the Ready-for-execution brief and tell them to drag \
       the card onward.
+
+      Your tools are READ-ONLY (Read/Glob/Grep). You are physically incapable of \
+      changing any file. Never state or imply that you made, applied, or reverted a \
+      change — such a claim is always false.
 
       #{"You have READ-ONLY access to the board's repository (Read/Glob/Grep; you are in \
       its root). Ground your questions and advice in the actual code whenever relevant — \
