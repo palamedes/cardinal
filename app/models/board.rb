@@ -83,6 +83,63 @@ class Board < ApplicationRecord
     cards.pluck(:tags).flatten.compact.uniq.sort
   end
 
+  # --- Repo brief (card #12) ---------------------------------------------
+  # A one-time deep dive that maps the repo, stored as flat markdown in
+  # .cardinal/ (never the host repo) and injected into worker prompts to
+  # spare each run the exploration tax. Metadata (which SHA/model/when) lives
+  # on the board so staleness can be judged against the current HEAD.
+  #
+  # Storage is a file + metadata, not one text column, so a structure
+  # provider (the Graphify child card) can slot a richer representation in
+  # underneath later without a migration.
+  BRIEF_STALE_AT = 10 # commits behind → the "refresh me" red/flashing state
+
+  def brief_path = Rails.root.join(".cardinal", "repo-brief.md")
+
+  def repo_brief
+    File.read(brief_path) if File.exist?(brief_path)
+  end
+
+  def brief?
+    brief_sha.present? && File.exist?(brief_path)
+  end
+
+  def brief_working? = brief_status == "working"
+
+  # HEAD of the board's repo right now — the yardstick staleness measures against.
+  def head_sha
+    return nil if local_path.blank?
+    out, ok = Open3.capture2e("git", "-C", local_path, "rev-parse", "HEAD")
+    ok.success? ? out.strip : nil
+  end
+
+  # How many commits landed since the brief was generated. nil when there's
+  # no brief (nothing to be stale against) or the SHA is unknown to the repo.
+  def commits_behind_brief
+    return @commits_behind_brief if defined?(@commits_behind_brief)
+    @commits_behind_brief =
+      if brief_sha.blank? || local_path.blank?
+        nil
+      else
+        out, ok = Open3.capture2e("git", "-C", local_path, "rev-list", "--count", "#{brief_sha}..HEAD")
+        ok.success? ? out.strip.to_i : nil
+      end
+  end
+
+  def brief_stale? = (commits_behind_brief || 0) >= BRIEF_STALE_AT
+
+  # Grey → red interpolation over 0..BRIEF_STALE_AT commits behind, emitted
+  # as a validated hex into the button's inline style (mirrors Column#safe_color).
+  # Deep red once the brief is stale enough to over-anchor on.
+  def brief_staleness_color
+    behind = commits_behind_brief || 0
+    grey = [0x8a, 0x8a, 0x8a]
+    red  = [0xd4, 0x33, 0x33]
+    t = [behind.to_f / BRIEF_STALE_AT, 1.0].min
+    rgb = grey.zip(red).map { |g, r| (g + (r - g) * t).round }
+    format("#%02x%02x%02x", *rgb)
+  end
+
   # Cards currently waiting on the human, ordered by urgency — feeds the
   # attention inbox in the board header.
   def attention_cards

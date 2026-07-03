@@ -28,4 +28,24 @@ class BoardsControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{ActionView::RecordIdentifier.dom_id(@exec)} a.add-card", false
     assert_select "##{ActionView::RecordIdentifier.dom_id(@exec)} .cards.cards-clickable", false
   end
+
+  test "topbar shows the deep dive button" do
+    get root_path
+    assert_select "form[action=?] button.deep-dive", deep_dive_board_path
+  end
+
+  test "deep_dive flips the board to working and enqueues the job" do
+    assert_enqueued_with(job: DeepDiveJob) do
+      post deep_dive_board_path
+    end
+    assert_redirected_to root_path
+    assert_equal "working", @board.reload.brief_status
+  end
+
+  test "deep_dive is ignored while a dive is already running" do
+    @board.update!(brief_status: "working")
+    assert_no_enqueued_jobs(only: DeepDiveJob) do
+      post deep_dive_board_path
+    end
+  end
 end

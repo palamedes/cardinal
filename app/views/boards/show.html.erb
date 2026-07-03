@@ -3,6 +3,23 @@
 <header class="topbar">
   <h1>Cardinal AI <span class="sep">▸</span> <%= @board.name %></h1>
   <div class="topbar-right">
+    <%# Repo deep dive (card #12): one-shot read-only mapping of the repo, stored
+        as a brief and injected into worker prompts. The button greys→reds as the
+        brief falls behind HEAD; a stale brief over-anchors, so it nags at 10+. %>
+    <% behind = @board.commits_behind_brief %>
+    <%= button_to deep_dive_board_path,
+          class: "deep-dive#{' stale-critical' if @board.brief_stale?}#{' working' if @board.brief_working?}",
+          disabled: @board.brief_working?,
+          style: @board.brief? ? "color: #{@board.brief_staleness_color}; border-color: #{@board.brief_staleness_color}" : nil,
+          title: @board.brief? ? "Repo brief from #{@board.brief_sha&.first(7)} · #{@board.brief_generated_at&.to_date}" : "Map this repo into a brief agents reuse — saves exploration on every run" do %>
+      <% if @board.brief_working? %>
+        <span class="pulse-dot"></span> Deep dive · working…
+      <% elsif behind&.positive? %>
+        🔍 Deep dive · <%= behind %> commit<%= "s" if behind != 1 %> behind
+      <% else %>
+        🔍 Deep dive
+      <% end %>
+    <% end %>
     <button type="button" class="theme-toggle"
             data-controller="theme" data-action="theme#toggle">☀ Light</button>
     <% if ENV["CARDINAL_AUTH"].present? %>
