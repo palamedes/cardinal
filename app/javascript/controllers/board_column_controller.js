@@ -5,7 +5,15 @@ import Sortable from "sortablejs"
 // Drag-and-drop for a column's card list. Moving a card PATCHes /cards/:id/move;
 // the server is the authority — a 422 snaps the card back and shows why.
 export default class extends Controller {
-  static values = { hint: String }
+  static values = { hint: String, newUrl: String }
+
+  // A bare click on the column background — not on a card — opens the New Card
+  // composer, mirroring the header's [+]. Cards keep their own click (open
+  // detail); we only act when the click lands on the container itself.
+  newCard(event) {
+    if (event.target !== this.element || !this.hasNewUrlValue) return
+    document.getElementById("modal").src = this.newUrlValue
+  }
 
   connect() {
     this.sortable = Sortable.create(this.element, {
