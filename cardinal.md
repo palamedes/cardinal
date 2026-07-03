@@ -384,21 +384,8 @@ without touching the product model.
 
 (Resolved questions move to the decision log, §15.)
 
-All current open questions concern the portable-instance direction (§16):
-
-1. **Adopt §16 at all?** It reshapes deployment (engine + per-repo instances) but barely
-   touches the domain model. Recommendation: yes, and soon — it's cheap now, expensive later.
-2. **SQLite vs Postgres.** If Cardinal spins up per-repo like cage, a per-instance SQLite
-   file (gitignored inside `.cardinal/`) removes the Postgres service dependency entirely;
-   Rails 8's Solid* stack is SQLite-first. Recommendation: switch now, before more schema
-   accumulates.
-3. **Commit policy for `.cardinal/` files.** Every drag = a file change; auto-committing
-   would spam history. Recommendation: Cardinal writes the files but never commits them —
-   they ride along in the user's normal commits; optional auto-commit-on-card-completion
-   later.
-4. **What lives in the card file vs. only in the DB?** Recommendation: identity, column,
-   status, tags, branch/PR, description, and final reports in the file (durable, greppable,
-   reviewable); the full event stream / tool logs stay DB-only as operational telemetry.
+1. **Datastore for the portable instance:** SQLite file inside `.cardinal/` (recommended)
+   vs. Postgres-per-container. Walkthrough delivered 2026-07-03; awaiting final call.
 
 ---
 
@@ -598,47 +585,43 @@ admin surface.
 
 ---
 
-## 16. Portable instances: Cardinal as a tool you point at any repo (proposed)
+## 16. Portable instances: Cardinal as a local tool you point at any repo (adopted)
 
-**The idea (raised 2026-07-03):** Cardinal lives in its own repo as the *engine*, but you
-instantiate it inside any repo — like cage. The board's durable state lives in that repo
-as `.cardinal/` files, so every repo can carry its own Cardinal board, versioned with the
-code it describes.
+**Decided 2026-07-03:** Cardinal's repo is the *engine*; `cardinal` (or `cardinal up`) run
+inside any repo boots a cage-style Docker container against that repo and serves the board
+on its own local port — living happily alongside the app that repo already runs (your app
+keeps its ports, its database, its everything; Cardinal touches none of it).
 
-### Shape
+**Cardinal is not an app you sign into.** It is a local tool for any coder at any level.
+Boards are personal: your Cardinal tasks in a repo are *yours*, not your teammates'.
+
+### The `.cardinal/` directory — local-only, never committed
 
 ```
 any-repo/
- ├── .cardinal/
- │    ├── board.yml          # committed: columns, archetypes, policies
- │    ├── cards/
- │    │    ├── 14-add-rate-limiting.md   # committed: one file per card
- │    │    └── 17-webhook-retries.md
- │    └── cardinal.db        # gitignored: SQLite runtime (events, runs, sessions)
- └── src/...
+ └── .cardinal/            # created by spin-up, NEVER committed to the host repo
+      ├── cardinal.db      # the board: cards, columns, policies, events, runs (SQLite, proposed)
+      └── workspaces/…     # per-card agent working state, scratch, logs
 ```
 
-- `cardinal up` (CLI, cage-style) in any repo → boots the engine in a container against
-  that repo, reads `.cardinal/`, serves the board on a local port.
-- **Card file** = frontmatter (number, column, status, tags, branch, pr_url) + markdown
-  body (description, planning brief, final reports). Greppable, hand-editable, reviewable
-  in PRs, survives any database.
-- **Sync rule — one direction at a time:** at boot, files are the source of truth (DB
-  rebuilt/reconciled from them); at runtime, the DB is authoritative and Cardinal flushes
-  card/board changes back to the files as ordinary working-tree edits. Cardinal never
-  commits them itself (§12.3 recommendation) — they ride along in normal commits.
-- The **event stream, tool logs, and run telemetry stay in the DB only.** They are
-  operational exhaust, not repo content; final reports are the durable distillate that
-  lands in the card file.
+- Spin-up excludes `.cardinal/` via **`.git/info/exclude`** rather than editing the repo's
+  `.gitignore` — the tool must not dirty the host repo, and `.gitignore` edits are
+  themselves a diff someone might accidentally commit. `info/exclude` is per-clone and
+  invisible to everyone else.
+- Because boards are personal and local, the earlier committed-files/sync-layer idea is
+  **dropped** — there is no second representation to reconcile. The on-disk store inside
+  `.cardinal/` *is* the board. (Human-readable export — `cardinal export` to markdown —
+  can come later as a view, not a store.)
+- Portability falls out for free: the whole instance is one directory. Copy it = backup,
+  delete it = uninstall, move it = the board moves.
 
 ### What this changes — and what it doesn't
 
 - **Unchanged:** the entire domain model (§2), lifecycle (§3), runner design (§11),
   column-as-policy (§1). `Board.repo_url` simply becomes "the repo I'm sitting in."
-- **Changed:** deployment (hosted app → per-repo instances), datastore (Postgres →
-  per-instance SQLite, proposed), and "multiple boards" gets a natural answer: one board
-  per repo, no multi-board UI needed at all.
-- **Gained:** board state is versioned, portable, diffable; a repo is "cardinal-enabled"
-  by committing `.cardinal/`; teammates get the board by cloning.
-- **Tension to manage:** two representations of a card (file + DB row) means sync
-  discipline matters; the one-direction-at-a-time rule above is the guard.
+- **Changed:** deployment (hosted app → per-repo local instances) and datastore
+  (Postgres → per-instance SQLite inside `.cardinal/`, recommended — §12.1); "multiple
+  boards" resolves to one board per repo with no multi-board UI at all.
+- **Card branches remain the collaboration surface.** Your board is private, but the work
+  it produces ships as ordinary branches and PRs — teammates see the output, not the board.
+
