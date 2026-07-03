@@ -8,6 +8,16 @@ module Rules
     "terminal"  => [{ "action" => "merge_pr" }]
   }.freeze
 
+  # Shown in the gear modal so the archetype's built-in behavior is visible,
+  # not implied (the on-entry box being blank doesn't mean nothing happens).
+  DEFAULT_DESCRIPTIONS = {
+    "inbox"     => "Nothing — cards park here untouched.",
+    "planning"  => "The planning assistant inspects the card and opens the conversation: it reads the title and description, then asks its sharpest clarifying questions to improve the card before execution. Tune its focus with the Instructions field above.",
+    "execution" => "A dedicated worker agent is assigned to the card and a run starts (plan-first if plan approval is on).",
+    "review"    => "Nothing automatic — the card waits for your verdict.",
+    "terminal"  => "The card's PR is marked ready, squash-merged, and its branch deleted."
+  }.freeze
+
   def self.fire_entry(card, column)
     each_rule(column.policy["on_entry"], column.archetype) do |rule|
       apply(rule, card, column)

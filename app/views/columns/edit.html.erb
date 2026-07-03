@@ -55,10 +55,13 @@
             <%= info_tip("The agent's first pass is read-only: it explores and proposes a plan, then waits. You approve with one click or reply to redirect. Your main safety rail.") %>
           </label>
 
-          <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior.") %></label>
+          <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior shown below.") %></label>
+          <% if @column.policy["on_entry_text"].blank? && @column.policy["on_entry"].blank? %>
+            <p class="default-rule">Default: <%= Rules::DEFAULT_DESCRIPTIONS[@column.archetype] %></p>
+          <% end %>
           <%= f.text_area :on_entry_text, rows: 3,
                 value: @column.policy["on_entry_text"],
-                placeholder: "e.g. Summarize the planning conversation into a brief, then start the worker agent." %>
+                placeholder: "Describe what should happen instead of the default…" %>
 
           <details class="advanced-rules">
             <summary>Advanced: compiled rules (JSON)</summary>
