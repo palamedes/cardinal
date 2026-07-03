@@ -1,10 +1,12 @@
-# The shared planning assistant (cardinal.md §5): one reply per user message
-# on cards sitting in a planning column, via the claude CLI (§ClaudeCli).
-# The card's event timeline IS the conversation, embedded as a transcript.
+# The shared planning assistant (cardinal.md §5): a CONTINUING claude session
+# per card (assistant_session_id) — context and repo exploration carry across
+# replies instead of being re-paid per message. Falls back to a fresh session
+# (with the transcript embedded) if the stored session can't be resumed.
 class AssistantReplyJob < ApplicationJob
   queue_as :default
 
   FALLBACK_MODEL = "claude-haiku-4-5-20251001".freeze
+  MAX_TURNS = 20
 
   KICKOFF_TURN = <<~MSG.freeze
     This card just entered the Planning column. Open the discussion: greet me in one short
@@ -21,18 +23,38 @@ class AssistantReplyJob < ApplicationJob
       return
     end
 
-    prompt = kickoff ? KICKOFF_TURN : transcript_prompt(card)
-    repo = card.board.local_path.presence
-    reply = ClaudeCli.prompt(prompt, system: system_prompt(card),
-                             model: card.column.model.presence || FALLBACK_MODEL,
-                             tools: repo ? "Read,Glob,Grep" : nil,
-                             cwd: repo, max_turns: repo ? 10 : 1)
+    reply, session_id = converse(card, kickoff:)
+    card.update!(assistant_session_id: session_id) if session_id.present?
     card.log!("assistant_message", actor: "assistant", text: reply) if reply.present?
   rescue ClaudeCli::Error => e
     card.log!("error", text: "The planning assistant #{e.message}.", detail: e.detail)
   end
 
   private
+
+  def converse(card, kickoff:)
+    repo = card.board.local_path.presence
+    common = { model: card.column.model.presence || FALLBACK_MODEL,
+               tools: repo ? "Read,Glob,Grep" : nil,
+               cwd: repo, max_turns: MAX_TURNS, with_session: true }
+
+    if !kickoff && card.assistant_session_id.present?
+      begin
+        # Continuing conversation: just the new message — the session already
+        # holds the system prompt, the history, and everything it explored.
+        return ClaudeCli.prompt(latest_user_message(card), resume: card.assistant_session_id, **common)
+      rescue ClaudeCli::Error
+        card.update!(assistant_session_id: nil) # stale/expired — start fresh below
+      end
+    end
+
+    ClaudeCli.prompt(kickoff ? KICKOFF_TURN : transcript_prompt(card),
+                     system: system_prompt(card), **common)
+  end
+
+  def latest_user_message(card)
+    card.events.where(kind: "user_message").order(:id).last&.text.to_s
+  end
 
   def system_prompt(card)
     <<~PROMPT

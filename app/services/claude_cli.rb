@@ -31,17 +31,25 @@ module ClaudeCli
 
   # tools: comma-separated read-only tool list (e.g. "Read,Glob,Grep") with
   # cwd pointing at the repo. Default remains tool-less single-turn.
-  def self.prompt(text, system: nil, model: nil, tools: nil, cwd: nil, max_turns: 1)
+  # resume: continue an existing claude session (context carries over).
+  # with_session: return [text, session_id] instead of just text, so callers
+  # can keep a continuing conversation (the planning assistant does).
+  def self.prompt(text, system: nil, model: nil, tools: nil, cwd: nil, max_turns: 1,
+                  resume: nil, with_session: false)
     raise Error.new("claude CLI not found on PATH") unless available?
 
-    json = invoke(text, system:, model:, tools:, cwd:, max_turns:)
-    return json["result"].to_s if success?(json)
+    json = invoke(text, system:, model:, tools:, cwd:, max_turns:, resume:)
+    if success?(json)
+      return with_session ? [json["result"].to_s, json["session_id"]] : json["result"].to_s
+    end
 
     # Ran out of turns mid-exploration: resume the same session tool-less and
     # force an answer from the context it already gathered.
     if json["subtype"] == "error_max_turns" && json["session_id"].present?
       wrapped = invoke(WRAP_UP, model:, cwd:, tools: "", max_turns: 2, resume: json["session_id"])
-      return wrapped["result"].to_s if success?(wrapped)
+      if success?(wrapped)
+        return with_session ? [wrapped["result"].to_s, wrapped["session_id"] || json["session_id"]] : wrapped["result"].to_s
+      end
       raise Error.new("ran out of working turns and couldn't wrap up — try again, or simplify the ask",
                       detail: wrapped.to_json)
     end

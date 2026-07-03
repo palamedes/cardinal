@@ -407,7 +407,10 @@ body.dragging .drop-hint { display: block; }
 .event-error .event-body { background: rgba(214, 102, 102, .08); border-radius: 8px; padding: 8px 10px; }
 .event-error .event-body > p:first-of-type { color: var(--red); }
 .error-detail summary { font-size: 11px; color: var(--text-dim); cursor: pointer; }
-.error-detail pre { font-size: 11px; max-height: 180px; overflow: auto; }
+.error-detail pre {
+  font-size: 11px; max-height: 180px; overflow: auto;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
 
 .panel-callout { border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
 .panel-callout p { margin: 0 0 8px; }
