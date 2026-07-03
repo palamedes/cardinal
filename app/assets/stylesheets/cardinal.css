@@ -140,6 +140,19 @@ body.dragging .drop-hint { display: block; }
   cursor: grab;
 }
 .card-link { color: inherit; display: block; }
+
+/* PR footer: the card's bottom edge is the link out to GitHub. The left
+   slot is reserved for ticket integrations (Asana/Trello). */
+.card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 8px -10px -9px; padding: 4px 10px 5px;
+  background: var(--bg);
+  border-top: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 0 0 7px 7px;
+  font-size: 11px; color: var(--text-dim); font-weight: 600;
+}
+.card-footer:hover .footer-pr { color: var(--blue); }
+.footer-left { min-width: 1px; }
 .card-ghost { opacity: .4; }
 .card-title { font-weight: 600; }
 .card-number { color: var(--text-dim); font-weight: 400; }
