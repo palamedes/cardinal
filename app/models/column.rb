@@ -9,7 +9,12 @@ class Column < ApplicationRecord
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
-                 :max_turns, :tools, :on_entry, :on_success
+                 :max_turns, :tools, :on_entry, :on_success, :color
+
+  # Only ever emit a validated hex color into inline styles.
+  def safe_color
+    color if color.to_s.match?(/\A#\h{6}\z/)
+  end
 
   # Start the next queued card when a run slot frees up. A queued card whose
   # run parked and already has its answer recorded resumes instead of

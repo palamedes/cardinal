@@ -353,7 +353,14 @@ body.dragging .drop-hint { display: block; }
 .check-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 13px; color: var(--text); text-transform: none; letter-spacing: 0; }
 .mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .form-error { color: var(--red); font-size: 13px; }
-.delete-column { margin-top: 14px; }
+.delete-column { margin-top: 6px; }
+.color-cell { flex: 0 0 auto !important; }
+.color-row { display: flex; align-items: center; gap: 6px; }
+.color-row input[type="color"] {
+  width: 42px; height: 30px; padding: 2px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--surface-2); cursor: pointer;
+}
+.check-row.inline { margin: 0; font-size: 12px; color: var(--text-dim); display: flex; gap: 4px; }
 .panel-advanced { margin-top: 18px; border-top: 1px solid var(--surface-2); padding-top: 10px; }
 .delete-card { margin: 4px 0 16px; opacity: .7; }
 .delete-card:hover { opacity: 1; }

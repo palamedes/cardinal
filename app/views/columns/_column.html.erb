@@ -1,4 +1,4 @@
-<section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>">
+<section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>"<%= " style=\"background-color: #{column.safe_color}\"".html_safe if column.safe_color %>>
   <header class="column-header">
     <h2><%= column.name %></h2>
     <%= link_to "⚙", edit_column_path(column), class: "gear", title: "Column settings",

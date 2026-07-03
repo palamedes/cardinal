@@ -21,11 +21,12 @@ class ColumnsController < ApplicationController
     attrs = params.require(:column).permit(
       :name, :archetype, :instructions, :model, :effort,
       :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval,
-      :on_entry_text, :on_entry_json
+      :on_entry_text, :on_entry_json, :color, :custom_color
     )
 
     policy = @column.policy.dup
     %w[instructions model effort].each { |k| policy[k] = attrs[k].presence }
+    policy["color"] = attrs[:custom_color] == "1" && attrs[:color].to_s.match?(/\A#\h{6}\z/) ? attrs[:color] : nil
     %w[concurrency_limit max_turns timeout_minutes].each do |k|
       policy[k] = attrs[k].present? ? attrs[k].to_i : nil
     end
