@@ -8,12 +8,6 @@ board = Board.find_or_create_by!(name: "Cardinal") do |b|
   b.local_path = Rails.root.to_s
 end
 
-Board::DEFAULT_COLUMNS.each_with_index do |attrs, index|
-  board.columns.find_or_create_by!(name: attrs[:name]) do |c|
-    c.position = index
-    c.archetype = attrs[:archetype]
-    c.policy = attrs[:policy]
-  end
-end
+board.install_default_columns! if board.columns.none?
 
 puts "Seeded board '#{board.name}' with #{board.columns.count} columns."

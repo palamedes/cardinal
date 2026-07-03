@@ -17,6 +17,12 @@ class BoardBootstrapTest < ActiveSupport::TestCase
       assert_equal "git@example.com:o/r.git", board.repo_url
       assert_equal %w[inbox planning execution review review terminal], board.columns.pluck(:archetype)
       assert_equal dir, board.local_path
+
+      # accepts_from_names resolved to real sibling ids on the new board
+      tasks = board.columns.find_by!(name: "Tasks")
+      expected = board.columns.where(name: %w[Planning Review QA Done]).pluck(:id).map(&:to_s)
+      assert_equal expected.sort, Array(tasks.policy["accepts_from"]).sort
+      assert_nil tasks.policy["accepts_from_names"]
     end
   end
 end
