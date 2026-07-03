@@ -3,7 +3,7 @@ require "test_helper"
 class WorkspaceTest < ActiveSupport::TestCase
   setup do
     @board = create_board
-    @card = create_card(@board, "execution", branch_name: "cardinal/1-test")
+    @card = create_card(@board, "execution", status: "queued", branch_name: "cardinal/1-test")
   end
 
   test "defaults to the local strategy" do
