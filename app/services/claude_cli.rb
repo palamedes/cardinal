@@ -17,17 +17,22 @@ module ClaudeCli
     @available = system("which claude > /dev/null 2>&1")
   end
 
-  def self.prompt(text, system: nil, model: nil)
+  # tools: comma-separated read-only tool list (e.g. "Read,Glob,Grep") with
+  # cwd pointing at the repo — lets the assistant tier ground itself in code.
+  # Default remains tool-less single-turn.
+  def self.prompt(text, system: nil, model: nil, tools: nil, cwd: nil, max_turns: 1)
     raise Error, "claude CLI not found on PATH" unless available?
 
-    cmd = ["claude", "-p", text, "--output-format", "json", "--max-turns", "1", "--tools", ""]
+    cmd = ["claude", "-p", text, "--output-format", "json",
+           "--max-turns", max_turns.to_s, "--tools", tools.presence || ""]
     cmd += ["--append-system-prompt", system] if system.present?
     cmd += ["--model", model] if model.present?
 
     env = STRIP_ENV.index_with { nil }
     env["ANTHROPIC_API_KEY"] = nil if ENV["ANTHROPIC_API_KEY"].blank?
 
-    out, err, status = Open3.capture3(env, *cmd)
+    spawn_opts = cwd.present? && Dir.exist?(cwd) ? { chdir: cwd } : {}
+    out, err, status = Open3.capture3(env, *cmd, **spawn_opts)
     raise Error, "claude exited #{status.exitstatus}: #{err.presence&.truncate(200) || out.truncate(200)}" unless status.success?
 
     json = JSON.parse(out)

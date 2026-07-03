@@ -22,8 +22,11 @@ class AssistantReplyJob < ApplicationJob
     end
 
     prompt = kickoff ? KICKOFF_TURN : transcript_prompt(card)
+    repo = card.board.local_path.presence
     reply = ClaudeCli.prompt(prompt, system: system_prompt(card),
-                             model: card.column.model.presence || FALLBACK_MODEL)
+                             model: card.column.model.presence || FALLBACK_MODEL,
+                             tools: repo ? "Read,Glob,Grep" : nil,
+                             cwd: repo, max_turns: repo ? 10 : 1)
     card.log!("assistant_message", actor: "assistant", text: reply) if reply.present?
   rescue ClaudeCli::Error => e
     card.log!("error", text: "Planning assistant error: #{e.message}")
@@ -44,6 +47,11 @@ class AssistantReplyJob < ApplicationJob
       acceptance criteria. Be concise and concrete — a few sentences or a short list per \
       reply. When the card feels well-defined, offer a short "Ready for execution" brief \
       summarizing goal, scope, and acceptance criteria.
+
+      #{"You have READ-ONLY access to the board's repository (Read/Glob/Grep; you are in \
+      its root). Ground your questions and advice in the actual code whenever relevant — \
+      check what exists before asking about it. Never promise to look at something later: \
+      you cannot act between replies, so look NOW, within this turn, then answer." if card.board.local_path.present?}
     PROMPT
   end
 
