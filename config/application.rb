@@ -14,12 +14,30 @@ require "action_view/railtie"
 require "action_cable/engine"
 require "rails/test_unit/railtie"
 
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
-Bundler.require(*Rails.groups)
+# Stdlib the app leans on — explicit because installed-gem mode has no
+# Bundler incidentally loading these.
+require "open3"
+require "fileutils"
+require "securerandom"
+
+if ENV["CARDINAL_GEM"] == "1"
+  # Installed-gem mode: no Bundler — load what Bundler.require would have.
+  %w[propshaft importmap-rails turbo-rails stimulus-rails redcarpet sqlite3].each { |g| require g }
+else
+  # Require the gems listed in Gemfile, including any gems
+  # you've limited to :test, :development, or :production.
+  Bundler.require(*Rails.groups)
+end
 
 module Cardinal
   class Application < Rails::Application
+    # Portable instances (§16): the engine/gem directory is read-only — the
+    # log joins the rest of the instance state in the target's .cardinal/.
+    # (Set here, not in an initializer: the logger is built before those run.)
+    if ENV["CARDINAL_DATA_DIR"].present?
+      config.paths["log"] = File.join(File.expand_path(ENV["CARDINAL_DATA_DIR"]), "cardinal.log")
+    end
+
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
 

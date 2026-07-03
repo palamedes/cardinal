@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# cardinal — spin up a Cardinal AI board for the repo you're standing in.
+#
+#   cardinal            # or `cardinal up` — first run links a Claude account
+#   cardinal login      # redo the account link (switch accounts)
+#   cardinal logout     # unlink this instance's account
+#
+# Each instance carries its OWN Claude identity, stored in ./.cardinal/claude/.
+# Escape hatch: CARDINAL_INHERIT_AUTH=1 uses the machine's claude login.
+# Everything lives in ./.cardinal/ — hidden from the host repo via
+# .git/info/exclude, never committed.
+
+require "fileutils"
+
+HOME_DIR = File.expand_path("..", __dir__)
+TARGET = Dir.pwd
+AUTH_DIR = File.join(TARGET, ".cardinal", "claude")
+TOKEN_FILE = File.join(AUTH_DIR, "oauth-token")
+
+def say(msg) = puts("cardinal ▸ #{msg}")
+def die(msg) = abort("cardinal: #{msg}")
+
+cmd = ARGV[0] || "up"
+die "#{TARGET} is not a git repository" unless File.directory?(File.join(TARGET, ".git"))
+
+case cmd
+when "logout"
+  FileUtils.rm_rf(AUTH_DIR)
+  say "account unlinked for #{File.basename(TARGET)}"
+  exit 0
+when "login"
+  FileUtils.rm_f(TOKEN_FILE)
+when "up" # continue
+else
+  die "usage: cardinal [up|login|logout]"
+end
+
+# Hide .cardinal/ from the host repo without touching its .gitignore.
+exclude = File.join(TARGET, ".git", "info", "exclude")
+FileUtils.mkdir_p(File.dirname(exclude))
+unless File.exist?(exclude) && File.readlines(exclude).any? { |l| l.strip == ".cardinal/" }
+  File.open(exclude, "a") { |f| f.puts ".cardinal/" }
+end
+FileUtils.mkdir_p(File.join(TARGET, ".cardinal", "tmp"))
+
+# ── Per-instance Claude identity ────────────────────────────────────────────
+if ENV["CARDINAL_INHERIT_AUTH"] == "1"
+  say "using this machine's claude login (CARDINAL_INHERIT_AUTH=1)"
+  ENV["CARDINAL_AUTH"] = "inherited"
+else
+  unless File.size?(TOKEN_FILE)
+    say "no Claude account is linked to this board yet"
+    say "starting the account link — pick the account this board should work as"
+    FileUtils.mkdir_p(AUTH_DIR)
+    File.chmod(0o700, AUTH_DIR)
+
+    # setup-token is interactive (browser hop, sometimes a pasted code):
+    # stream its output to the terminal while capturing it for the token.
+    buffer = +""
+    reader, writer = IO.pipe
+    pid = spawn({ "CLAUDE_CONFIG_DIR" => AUTH_DIR }, "claude", "setup-token",
+                out: writer, err: writer)
+    writer.close
+    begin
+      loop do
+        chunk = reader.readpartial(4096)
+        $stdout.write(chunk)
+        $stdout.flush
+        buffer << chunk
+      end
+    rescue EOFError
+      # stream ended
+    end
+    Process.wait(pid)
+    die "account link failed — try again, or CARDINAL_INHERIT_AUTH=1 to use the machine login" unless $?.success?
+
+    token = buffer.scan(/sk-ant-[A-Za-z0-9_\-]+/).last
+    die "no token found in setup output" unless token
+    File.write(TOKEN_FILE, token)
+    File.chmod(0o600, TOKEN_FILE)
+    say "account linked (stored in .cardinal/claude/, local-only)"
+  end
+  ENV["CLAUDE_CONFIG_DIR"] = AUTH_DIR
+  ENV["CLAUDE_CODE_OAUTH_TOKEN"] = File.read(TOKEN_FILE).strip
+  ENV["CARDINAL_AUTH"] = "dedicated"
+end
+
+ENV["CARDINAL_GEM"] = "1"
+ENV["RAILS_ENV"] ||= "development"
+ENV["CARDINAL_TARGET_REPO"] = TARGET
+ENV["CARDINAL_DATA_DIR"] = File.join(TARGET, ".cardinal")
+ENV["PORT"] ||= "4000"
+
+say "board for #{File.basename(TARGET)} — data in .cardinal/, ui on http://localhost:#{ENV["PORT"]}"
+
+Dir.chdir(HOME_DIR)
+system(RbConfig.ruby, File.join(HOME_DIR, "bin", "rails"), "db:prepare") || die("database preparation failed")
+if ENV["CARDINAL_NO_SERVER"] == "1"
+  say "prepared (no-server mode)"
+  exit 0
+end
+
+# Boot puma directly (not `rails server`, which insists on creating tmp/
+# scaffolding inside the engine/gem directory — read-only for sudo installs).
+ENV["PIDFILE"] = File.join(TARGET, ".cardinal", "tmp", "server.pid")
+ENV["CARDINAL_SWEEPER"] = "1" # the sweeper initializer keys off Rails::Server otherwise
+exec(RbConfig.ruby, "-S", "puma",
+     "-b", "tcp://0.0.0.0:#{ENV["PORT"]}",
+     File.join(HOME_DIR, "config.ru"))
