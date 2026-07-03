@@ -4,7 +4,8 @@
       <span class="card-number">#<%= card.number %></span> <%= card.title %>
       <span class="status-glyph"><%= { "working" => "⚡", "needs_input" => "❓", "failed" => "✖",
                                        "work_complete" => "✅", "done" => "✓", "queued" => "⏳",
-                                       "discussing" => "💬" }[card.status] %></span>
+                                       "discussing" => "💬", "in_review" => "👁", "approved" => "👍",
+                                       "changes_requested" => "🔁" }[card.status] %></span>
     </div>
     <% if card.queued? %>
       <% ahead = card.column.cards.where(status: "queued").where("position < ?", card.position).count %>
@@ -13,6 +14,10 @@
       <p class="card-progress working-line"><span class="spinner"></span> <%= card.latest_progress || "agent starting…" %></p>
     <% elsif card.latest_progress && card.running? %>
       <p class="card-progress">▸ <%= card.latest_progress %></p>
+    <% elsif card.approved? %>
+      <p class="card-progress approved-text">👍 approved — drag to Done to ship</p>
+    <% elsif card.changes_requested? %>
+      <p class="card-progress attention-text">🔁 changes requested</p>
     <% elsif card.needs_attention? %>
       <p class="card-progress attention-text"><%= card.status.humanize %></p>
     <% end %>

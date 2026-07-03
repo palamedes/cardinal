@@ -207,6 +207,10 @@ body.dragging .drop-hint { display: block; }
 .card.status-failed .attention-text { color: var(--red); font-weight: 600; }
 .card.status-work_complete { border-color: var(--green); }
 .card.status-work_complete .attention-text { color: var(--green); font-weight: 600; }
+.card.status-in_review { border-color: var(--blue); }
+.card.status-approved { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+.card.status-approved .approved-text { color: var(--green); font-weight: 600; }
+.card.status-changes_requested { border-color: var(--amber); border-style: dashed; }
 .card.status-done, .card.status-archived { opacity: .55; }
 
 @keyframes breathe {
