@@ -32,6 +32,10 @@ class AssistantReplyJob < ApplicationJob
 
   private
 
+  # Invariant: the assistant's session must never hold less of the timeline
+  # than the user's screen shows. Kickoffs seed ALL prior conversation (notes
+  # made before Planning included); resumes send everything said since the
+  # assistant's last reply, not just the latest message.
   def converse(card, kickoff:)
     repo = card.board.local_path.presence
     common = { model: card.column.model.presence || FALLBACK_MODEL,
@@ -40,20 +44,30 @@ class AssistantReplyJob < ApplicationJob
 
     if !kickoff && card.assistant_session_id.present?
       begin
-        # Continuing conversation: just the new message — the session already
-        # holds the system prompt, the history, and everything it explored.
-        return ClaudeCli.prompt(latest_user_message(card), resume: card.assistant_session_id, **common)
+        return ClaudeCli.prompt(unheard_messages(card), resume: card.assistant_session_id, **common)
       rescue ClaudeCli::Error
         card.update!(assistant_session_id: nil) # stale/expired — start fresh below
       end
     end
 
-    ClaudeCli.prompt(kickoff ? KICKOFF_TURN : transcript_prompt(card),
-                     system: system_prompt(card), **common)
+    opener = kickoff ? kickoff_prompt(card) : transcript_prompt(card)
+    ClaudeCli.prompt(opener, system: system_prompt(card), **common)
   end
 
-  def latest_user_message(card)
-    card.events.where(kind: "user_message").order(:id).last&.text.to_s
+  def kickoff_prompt(card)
+    prior = conversation_turns(card)
+    return KICKOFF_TURN if prior.empty?
+    "#{KICKOFF_TURN}\n\nThe card already carries conversation/notes from before it " \
+    "entered Planning — treat these as things I have already told you:\n\n#{prior.join("\n\n")}"
+  end
+
+  # Everything the user said since the assistant last spoke — never just the
+  # latest message (bursts and between-column notes must not be dropped).
+  def unheard_messages(card)
+    last_reply_id = card.events.where(kind: "assistant_message").maximum(:id) || 0
+    texts = card.events.where(kind: "user_message").where("id > ?", last_reply_id)
+                .order(:id).filter_map(&:text)
+    texts.presence&.join("\n\n") || card.events.where(kind: "user_message").order(:id).last&.text.to_s
   end
 
   def system_prompt(card)
@@ -77,14 +91,17 @@ class AssistantReplyJob < ApplicationJob
     PROMPT
   end
 
-  def transcript_prompt(card)
-    turns = card.events.where(kind: %w[user_message assistant_message]).last(30).map do |event|
+  def conversation_turns(card)
+    card.events.where(kind: %w[user_message assistant_message]).last(30).map do |event|
       "#{event.kind == "user_message" ? "User" : "You"}: #{event.text}"
     end
+  end
+
+  def transcript_prompt(card)
     <<~PROMPT
       Conversation so far:
 
-      #{turns.join("\n\n")}
+      #{conversation_turns(card).join("\n\n")}
 
       Reply to the user's latest message as the planning assistant. Output only your reply.
     PROMPT
