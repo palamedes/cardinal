@@ -671,6 +671,16 @@ recorded PID. WIP limits enforced at job start; a finishing run kicks the next q
 Proven end-to-end 2026-07-03: card #4 ("Document what a Cardinal worker agent is") →
 queued → working → work_complete, one scoped commit, draft PR #2, $0.08 on Sonnet.
 
-Known gaps (next passes): `needs_input` round-trips (session resume), plan-approval gate,
-run heartbeats + a sweeper for dead runners (an interrupted dev process left a stuck
-"running" run — the failure mode §11 predicted), per-card cage containers, merge-on-Done.
+All v1 gaps closed overnight 2026-07-03→04: heartbeats + RunSweeper (dead runs reaped,
+stuck cards repaired, queues re-kicked); `needs_input` round-trips via claude session
+resume (QUESTION: protocol); plan-approval gate (read-only plan phase → approve/redirect →
+execute, same session); review loop (approve / request-changes → revision runs on the same
+branch); merge-on-Done (`gh pr ready` + squash-merge + branch delete as the terminal rule);
+gear modal is the real policy editor (including on_entry rules JSON); engine test suite
+(31 tests, subprocess stubbed); workspace strategy factory (Local default + experimental
+cage-style Container behind CARDINAL_WORKSPACE=container, docker/agent image);
+**`bin/cardinal` (`cardinal up`)** — portable per-repo instances per §16 with
+.git/info/exclude hiding, per-target `.cardinal/` data dir, and first-run
+`Board.bootstrap!` (credential-sanitized origin URL). Lifecycle proven live twice:
+PR #2 (docs card: work → review → revision → approve → Done → squash-merged to main) and
+PR #3 (motto card: plan → approve → QUESTION → answer → work_complete).

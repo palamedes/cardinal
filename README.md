@@ -17,10 +17,13 @@ assigning the work, supervising it, and shipping it.
 
 ## Status
 
-Early development. Working today: the board UI (drag-and-drop columns-as-policies, card
-modals, live sync), the full domain model, and the card transition engine. In flight: the
-planning assistant, the agent runner, and the `cardinal` CLI. The design document —
-architecture, decisions, and roadmap — lives in [cardinal.md](cardinal.md).
+Early but real: the full card lifecycle works end to end. Cards become agents in
+execution columns (plan approval → work → questions back to you → draft PR), you review
+and request changes (revision runs on the same branch), and dragging to Done squash-merges
+the PR. Column rules, one-shot AI maintenance agents, a policy editor behind every
+column's gear icon, run heartbeats + sweeping, and `cardinal up` for spinning a board up
+inside any repo. PRs #2 and #3 of this very repo were written by Cardinal cards. The
+design document — architecture, decisions, roadmap — lives in [cardinal.md](cardinal.md).
 
 ## Stack
 
