@@ -384,7 +384,21 @@ without touching the product model.
 
 (Resolved questions move to the decision log, §15.)
 
-_None currently — next open items will come out of implementation._
+All current open questions concern the portable-instance direction (§16):
+
+1. **Adopt §16 at all?** It reshapes deployment (engine + per-repo instances) but barely
+   touches the domain model. Recommendation: yes, and soon — it's cheap now, expensive later.
+2. **SQLite vs Postgres.** If Cardinal spins up per-repo like cage, a per-instance SQLite
+   file (gitignored inside `.cardinal/`) removes the Postgres service dependency entirely;
+   Rails 8's Solid* stack is SQLite-first. Recommendation: switch now, before more schema
+   accumulates.
+3. **Commit policy for `.cardinal/` files.** Every drag = a file change; auto-committing
+   would spam history. Recommendation: Cardinal writes the files but never commits them —
+   they ride along in the user's normal commits; optional auto-commit-on-card-completion
+   later.
+4. **What lives in the card file vs. only in the DB?** Recommendation: identity, column,
+   status, tags, branch/PR, description, and final reports in the file (durable, greppable,
+   reviewable); the full event stream / tool logs stay DB-only as operational telemetry.
 
 ---
 
@@ -581,3 +595,50 @@ admin surface.
   (5) review surface = in-card final report + file-level diff summary, deep link to the
   GitHub PR for line-level review. Scaffolding started: Rails 8 + Ruby 3.4 (Fullstaq) +
   Postgres 15 inside the cage container, repo at github.com/palamedes/cardinal.
+
+---
+
+## 16. Portable instances: Cardinal as a tool you point at any repo (proposed)
+
+**The idea (raised 2026-07-03):** Cardinal lives in its own repo as the *engine*, but you
+instantiate it inside any repo — like cage. The board's durable state lives in that repo
+as `.cardinal/` files, so every repo can carry its own Cardinal board, versioned with the
+code it describes.
+
+### Shape
+
+```
+any-repo/
+ ├── .cardinal/
+ │    ├── board.yml          # committed: columns, archetypes, policies
+ │    ├── cards/
+ │    │    ├── 14-add-rate-limiting.md   # committed: one file per card
+ │    │    └── 17-webhook-retries.md
+ │    └── cardinal.db        # gitignored: SQLite runtime (events, runs, sessions)
+ └── src/...
+```
+
+- `cardinal up` (CLI, cage-style) in any repo → boots the engine in a container against
+  that repo, reads `.cardinal/`, serves the board on a local port.
+- **Card file** = frontmatter (number, column, status, tags, branch, pr_url) + markdown
+  body (description, planning brief, final reports). Greppable, hand-editable, reviewable
+  in PRs, survives any database.
+- **Sync rule — one direction at a time:** at boot, files are the source of truth (DB
+  rebuilt/reconciled from them); at runtime, the DB is authoritative and Cardinal flushes
+  card/board changes back to the files as ordinary working-tree edits. Cardinal never
+  commits them itself (§12.3 recommendation) — they ride along in normal commits.
+- The **event stream, tool logs, and run telemetry stay in the DB only.** They are
+  operational exhaust, not repo content; final reports are the durable distillate that
+  lands in the card file.
+
+### What this changes — and what it doesn't
+
+- **Unchanged:** the entire domain model (§2), lifecycle (§3), runner design (§11),
+  column-as-policy (§1). `Board.repo_url` simply becomes "the repo I'm sitting in."
+- **Changed:** deployment (hosted app → per-repo instances), datastore (Postgres →
+  per-instance SQLite, proposed), and "multiple boards" gets a natural answer: one board
+  per repo, no multi-board UI needed at all.
+- **Gained:** board state is versioned, portable, diffable; a repo is "cardinal-enabled"
+  by committing `.cardinal/`; teammates get the board by cloning.
+- **Tension to manage:** two representations of a card (file + DB row) means sync
+  discipline matters; the one-direction-at-a-time rule above is the guard.
