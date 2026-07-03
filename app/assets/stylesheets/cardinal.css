@@ -509,7 +509,7 @@ body.dragging .drop-hint { display: block; }
 [data-theme="light"] .card-footer { background: #e2e5ea; border-top-color: rgba(0, 0, 0, .1); }
 
 /* Accept-policy visibility while dragging + rejected-drop flash */
-.column.drop-blocked { opacity: .45; }
+.column.drop-blocked { opacity: .35; filter: grayscale(.5) brightness(.7); transition: opacity .15s, filter .15s; }
 .column.drop-blocked .drop-hint { color: var(--red); }
 .column.drop-blocked .drop-hint::before { content: "✗ won't accept from here — "; }
 
