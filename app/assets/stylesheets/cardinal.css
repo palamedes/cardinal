@@ -259,13 +259,14 @@ body.dragging .drop-hint { display: block; }
   color: var(--text-dim); font-size: 10px; font-style: italic; font-weight: 600;
   text-transform: none; vertical-align: middle;
 }
-.info:hover { color: var(--text); border-color: var(--text-dim); }
-.info:hover::after {
-  content: attr(data-tip);
-  position: absolute; left: 50%; bottom: 140%; transform: translateX(-50%);
-  width: 240px; z-index: 40;
+.info:hover, .info:focus { color: var(--text); border-color: var(--text-dim); outline: none; }
+
+.tooltip-pop {
+  position: fixed; z-index: 100; max-width: 260px;
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
   padding: 8px 10px; color: var(--text);
   font-size: 12px; font-style: normal; font-weight: 400;
   letter-spacing: 0; text-transform: none; line-height: 1.4; white-space: normal;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
+  pointer-events: none;
 }

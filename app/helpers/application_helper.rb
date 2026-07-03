@@ -14,6 +14,9 @@ module ApplicationHelper
   end
 
   def info_tip(text)
-    tag.span("i", class: "info", data: { tip: text })
+    tag.span("i", class: "info",
+             data: { controller: "tooltip", tooltip_text_value: text,
+                     action: "mouseenter->tooltip#show mouseleave->tooltip#hide focus->tooltip#show blur->tooltip#hide" },
+             tabindex: 0)
   end
 end
