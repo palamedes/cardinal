@@ -6,27 +6,38 @@ class AssistantReplyJob < ApplicationJob
 
   FALLBACK_MODEL = "claude-haiku-4-5-20251001".freeze
 
-  def perform(card)
+  # kickoff: true generates the opening message when a card enters planning —
+  # the assistant reads the card and asks its sharpest clarifying questions.
+  def perform(card, kickoff: false)
     unless ENV["ANTHROPIC_API_KEY"].present?
       card.log!("assistant_message", actor: "assistant",
-                text: "I can't reach the Claude API — set ANTHROPIC_API_KEY in Cardinal's environment and message me again.")
+                text: kickoff ? "I'm here to help shape this card. What's the goal, and how will we know it's done?" \
+                              : "I can't reach the Claude API — set ANTHROPIC_API_KEY in Cardinal's environment and message me again.")
       return
     end
 
-    card.log!("assistant_message", actor: "assistant", text: request_reply(card))
+    card.log!("assistant_message", actor: "assistant", text: request_reply(card, kickoff:))
   rescue Anthropic::Errors::APIError => e
     card.log!("error", text: "Planning assistant error: #{e.message}")
   end
 
   private
 
-  def request_reply(card)
+  KICKOFF_TURN = <<~MSG.freeze
+    This card just entered the Planning column. Open the discussion: greet me in one short
+    sentence, then ask the 2-3 most important clarifying questions that would make THIS
+    card execution-ready. Be specific to the card's actual content — never generic. If the
+    card is already crystal clear, say so and propose a "Ready for execution" brief instead.
+  MSG
+
+  def request_reply(card, kickoff: false)
     client = Anthropic::Client.new
+    messages = kickoff ? [{ role: "user", content: KICKOFF_TURN }] : conversation(card)
     response = client.messages.create(
       model: card.column.model.presence || FALLBACK_MODEL,
       max_tokens: 1024,
       system_: system_prompt(card),
-      messages: conversation(card)
+      messages: messages
     )
     response.content.filter_map { |block| block.text if block.type == :text }.join("\n")
   end

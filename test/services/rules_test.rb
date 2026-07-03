@@ -5,10 +5,20 @@ class RulesTest < ActiveSupport::TestCase
     @board = create_board
   end
 
-  test "planning default posts the assistant greeting" do
+  test "planning default enqueues the assistant kickoff" do
     card = create_card(@board)
-    Rules.fire_entry(card, column(@board, "planning"))
-    assert_equal 1, card.events.where(kind: "assistant_message").count
+    assert_enqueued_with(job: AssistantReplyJob) do
+      Rules.fire_entry(card, column(@board, "planning"))
+    end
+  end
+
+  test "assistant kickoff without an API key posts the canned greeting" do
+    original = ENV.delete("ANTHROPIC_API_KEY")
+    card = create_card(@board)
+    AssistantReplyJob.perform_now(card, kickoff: true)
+    assert_match(/help shape this card/, card.events.where(kind: "assistant_message").last.text)
+  ensure
+    ENV["ANTHROPIC_API_KEY"] = original if original
   end
 
   test "terminal default with a PR enqueues the merge job" do
@@ -40,8 +50,9 @@ class RulesTest < ActiveSupport::TestCase
     col = column(@board, "inbox")
     col.update!(policy: { "on_entry" => "assistant_greeting" })
     card = create_card(@board)
-    Rules.fire_entry(card, col)
-    assert_equal 1, card.events.where(kind: "assistant_message").count
+    assert_enqueued_with(job: AssistantReplyJob) do
+      Rules.fire_entry(card, col)
+    end
   end
 
   test "unknown rule logs an error event instead of raising" do

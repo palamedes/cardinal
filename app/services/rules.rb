@@ -23,8 +23,9 @@ module Rules
   def self.apply(rule, card, column)
     case rule["action"]
     when "assistant_greeting"
-      card.log!("assistant_message", actor: "assistant",
-                text: "I'm here to help shape this card. What's the goal, and how will we know it's done?")
+      # Contextual opener: the assistant reads the card and asks targeted
+      # questions (AssistantReplyJob falls back to a canned line without a key).
+      AssistantReplyJob.perform_later(card, kickoff: true)
     when "start_agent_run"
       card.update!(branch_name: card.branch_name.presence || card.default_branch_name)
       card.log!("status_change", text: "Queued for execution on #{card.branch_name}")
