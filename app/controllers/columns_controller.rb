@@ -71,7 +71,12 @@ class ColumnsController < ApplicationController
   end
 
   def destroy
-    if @column.cards.none?
+    if @column.inbox?
+      # The Tasks/inbox column is the board's intake — cards enter the flow here
+      # to be triaged. It can never be deleted (card #17).
+      @json_error = "The Tasks column is the board's intake and can't be deleted."
+      render :edit, status: :unprocessable_entity
+    elsif @column.cards.none?
       @column.destroy!
       redirect_to root_path
     else
