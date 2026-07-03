@@ -8,7 +8,7 @@
           <span class="card-number-sub" title="Card number — how branches, PRs, and other cards refer to this card">#<%= @card.number %></span>
         </h1>
         <div class="modal-header-right">
-          <% if @card.branch_name %>
+          <% if @card.branch_name.present? %>
             <span class="git-line">
               <span class="branch-base"><%= @card.board.default_branch %></span>
               <span class="git-arrow">→</span>
@@ -17,7 +17,7 @@
                 <button type="button" class="copy-btn" data-clipboard-target="button"
                         data-action="clipboard#copy" title="Copy branch name">⧉</button>
               </span>
-              <% if @card.pr_url %>
+              <% if @card.pr_url.present? %>
                 <span class="git-arrow">→</span>
                 <%= link_to "##{@card.pr_url[%r{/pull/(\d+)}, 1]}", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-link" %>
                 <% if @card.pr_state.present? %><span class="pr-state">(<%= @card.pr_state %>)</span><% end %>
@@ -113,7 +113,7 @@
 
           <% if @card.column.review? %>
             <h3>Review</h3>
-            <% if @card.pr_url %>
+            <% if @card.pr_url.present? %>
               <%= link_to "View Pull Request", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-view-btn" %>
             <% end %>
             <% if @card.in_review? %>
@@ -168,7 +168,7 @@
                 </li>
               <% end %>
             </ul>
-            <% if @card.pr_url %>
+            <% if @card.pr_url.present? %>
               <p>🌿 <%= link_to "View pull request", @card.pr_url, target: "_blank" %><%= " (#{@card.pr_state})" if @card.pr_state.present? %></p>
             <% end %>
           <% else %>

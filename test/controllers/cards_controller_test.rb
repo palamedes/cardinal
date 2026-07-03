@@ -39,6 +39,20 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "cardinal/1-thing", card.branch_name
     assert_equal "https://github.com/o/r/pull/7", card.pr_url
   end
+
+  # The optional git fields left blank on the new-card form must not create a
+  # half-real PR: "" would render a "GitHub #" footer with no number.
+  test "create with blank git fields stores nil, and the card face shows no PR footer" do
+    post cards_path, params: { card: { title: "no git", branch_name: "", pr_url: "  " } }
+    card = @board.cards.find_by!(title: "no git")
+    assert_nil card.branch_name
+    assert_nil card.pr_url
+
+    get root_path
+    face = css_select("[data-card-id='#{card.number}']").first
+    assert face, "card face should render"
+    assert_empty face.css(".card-footer"), "blank pr_url must not render a PR footer"
+  end
 end
 
 class CardGitFieldsTest < ActionDispatch::IntegrationTest

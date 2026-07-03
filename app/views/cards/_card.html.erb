@@ -36,10 +36,10 @@
       <% end %>
       <% if card.parent_id %><span class="chip">↑ sub</span><% end %>
       <% if card.children.any? %><span class="chip">↳ <%= card.children.where(status: %w[done archived]).count %>/<%= card.children.count %></span><% end %>
-      <% if card.branch_name && card.pr_url.blank? %><span class="chip branch">🌿 <%= card.branch_name.delete_prefix("cardinal/") %></span><% end %>
+      <% if card.branch_name.present? && card.pr_url.blank? %><span class="chip branch">🌿 <%= card.branch_name.delete_prefix("cardinal/") %></span><% end %>
     </div>
   <% end %>
-  <% if card.pr_url %>
+  <% if card.pr_url.present? %>
     <a class="card-footer" href="<%= card.pr_url %>" target="_blank" rel="noopener" title="Open the pull request on GitHub">
       <span class="footer-left"><%# future: Asana / Trello / linked-ticket slot %></span>
       <span class="footer-pr">GitHub #<%= card.pr_url[%r{/pull/(\d+)}, 1] %> ↗</span>

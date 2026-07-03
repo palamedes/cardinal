@@ -29,6 +29,9 @@ class Card < ApplicationRecord
   validate :status_legal_for_column
 
   before_validation :assign_number_and_position, on: :create
+  # Optional git fields left blank on the new-card form arrive as "" — store
+  # them as nil so "no PR/branch" is one state, not two ("" renders footers).
+  normalizes :branch_name, :pr_url, with: ->(v) { v.strip.presence }
 
   after_commit -> { broadcast_refresh_to board }
 
