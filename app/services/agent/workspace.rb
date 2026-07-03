@@ -83,6 +83,10 @@ module Agent
         git_out(path, "log", "--oneline", "#{sha}..HEAD").lines.map(&:strip)
       end
 
+      def ahead_of_default?
+        git_out(path, "rev-list", "--count", "origin/#{card.board.default_branch}..HEAD").strip.to_i.positive?
+      end
+
       def push!
         git!(path, "push", "--quiet", "-u", "origin", card.branch_name)
       end

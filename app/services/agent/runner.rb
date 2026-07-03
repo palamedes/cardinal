@@ -203,6 +203,11 @@ module Agent
         ensure_pull_request(workspace)
         run.artifacts.create!(kind: "pull_request", name: "PR for #{card.branch_name}",
                               payload: { url: card.pr_url, commits: commits })
+      elsif card.pr_url.blank? && workspace.ahead_of_default?
+        # No new commits this run, but the branch carries earlier work (e.g. a
+        # salvage commit) that still needs a PR.
+        workspace.push!
+        ensure_pull_request(workspace)
       end
 
       run.update!(status: "succeeded", finished_at: Time.current,
