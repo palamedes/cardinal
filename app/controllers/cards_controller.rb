@@ -36,6 +36,14 @@ class CardsController < ApplicationController
               when "activity" then @card.events.activity
               else @card.events
               end
+
+    # A frame navigation (opening the modal from the board) only needs the modal
+    # frame. A direct visit — bookmark, reload, or history restore of /cards/:id —
+    # must render the whole board with the modal already open behind it.
+    unless turbo_frame_request?
+      @board = @card.board
+      render "boards/show"
+    end
   end
 
   def update
