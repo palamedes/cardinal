@@ -117,14 +117,25 @@
           <h3>Work</h3>
           <% runs = @card.runs.order(:id) %>
           <% parked = runs.select(&:needs_input?).last %>
+          <% latest = runs.last %>
           <% if parked&.phase == "plan" %>
             <div class="panel-callout callout-plan">
               <p><strong>Plan proposed.</strong> Approve to let the agent execute, or reply in the timeline to redirect.</p>
               <%= button_to "👍 Approve plan", approve_run_path(parked), class: "approve-btn", form_class: "align-right" %>
             </div>
+          <% elsif parked&.restartable? %>
+            <div class="panel-callout callout-restart">
+              <p><strong>Run hit its turn budget.</strong> Restart to continue with a fresh budget, or raise <strong>Max turns</strong> in the column's gear settings.</p>
+              <%= button_to "🔄 Restart run", restart_run_path(parked), class: "restart-btn", form_class: "align-right" %>
+            </div>
           <% elsif parked %>
             <div class="panel-callout callout-question">
               <p><strong>The agent has a question</strong> — answer it in the timeline message box.</p>
+            </div>
+          <% elsif latest&.failed? && latest.restartable? %>
+            <div class="panel-callout callout-restart">
+              <p><strong>Run failed on its budget.</strong> Restart to try again with a fresh budget, or raise the column's <strong>Max turns</strong> / timeout in its gear settings.</p>
+              <%= button_to "🔄 Restart run", restart_run_path(latest), class: "restart-btn", form_class: "align-right" %>
             </div>
           <% end %>
           <% if runs.any? %>
