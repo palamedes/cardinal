@@ -9,11 +9,20 @@ class Column < ApplicationRecord
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
-                 :max_turns, :tools, :on_entry, :on_success, :color, :arrivals
+                 :max_turns, :tools, :on_entry, :on_success, :color, :arrivals,
+                 :accepts_from
 
   # Only ever emit a validated hex color into inline styles.
   def safe_color
     color if color.to_s.match?(/\A#\h{6}\z/)
+  end
+
+  # Which columns may move cards INTO this one (§ accept policy, card #15).
+  # Stored as an array of column-id strings; blank = accept from anywhere, so
+  # existing boards keep their unrestricted behavior.
+  def accepts?(source_column)
+    ids = Array(accepts_from).map(&:to_s).reject(&:blank?)
+    ids.empty? || ids.include?(source_column.id.to_s)
   end
 
   # Start the next queued card when a run slot frees up. A queued card whose

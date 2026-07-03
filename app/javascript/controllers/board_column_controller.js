@@ -52,9 +52,26 @@ export default class extends Controller {
       // styling, ticker counts, queue positions.
       Turbo.renderStreamMessage(await response.text())
     } else {
+      // Server said no: snap the card back where it came from and flash a red
+      // border so the bounce reads as a rejection, not a glitch.
       event.from.insertBefore(event.item, event.from.children[event.oldIndex])
       const body = await response.json().catch(() => ({}))
-      if (body.error) alert(body.error)
+      this.flashRejected(event.item, body.error)
     }
+  }
+
+  flashRejected(card, message) {
+    // Surface the reason on hover for the life of the flash; the durable
+    // record lives in the card's event timeline.
+    const priorTitle = card.getAttribute("title")
+    if (message) card.setAttribute("title", message)
+    card.classList.remove("move-rejected")
+    // Force a reflow so re-adding the class restarts the animation.
+    void card.offsetWidth
+    card.classList.add("move-rejected")
+    card.addEventListener("animationend", () => {
+      card.classList.remove("move-rejected")
+      if (message) priorTitle ? card.setAttribute("title", priorTitle) : card.removeAttribute("title")
+    }, { once: true })
   }
 }
