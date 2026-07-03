@@ -9,7 +9,20 @@
         </h1>
         <div class="modal-header-right">
           <% if @card.branch_name %>
-            <span class="git-line">🌿 <%= @card.branch_name %><% if @card.pr_url %> → <%= link_to "PR", @card.pr_url, target: "_blank" %> (<%= @card.pr_state %>)<% end %></span>
+            <span class="git-line">
+              <span class="branch-base"><%= @card.board.default_branch %></span>
+              <span class="git-arrow">→</span>
+              <span class="branch-pill" data-controller="clipboard" data-clipboard-text-value="<%= @card.branch_name %>">
+                <code><%= @card.branch_name %></code>
+                <button type="button" class="copy-btn" data-clipboard-target="button"
+                        data-action="clipboard#copy" title="Copy branch name">⧉</button>
+              </span>
+              <% if @card.pr_url %>
+                <span class="git-arrow">→</span>
+                <%= link_to "##{@card.pr_url[%r{/pull/(\d+)}, 1]}", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-link" %>
+                <span class="pr-state">(<%= @card.pr_state %>)</span>
+              <% end %>
+            </span>
           <% end %>
           <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
         </div>
