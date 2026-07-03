@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# cardinal — spin up a Cardinal board for the repo you're standing in (§16).
+#
+#   cd ~/Projects/some-repo && cardinal        # or `cardinal up`
+#
+# The board, its database, and all agent workspaces live in ./.cardinal/,
+# which is hidden from the host repo via .git/info/exclude (never committed).
+# Symlink this script onto your PATH:  ln -s <cardinal-repo>/bin/cardinal ~/bin/
+set -euo pipefail
+
+CARDINAL_HOME="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+TARGET="$(pwd)"
+
+[ "${1:-up}" = "up" ] || { echo "usage: cardinal [up]"; exit 1; }
+
+if [ ! -d "$TARGET/.git" ]; then
+  echo "cardinal: $TARGET is not a git repository" >&2
+  exit 1
+fi
+
+# Hide .cardinal/ from the host repo without touching its .gitignore —
+# info/exclude is per-clone and invisible to collaborators.
+EXCLUDE="$TARGET/.git/info/exclude"
+mkdir -p "$(dirname "$EXCLUDE")"
+grep -qx "\.cardinal/" "$EXCLUDE" 2>/dev/null || echo ".cardinal/" >> "$EXCLUDE"
+mkdir -p "$TARGET/.cardinal"
+
+export CARDINAL_TARGET_REPO="$TARGET"
+export CARDINAL_DATA_DIR="$TARGET/.cardinal"
+export PORT="${PORT:-4000}"
+
+echo "cardinal ▸ board for $(basename "$TARGET") — data in .cardinal/, ui on http://localhost:$PORT"
+
+cd "$CARDINAL_HOME"
+bin/rails db:prepare
+[ "${CARDINAL_NO_SERVER:-}" = "1" ] && { echo "cardinal ▸ prepared (no-server mode)"; exit 0; }
+exec bin/rails server -b 0.0.0.0 -p "$PORT"

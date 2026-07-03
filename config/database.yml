@@ -7,7 +7,7 @@ default: &default
 
 development:
   <<: *default
-  database: .cardinal/cardinal.db
+  database: <%= ENV.fetch("CARDINAL_DATA_DIR", ".cardinal") %>/cardinal.db
 
 test:
   <<: *default
@@ -16,16 +16,16 @@ test:
 production:
   primary:
     <<: *default
-    database: .cardinal/cardinal.db
+    database: <%= ENV.fetch("CARDINAL_DATA_DIR", ".cardinal") %>/cardinal.db
   cache:
     <<: *default
-    database: .cardinal/cache.sqlite3
+    database: <%= ENV.fetch("CARDINAL_DATA_DIR", ".cardinal") %>/cache.sqlite3
     migrations_paths: db/cache_migrate
   queue:
     <<: *default
-    database: .cardinal/queue.sqlite3
+    database: <%= ENV.fetch("CARDINAL_DATA_DIR", ".cardinal") %>/queue.sqlite3
     migrations_paths: db/queue_migrate
   cable:
     <<: *default
-    database: .cardinal/cable.sqlite3
+    database: <%= ENV.fetch("CARDINAL_DATA_DIR", ".cardinal") %>/cable.sqlite3
     migrations_paths: db/cable_migrate
