@@ -422,6 +422,11 @@ body.dragging .drop-hint { display: block; }
 .callout-question { border: 1px solid var(--amber); background: rgba(217, 164, 65, .08); }
 .callout-restart { border: 1px solid var(--accent); background: rgba(201, 79, 79, .08); }
 .approve-btn { background: var(--green); }
+.pr-view-btn {
+  display: block; width: 100%; box-sizing: border-box; text-align: center;
+  background: var(--green); color: #fff; border-radius: 6px;
+  padding: 8px 12px; font-weight: 600; margin-bottom: 12px;
+}
 .restart-btn { background: var(--accent); }
 .align-right { display: flex; justify-content: flex-end; }
 .autosave-status { font-size: 11px; color: var(--green); text-transform: none; letter-spacing: 0; margin-left: 6px; }
