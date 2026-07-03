@@ -37,3 +37,4 @@
 .github/workflows/
 /.cardinal/*
 !/.cardinal/.gitkeep
+*.gem
