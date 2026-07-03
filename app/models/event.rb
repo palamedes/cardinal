@@ -30,5 +30,10 @@ class Event < ApplicationRecord
   after_create_commit -> { card.broadcast_refresh_to card.board },
                       if: -> { %w[progress run_started run_finished].include?(kind) }
 
+  # These kinds mean the AI has delivered what the typing indicator promised.
+  RESOLVES_THINKING = %w[assistant_message final_report question plan_proposed error].freeze
+  after_create_commit -> { broadcast_remove_to card, target: "typing-indicator" },
+                      if: -> { RESOLVES_THINKING.include?(kind) }
+
   def text = payload["text"]
 end

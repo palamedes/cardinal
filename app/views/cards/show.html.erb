@@ -35,6 +35,13 @@
             <% end %>
           </div>
 
+          <% if @card.thinking? %>
+            <div class="event typing" id="typing-indicator">
+              <span class="event-actor"><%= @card.working? ? "🤖" : "🪶" %></span>
+              <div class="typing-dots"><span></span><span></span><span></span></div>
+            </div>
+          <% end %>
+
           <%= form_with url: card_messages_path(@card), class: "message-form" do |f| %>
             <%= f.text_area "message[text]", rows: 2, required: true,
                   placeholder: @card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…" %>

@@ -40,6 +40,19 @@ class Card < ApplicationRecord
     events.where(kind: "progress").last&.payload&.[]("text")
   end
 
+  # Is the planning assistant expected to post next? True right after entering
+  # a planning column (kickoff inspection pending) or after a user message.
+  def awaiting_assistant?
+    return false unless column.planning?
+    last = events.where(kind: %w[user_message assistant_message error column_move]).order(:id).last
+    last.present? && %w[user_message column_move].include?(last.kind)
+  end
+
+  # Some AI is expected to write to this card imminently.
+  def thinking?
+    awaiting_assistant? || working?
+  end
+
   def default_branch_name
     "cardinal/#{number}-#{title.parameterize[0, 40]}"
   end
