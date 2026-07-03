@@ -53,4 +53,37 @@ class ColumnFooterTest < ActiveSupport::TestCase
     @col.update!(policy: @col.policy.merge("footer" => [{ "label" => "", "compute" => "" }]))
     assert_equal [], @col.footer_rows
   end
+
+  test "an AI column appends its active model as a final row" do
+    @col.update!(policy: @col.policy.merge("model" => "claude-sonnet-4-6"))
+    assert_equal [{ label: "Model:", value: "sonnet" }], @col.footer_rows
+  end
+
+  test "the model row follows the configured footer rows" do
+    @col.update!(policy: @col.policy.merge(
+      "model"  => "claude-sonnet-4-6",
+      "footer" => [{ "label" => "Cards:", "compute" => "count_cards" }]
+    ))
+    assert_equal [
+      { label: "Cards:", value: "0" },
+      { label: "Model:", value: "sonnet" }
+    ], @col.footer_rows
+  end
+
+  test "a non-AI column shows no model row" do
+    @col.update!(policy: @col.policy.merge("model" => "claude-sonnet-4-6", "ai" => false))
+    assert_equal [], @col.footer_rows
+  end
+
+  test "the inbox never shows a model row" do
+    inbox = column(@board, "inbox")
+    inbox.update!(policy: inbox.policy.merge("model" => "claude-sonnet-4-6"))
+    assert_equal [], inbox.footer_rows
+  end
+
+  test "an AI column with no model adds no model row" do
+    assert_predicate @col, :ai?
+    assert_nil @col.model
+    assert_equal [], @col.footer_rows
+  end
 end

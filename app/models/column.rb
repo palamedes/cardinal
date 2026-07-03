@@ -68,12 +68,17 @@ class Column < ApplicationRecord
   # static label text with an optional computed aggregate over this column's
   # cards. Returns [] when unconfigured, so existing columns render no footer.
   def footer_rows
-    Array(footer).filter_map do |row|
+    rows = Array(footer).filter_map do |row|
       label = row["label"].to_s
       value = footer_value(row["compute"])
       next if label.blank? && value.blank?
       { label:, value: }
     end
+    # AI columns advertise their active model as a final auto-row (card #32).
+    # Guarded on model presence so an AI column without one adds nothing,
+    # rather than emitting a "Model:" row with a blank value.
+    rows << { label: "Model:", value: model_short } if ai? && model.present?
+    rows
   end
 
   # Start the next queued card when a run slot frees up. A queued card whose
