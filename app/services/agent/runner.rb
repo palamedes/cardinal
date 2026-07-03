@@ -102,7 +102,8 @@ module Agent
 
       result = {}
       env = STRIP_ENV.index_with { nil }
-      Open3.popen3(env, *cmd, chdir: workspace.path.to_s) do |stdin, stdout, stderr, wait|
+      spawn_cmd, spawn_opts = workspace.agent_spawn(cmd)
+      Open3.popen3(env, *spawn_cmd, **spawn_opts) do |stdin, stdout, stderr, wait|
         stdin.close
         run.agent_session.update!(status: "ready", config: run.agent_session.config.merge("pid" => wait.pid))
         watchdog = Thread.new do
