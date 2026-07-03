@@ -10,7 +10,7 @@ Rails.application.routes.draw do
     end
     resources :messages, only: [:create]
   end
-  resources :columns, only: [:create, :edit]
+  resources :columns, only: [:create, :edit, :update, :destroy]
   resources :runs, only: [] do
     member do
       post :cancel

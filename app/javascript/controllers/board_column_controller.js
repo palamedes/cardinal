@@ -11,7 +11,11 @@ export default class extends Controller {
       group: "cards",
       animation: 150,
       ghostClass: "card-ghost",
-      onEnd: (event) => this.move(event)
+      onStart: () => document.body.classList.add("dragging"),
+      onEnd: (event) => {
+        document.body.classList.remove("dragging")
+        this.move(event)
+      }
     })
   }
 

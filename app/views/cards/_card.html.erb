@@ -16,6 +16,12 @@
       <% if card.running? && card.column.model %>
         <span class="chip agent-chip">🤖 <%= card.column.model_short %><%= " · #{card.column.effort}" if card.column.effort %></span>
       <% end %>
+      <% if card.discussing? && card.events.conversation.last&.actor == "assistant" %>
+        <span class="chip agent-chip">🪶 replied</span>
+      <% end %>
+      <% if (card.running? || card.needs_attention?) && (last_run = card.runs.order(:id).last)&.cost.to_f.positive? %>
+        <span class="chip">$<%= last_run.cost.round(2) %></span>
+      <% end %>
       <% if card.branch_name %><span class="chip branch">🌿 <%= card.pr_url ? "PR" : card.branch_name.delete_prefix("cardinal/") %></span><% end %>
     </div>
   <% end %>

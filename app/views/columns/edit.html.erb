@@ -6,14 +6,69 @@
         <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
       </header>
       <div class="modal-body">
-        <p class="empty">
-          Column controls land here as they're decided (cardinal.md §14.3) — instructions,
-          model & effort, concurrency limit, tool permissions, plan approval, budgets,
-          and entry/exit automations.
-        </p>
-        <% if @column.policy.present? %>
-          <h3>Current policy</h3>
-          <pre><%= JSON.pretty_generate(@column.policy) %></pre>
+        <% if @json_error %><p class="form-error"><%= @json_error %></p><% end %>
+
+        <%= form_with model: @column, class: "card-edit" do |f| %>
+          <div class="field-row">
+            <div>
+              <label>Name</label>
+              <%= f.text_field :name, required: true %>
+            </div>
+            <div>
+              <label>Archetype</label>
+              <%= f.select :archetype, Column::ARCHETYPES.map { |a| [a.capitalize, a] } %>
+            </div>
+          </div>
+
+          <label>Instructions <span class="hint">(given to any agent working in this column)</span></label>
+          <%= f.text_area :instructions, rows: 3, value: @column.instructions %>
+
+          <div class="field-row">
+            <div>
+              <label>Model</label>
+              <%= f.text_field :model, value: @column.model, list: "model-options", placeholder: "inherit" %>
+              <datalist id="model-options">
+                <option value="claude-sonnet-4-6"></option>
+                <option value="claude-haiku-4-5-20251001"></option>
+                <option value="claude-opus-4-8"></option>
+              </datalist>
+            </div>
+            <div>
+              <label>Effort</label>
+              <%= f.select :effort, [["(default)", ""], "low", "medium", "high", "max"], selected: @column.effort %>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div>
+              <label>Concurrency</label>
+              <%= f.number_field :concurrency_limit, value: @column.concurrency_limit, min: 1, placeholder: "∞" %>
+            </div>
+            <div>
+              <label>Max turns</label>
+              <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "25" %>
+            </div>
+            <div>
+              <label>Timeout (min)</label>
+              <%= f.number_field :timeout_minutes, value: @column.timeout_minutes, min: 1, placeholder: "30" %>
+            </div>
+          </div>
+
+          <label class="check-row">
+            <%= f.check_box :plan_approval, checked: ActiveModel::Type::Boolean.new.cast(@column.plan_approval) %>
+            Require plan approval before the agent makes changes
+          </label>
+
+          <label>On-entry rules <span class="hint">(JSON — see cardinal.md §17; blank = archetype default)</span></label>
+          <%= f.text_area :on_entry_json, rows: 4, class: "mono",
+                value: @column.policy["on_entry"] ? JSON.pretty_generate(@column.policy["on_entry"]) : "",
+                placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
+
+          <%= f.submit "Save" %>
+        <% end %>
+
+        <% if @column.cards.none? %>
+          <%= button_to "Delete column", column_path(@column), method: :delete, class: "cancel-btn delete-column" %>
         <% end %>
       </div>
     </div>

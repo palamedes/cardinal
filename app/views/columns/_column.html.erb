@@ -4,6 +4,7 @@
     <%= link_to "⚙", edit_column_path(column), class: "gear", title: "Column settings",
                 data: { turbo_frame: "modal" } %>
   </header>
+  <p class="drop-hint">→ <%= column.drag_hint %></p>
   <% if column.execution? %>
     <p class="ticker">
       <%= column.running_count %> running · <%= column.queued_count %> queued

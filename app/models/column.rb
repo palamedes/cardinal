@@ -40,7 +40,7 @@ class Column < ApplicationRecord
     when "planning"  then "The board assistant will join the discussion"
     when "execution" then "An agent will be assigned and start work"
     when "review"    then "Work stops — ready for your verdict"
-    when "terminal"  then "Card will be finalized"
+    when "terminal"  then "Ships it — PR merged, branch deleted"
     end
   end
 end
