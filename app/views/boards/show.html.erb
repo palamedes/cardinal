@@ -9,15 +9,21 @@
         <summary>⚠ <%= attention.size %> need you</summary>
         <ul>
           <% attention.each do |card| %>
-            <li><%= link_to "##{card.number} #{card.title} — #{card.status.humanize.downcase}", card_path(card) %></li>
+            <li><%= link_to "##{card.number} #{card.title} — #{card.status.humanize.downcase}",
+                            card_path(card), data: { turbo_frame: "modal" } %></li>
           <% end %>
         </ul>
       </details>
     <% end %>
-    <%= form_with url: cards_path, class: "new-card" do |f| %>
-      <%= f.text_field "card[title]", placeholder: "New card…", required: true %>
-      <%= f.submit "+ Card" %>
-    <% end %>
+    <details class="new-column">
+      <summary>+ Column</summary>
+      <%= form_with url: columns_path, class: "new-column-form" do |f| %>
+        <%= f.text_field "column[name]", placeholder: "Column name", required: true %>
+        <%= f.select "column[archetype]",
+              Column::ARCHETYPES.map { |a| [a.capitalize, a] }, selected: "inbox" %>
+        <%= f.submit "Add" %>
+      <% end %>
+    </details>
   </div>
 </header>
 
@@ -26,3 +32,5 @@
     <%= render "columns/column", column: column %>
   <% end %>
 </main>
+
+<%= turbo_frame_tag "modal" %>

@@ -6,10 +6,10 @@ board = Board.find_or_create_by!(name: "Cardinal") do |b|
 end
 
 defaults = [
-  { name: "Ideas",       archetype: "inbox",     policy: {} },
+  { name: "Tasks",       archetype: "inbox",     policy: {} },
   { name: "Planning",    archetype: "planning",  policy: { "model" => "claude-haiku-4-5-20251001" } },
   { name: "In Progress", archetype: "execution",
-    policy: { "model" => "claude-sonnet-4-6", "concurrency_limit" => 3, "plan_approval" => true,
+    policy: { "model" => "claude-sonnet-4-6", "effort" => "high", "concurrency_limit" => 3, "plan_approval" => true,
               "budget_per_run_cents" => 200, "timeout_minutes" => 30,
               "tools" => %w[read edit run_commands git_commit_push] } },
   { name: "Review",      archetype: "review",    policy: {} },
@@ -25,7 +25,7 @@ defaults.each_with_index do |attrs, index|
 end
 
 if board.cards.none?
-  ideas = board.columns.find_by!(name: "Ideas")
+  ideas = board.columns.find_by!(name: "Tasks")
   [
     { title: "Column settings gear modal", tags: %w[ui policy],
       description: "The gear icon on each column opens the policy editor (cardinal.md §14.3)." },

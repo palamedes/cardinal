@@ -1,5 +1,5 @@
 <article class="card status-<%= card.status %>" id="<%= dom_id(card) %>" data-card-id="<%= card.id %>">
-  <%= link_to card_path(card), class: "card-link" do %>
+  <%= link_to card_path(card), class: "card-link", data: { turbo_frame: "modal" } do %>
     <div class="card-title">
       <span class="card-number">#<%= card.number %></span> <%= card.title %>
       <span class="status-glyph"><%= { "working" => "⚡", "needs_input" => "❓", "failed" => "✖",
@@ -13,6 +13,9 @@
     <% end %>
     <div class="card-meta">
       <% card.tags.each do |tag| %><span class="tag"><%= tag %></span><% end %>
+      <% if card.running? && card.column.model %>
+        <span class="chip agent-chip">🤖 <%= card.column.model_short %><%= " · #{card.column.effort}" if card.column.effort %></span>
+      <% end %>
       <% if card.branch_name %><span class="chip branch">🌿 <%= card.pr_url ? "PR" : card.branch_name.delete_prefix("cardinal/") %></span><% end %>
     </div>
   <% end %>

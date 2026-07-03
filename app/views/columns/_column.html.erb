@@ -6,6 +6,9 @@
   <% if column.execution? %>
     <p class="ticker">
       <%= column.running_count %> running · <%= column.queued_count %> queued
+      <% if column.model %>
+        <span class="chip agent-chip">🤖 <%= column.model_short %><%= " · #{column.effort}" if column.effort %></span>
+      <% end %>
     </p>
   <% end %>
   <div class="cards"
@@ -16,4 +19,10 @@
       <%= render "cards/card", card: card %>
     <% end %>
   </div>
+  <% if column.inbox? %>
+    <%= form_with url: cards_path, class: "new-card" do |f| %>
+      <%= f.text_field "card[title]", placeholder: "New card…", required: true %>
+      <%= f.submit "+ Card" %>
+    <% end %>
+  <% end %>
 </section>

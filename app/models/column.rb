@@ -7,9 +7,14 @@ class Column < ApplicationRecord
   enum :archetype, ARCHETYPES.index_by(&:itself)
 
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
-  store_accessor :policy, :instructions, :model, :concurrency_limit,
+  store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
                  :tools, :on_entry, :on_success
+
+  # "claude-sonnet-4-6" → "sonnet", for compact chips on card faces.
+  def model_short
+    model.to_s[/claude-([a-z]+)/, 1] || model
+  end
 
   validates :name, presence: true
   validates :position, presence: true

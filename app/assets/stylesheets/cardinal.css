@@ -50,14 +50,27 @@ a { color: var(--blue); text-decoration: none; }
 }
 .attention li { padding: 4px 0; }
 
-.new-card { display: flex; gap: 6px; }
+.new-card { display: flex; gap: 6px; margin-top: 8px; }
 .new-card input[type="text"] {
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
-  color: var(--text); padding: 6px 10px; width: 200px;
+  color: var(--text); padding: 6px 10px; flex: 1; min-width: 0;
 }
-.new-card input[type="submit"], button {
+.new-card input[type="submit"], button, input[type="submit"] {
   background: var(--accent); color: #fff; border: 0; border-radius: 6px;
   padding: 6px 12px; cursor: pointer; font-weight: 600;
+}
+
+.new-column { position: relative; }
+.new-column summary { cursor: pointer; color: var(--text-dim); font-weight: 600; list-style: none; }
+.new-column summary:hover { color: var(--text); }
+.new-column-form {
+  position: absolute; right: 0; top: 28px; z-index: 20;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 220px;
+}
+.new-column-form input[type="text"], .new-column-form select {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); padding: 6px 10px;
 }
 
 /* ── Board ───────────────────────────────────────────── */
@@ -65,9 +78,9 @@ a { color: var(--blue); text-decoration: none; }
   display: flex;
   gap: 12px;
   padding: 14px;
-  align-items: flex-start;
+  align-items: stretch;
   overflow-x: auto;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 53px);
 }
 
 .column {
@@ -77,6 +90,8 @@ a { color: var(--blue); text-decoration: none; }
   min-width: 250px;
   width: 250px;
   padding: 10px;
+  display: flex;
+  flex-direction: column;
 }
 .column-execution { background: #20222c; border-color: #3a3f52; }
 .column-review    { background: #24211c; border-color: #4a4232; }
@@ -85,7 +100,8 @@ a { color: var(--blue); text-decoration: none; }
 .gear { cursor: pointer; color: var(--text-dim); }
 .ticker { font-size: 11px; color: var(--text-dim); margin: 0 4px 8px; }
 
-.cards { min-height: 40px; display: flex; flex-direction: column; gap: 8px; }
+.cards { min-height: 40px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
+.agent-chip { color: var(--blue); }
 
 /* ── Cards ───────────────────────────────────────────── */
 .card {
@@ -123,11 +139,45 @@ a { color: var(--blue); text-decoration: none; }
   50%      { box-shadow: 0 0 0 3px rgba(107, 147, 201, .25); }
 }
 
-/* ── Card detail ─────────────────────────────────────── */
-.card-detail .topbar { flex-direction: column; align-items: flex-start; gap: 4px; }
-.back { margin-right: 10px; color: var(--text-dim); }
+/* ── Card modal ──────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, .6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 3vh 3vw;
+}
+.modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%; height: 100%;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface); border-radius: 12px 12px 0 0;
+  position: sticky; top: 0; z-index: 5;
+}
+.modal-header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+.modal-header-right { display: flex; align-items: center; gap: 14px; }
+.modal-close {
+  background: var(--surface-2); color: var(--text-dim);
+  font-size: 15px; line-height: 1; padding: 7px 10px;
+}
+.modal-close:hover { color: var(--text); }
 .git-line { margin: 0; font-size: 12px; color: var(--text-dim); }
 .status-chip { margin-left: 8px; }
+
+.card-edit { display: flex; flex-direction: column; gap: 4px; margin-bottom: 18px; }
+.card-edit label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); margin-top: 6px; }
+.card-edit .hint { text-transform: none; letter-spacing: 0; }
+.card-edit input[type="text"], .card-edit textarea {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); padding: 6px 10px; font: inherit;
+}
+.card-edit input[type="submit"] { margin-top: 10px; align-self: flex-start; }
 
 .detail-panes { display: flex; gap: 16px; padding: 16px; align-items: flex-start; }
 .timeline { flex: 2; }
