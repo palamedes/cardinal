@@ -1,6 +1,6 @@
 class MessagesController < ApplicationController
   def create
-    card = Card.find(params[:card_id])
+    card = Board.first!.cards.find_by!(number: params[:card_id])
     text = params.require(:message)[:text]
     parked_run = card.runs.where(status: "needs_input").order(:id).last
 

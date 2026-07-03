@@ -56,6 +56,10 @@ class Card < ApplicationRecord
     awaiting_assistant? || working?
   end
 
+  # URLs speak card numbers, matching every other surface (header #N,
+  # branches, PR titles) — not database ids, which drift after deletions.
+  def to_param = number.to_s
+
   def default_branch_name
     "cardinal/#{number}-#{title.parameterize[0, 40]}"
   end

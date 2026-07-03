@@ -98,7 +98,7 @@ class CardsController < ApplicationController
   private
 
   def set_card
-    @card = Card.find(params[:id])
+    @card = Board.first!.cards.find_by!(number: params[:id])
   end
 
   def card_params
