@@ -24,6 +24,31 @@ class RunsController < ApplicationController
     redirect_to card_path(card)
   end
 
+  # Restart a run that parked or failed on its turn budget / timeout. Mirrors
+  # Column#kick_queue's branch: resume the saved session for a fresh budget, or
+  # (no session left) re-queue for a clean run.
+  def restart
+    if run.restartable?
+      if run.needs_input?
+        card.log!("progress", actor: "user", run: run, text: "Restarting run — resuming with a fresh turn budget")
+        ResumeRunJob.perform_later(run.id, "")
+      elsif run.external_session_id.present?
+        # Failed but the session survived: flip back to needs_input so
+        # ResumeRunJob's guard passes, then resume it.
+        run.update!(status: "needs_input", finished_at: nil)
+        card.update!(status: "needs_input")
+        card.log!("progress", actor: "user", run: run, text: "Restarting failed run — resuming the saved session with a fresh turn budget")
+        ResumeRunJob.perform_later(run.id, "")
+      else
+        # No session to resume: a clean run from the queue.
+        card.update!(status: "queued")
+        card.log!("progress", actor: "user", run: run, text: "Restarting failed run — starting a fresh run")
+        StartRunJob.perform_later(card.id)
+      end
+    end
+    redirect_to card_path(card)
+  end
+
   private
 
   attr_reader :run

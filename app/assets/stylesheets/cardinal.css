@@ -419,7 +419,9 @@ body.dragging .drop-hint { display: block; }
 .panel-callout p { margin: 0 0 8px; }
 .callout-plan { border: 1px solid var(--blue); background: rgba(107, 147, 201, .08); }
 .callout-question { border: 1px solid var(--amber); background: rgba(217, 164, 65, .08); }
+.callout-restart { border: 1px solid var(--accent); background: rgba(201, 79, 79, .08); }
 .approve-btn { background: var(--green); }
+.restart-btn { background: var(--accent); }
 .align-right { display: flex; justify-content: flex-end; }
 .autosave-status { font-size: 11px; color: var(--green); text-transform: none; letter-spacing: 0; margin-left: 6px; }
 

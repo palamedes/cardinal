@@ -14,6 +14,7 @@ Rails.application.routes.draw do
     member do
       post :cancel
       post :approve
+      post :restart
     end
   end
 
