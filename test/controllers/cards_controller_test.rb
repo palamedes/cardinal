@@ -30,6 +30,51 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to card_path(card)
   end
+
+  test "create persists an optional branch name and PR url" do
+    post cards_path, params: { card: { title: "with git",
+                                       branch_name: "cardinal/1-thing",
+                                       pr_url: "https://github.com/o/r/pull/7" } }
+    card = @board.cards.find_by!(title: "with git")
+    assert_equal "cardinal/1-thing", card.branch_name
+    assert_equal "https://github.com/o/r/pull/7", card.pr_url
+  end
+end
+
+class CardGitFieldsTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "G", default_branch: "main")
+    @col = @board.columns.create!(name: "t", archetype: "inbox", position: 0, policy: {})
+  end
+
+  test "editing a blank branch name persists it and logs one coalesced changelog entry" do
+    card = @board.cards.create!(column: @col, title: "hint me")
+    patch card_path(card), params: { autosave: "1", card: { branch_name: "cardinal/2-hint" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    assert_equal "cardinal/2-hint", card.reload.branch_name
+    logs = card.events.where(kind: "status_change").select { |e| e.payload["changelog"] }
+    assert_equal 1, logs.size
+    assert_includes logs.first.payload["fields"], "branch_name"
+  end
+
+  test "a set branch name is locked and cannot be overwritten via update" do
+    card = @board.cards.create!(column: @col, title: "locked", branch_name: "cardinal/3-original")
+    patch card_path(card), params: { autosave: "1", card: { branch_name: "cardinal/3-hijack" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal "cardinal/3-original", card.reload.branch_name
+  end
+
+  test "detail shows an editable branch input when blank and read-only display once set" do
+    blank = @board.cards.create!(column: @col, title: "blank")
+    get card_path(blank)
+    assert_select "input[name=?]", "card[branch_name]"
+
+    set = @board.cards.create!(column: @col, title: "set", branch_name: "cardinal/4-done")
+    get card_path(set)
+    assert_select "input[name=?]", "card[branch_name]", false
+    assert_select ".locked-field code", text: "cardinal/4-done"
+  end
 end
 
 class CardReviewButtonTest < ActionDispatch::IntegrationTest

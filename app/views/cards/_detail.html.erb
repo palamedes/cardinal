@@ -20,7 +20,7 @@
               <% if @card.pr_url %>
                 <span class="git-arrow">→</span>
                 <%= link_to "##{@card.pr_url[%r{/pull/(\d+)}, 1]}", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-link" %>
-                <span class="pr-state">(<%= @card.pr_state %>)</span>
+                <% if @card.pr_state.present? %><span class="pr-state">(<%= @card.pr_state %>)</span><% end %>
               <% end %>
             </span>
           <% end %>
@@ -79,6 +79,19 @@
               <%= render "cards/tag_picker", board: @card.board, tags: @card.tags %>
               <label>Description</label>
               <%= f.text_area :description, rows: 6 %>
+              <label>Branch <span class="hint">— optional</span></label>
+              <% if @card.branch_name.present? %>
+                <%# Locked once set — by the user here or by the agent on run start. %>
+                <p class="locked-field"><code><%= @card.branch_name %></code> <span class="hint">set</span></p>
+              <% else %>
+                <%= f.text_field :branch_name, placeholder: @card.default_branch_name %>
+              <% end %>
+              <label>Pull request <span class="hint">— optional</span></label>
+              <% if @card.pr_url.present? %>
+                <p class="locked-field"><%= link_to @card.pr_url, @card.pr_url, target: "_blank", rel: "noopener" %> <span class="hint">set</span></p>
+              <% else %>
+                <%= f.text_field :pr_url, placeholder: "https://github.com/owner/repo/pull/123" %>
+              <% end %>
             <% end %>
           </div>
 
@@ -156,7 +169,7 @@
               <% end %>
             </ul>
             <% if @card.pr_url %>
-              <p>🌿 <%= link_to "View pull request", @card.pr_url, target: "_blank" %> (<%= @card.pr_state %>)</p>
+              <p>🌿 <%= link_to "View pull request", @card.pr_url, target: "_blank" %><%= " (#{@card.pr_state})" if @card.pr_state.present? %></p>
             <% end %>
           <% else %>
             <p class="empty">No runs yet — drag the card into an execution column to assign an agent.</p>
