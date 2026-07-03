@@ -154,6 +154,10 @@ button, input[type="submit"] {
 body.dragging .drop-hint { display: block; }
 .ticker { font-size: 11px; color: var(--text-dim); margin: 0 4px 8px; }
 
+.column-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); }
+.footer-row { display: flex; justify-content: space-between; gap: 8px; padding: 1px 4px; }
+.footer-value { font-variant-numeric: tabular-nums; color: var(--text); }
+
 .cards { min-height: 40px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
 .cards-clickable { cursor: pointer; }
 .agent-chip { color: var(--blue); }
