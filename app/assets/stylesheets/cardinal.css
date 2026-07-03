@@ -364,7 +364,10 @@ body.dragging .drop-hint { display: block; }
 .event-body table { border-collapse: collapse; margin: 6px 0; font-size: 12px; }
 .event-body th, .event-body td { border: 1px solid var(--border); padding: 3px 8px; }
 .event-kind { color: var(--text-dim); font-size: 12px; }
-.event-description { background: var(--surface); border-radius: 8px; border-bottom: 0; }
+.event-description {
+  display: block; /* .event is flex for icon+body; raw markdown children must stack */
+  background: var(--surface); border-radius: 8px; border-bottom: 0; padding: 10px 12px;
+}
 .actor-agent .event-body p { color: #b9c3d8; }
 [data-theme="light"] .actor-agent .event-body p { color: #3a4a63; }
 
