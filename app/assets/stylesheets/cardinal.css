@@ -522,3 +522,9 @@ body.dragging .drop-hint { display: block; }
 .card-edit textarea, .card-edit input[type="text"] { width: 100%; }
 
 .default-rule.active-rule { border-left-color: var(--green); }
+
+.archetype-locked {
+  font-size: 13px; color: var(--text-dim); margin: 0;
+  padding: 6px 10px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px;
+}

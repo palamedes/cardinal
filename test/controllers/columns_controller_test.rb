@@ -98,3 +98,26 @@ class ColumnAutosaveTest < ActionDispatch::IntegrationTest
     assert_no_match(/modal-body/, response.body)
   end
 end
+
+class InboxUniquenessTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "IU", default_branch: "main")
+    @inbox = @board.columns.create!(name: "Tasks", archetype: "inbox", position: 0, policy: {})
+    @other = @board.columns.create!(name: "Held", archetype: "review", position: 1, policy: {})
+  end
+
+  test "the inbox archetype is immutable" do
+    patch column_path(@inbox), params: { column: { name: "Tasks", archetype: "planning" } }
+    assert_equal "inbox", @inbox.reload.archetype
+  end
+
+  test "no other column may become an inbox" do
+    patch column_path(@other), params: { column: { name: "Held", archetype: "inbox" } }
+    assert_equal "review", @other.reload.archetype
+  end
+
+  test "creating an inbox column is refused" do
+    post columns_path, params: { column: { name: "Sneaky", archetype: "inbox" } }
+    assert_equal "planning", @board.columns.find_by!(name: "Sneaky").archetype
+  end
+end

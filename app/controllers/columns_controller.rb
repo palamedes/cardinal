@@ -67,7 +67,9 @@ class ColumnsController < ApplicationController
 
     @column.update!(
       name: attrs[:name].presence || @column.name,
-      archetype: attrs[:archetype].presence_in(Column::ARCHETYPES) || @column.archetype,
+      # Exactly one inbox per board: the intake's archetype is immutable, and
+      # no other column may become an inbox.
+      archetype: @column.inbox? ? "inbox" : (attrs[:archetype].presence_in(Column::ARCHETYPES - %w[inbox]) || @column.archetype),
       policy: policy.compact
     )
 
