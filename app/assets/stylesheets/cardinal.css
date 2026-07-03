@@ -43,12 +43,31 @@ a { color: var(--blue); text-decoration: none; }
   list-style: none;
 }
 .attention { position: relative; }
-.attention ul {
+.attention-list {
   position: absolute; right: 0; top: 26px; z-index: 20;
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 12px; margin: 0; min-width: 280px; list-style: none;
+  padding: 8px 12px; margin: 0; min-width: 300px; max-height: 60vh; overflow-y: auto;
 }
+.attention ul { list-style: none; margin: 0 0 6px; padding: 0; }
 .attention li { padding: 4px 0; }
+.attn-part { margin-left: 10px; }
+.attn-part:first-child { margin-left: 0; }
+.attn-part.working-part { color: var(--blue); }
+.attn-header {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text-dim); margin: 8px 0 2px; font-weight: 700;
+}
+.attn-header:first-child { margin-top: 0; }
+.attn-working { display: flex; align-items: center; gap: 6px; }
+.pulse-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--blue); animation: pulse-dot 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: .35; transform: scale(.85); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
 
 .new-card-btn {
   display: block; text-align: center; margin-top: 8px; padding: 9px;

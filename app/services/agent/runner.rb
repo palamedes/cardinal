@@ -107,12 +107,14 @@ module Agent
       Open3.popen3(env, *spawn_cmd, **spawn_opts) do |stdin, stdout, stderr, wait|
         stdin.close
         run.agent_session.update!(status: "ready", config: run.agent_session.config.merge("pid" => wait.pid))
+        timeout_min = (column.timeout_minutes.presence || 30).to_i
         watchdog = Thread.new do
-          sleep (column.timeout_minutes.presence || 30).to_i * 60
+          sleep timeout_min * 60
+          @timed_out = true
           Process.kill("TERM", wait.pid) rescue nil
         end
-        err_tail = +""
-        drain = Thread.new { stderr.each_line { |l| err_tail = l } }
+        err_lines = []
+        drain = Thread.new { stderr.each_line { |l| err_lines << l.strip; err_lines.shift while err_lines.size > 4 } }
         last_beat = Time.current
         stdout.each_line do |line|
           if Time.current - last_beat > HEARTBEAT_EVERY
@@ -128,7 +130,9 @@ module Agent
         drain.join(1)
         watchdog.kill
         result[:exit_status] = wait.value
-        result[:stderr] = err_tail.strip
+        result[:stderr] = err_lines.join(" | ")
+        result[:timed_out] = @timed_out
+        result[:timeout_min] = timeout_min
       end
 
       mode == "plan" ? conclude_plan(result) : conclude_execute(workspace, result)
@@ -164,7 +168,7 @@ module Agent
     def conclude_plan(result)
       accumulate_usage(result)
       unless result[:success] && result[:report].present?
-        return record_failure(RuntimeError.new("plan phase failed#{": #{result[:stderr]}" if result[:stderr].present?}"))
+        return record_failure(RuntimeError.new("plan phase failed — #{failure_reason(result)}"))
       end
       park!("plan_proposed", result[:report],
             note: "Plan proposed — approve it in the work panel, or reply to redirect.")
@@ -173,7 +177,8 @@ module Agent
     def conclude_execute(workspace, result)
       accumulate_usage(result)
       unless result[:success]
-        return record_failure(RuntimeError.new("agent did not finish cleanly#{" — #{result[:stderr]}" if result[:stderr].present?} (exit #{result[:exit_status]&.exitstatus})"))
+        salvage_commits(workspace)
+        return record_failure(RuntimeError.new(failure_reason(result)))
       end
 
       report = result[:report].to_s
@@ -205,6 +210,27 @@ module Agent
       card.log!(kind, actor: "agent", run: run, text: text)
       card.update!(status: "needs_input")
       card.log!("status_change", run: run, text: note)
+    end
+
+    # Say WHY, not just that it died: timeout vs error result vs crash.
+    def failure_reason(result)
+      return "timed out after #{result[:timeout_min]} minutes and was stopped — raise the column's timeout for bigger tasks, or split the card" if result[:timed_out]
+      parts = ["agent did not finish cleanly (exit #{result[:exit_status]&.exitstatus || "?"})"]
+      parts << "last output: #{result[:report].truncate(300)}" if result[:report].present?
+      parts << "stderr: #{result[:stderr].truncate(300)}" if result[:stderr].present?
+      parts.join(" — ")
+    end
+
+    # A failed/timed-out segment may still hold real local commits; push them
+    # so the branch (and any PR) keeps the partial progress instead of the
+    # next provision's reset wiping it.
+    def salvage_commits(workspace)
+      commits = workspace.commits_since(base_sha)
+      return if commits.empty?
+      workspace.push!
+      card.log!("progress", run: run, text: "Partial work preserved: #{commits.size} commit(s) pushed to #{card.branch_name} before failure")
+    rescue => e
+      card.log!("progress", run: run, text: "Could not preserve partial work: #{e.message.truncate(120)}")
     end
 
     def record_failure(error)
