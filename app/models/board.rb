@@ -8,6 +8,8 @@ class Board < ApplicationRecord
                 "accepts_from_names" => ["Planning", "Review", "QA", "Done"] } },
     { name: "Planning",    archetype: "planning",
       policy: { "ai" => true, "model" => "claude-haiku-4-5-20251001", "plan_approval" => false,
+                "on_entry" => [{ "action" => "assistant_greeting" }],
+                "on_entry_text" => "The planning assistant reads the card and opens the discussion.",
                 "accepts_from_names" => ["Tasks", "In Progress", "Review", "QA"] } },
     { name: "In Progress", archetype: "execution",
       policy: { "ai" => true, "model" => "claude-opus-4-8", "effort" => "high",
@@ -28,7 +30,7 @@ class Board < ApplicationRecord
                 "on_entry" => [{ "action" => "mark_pr_ready" }] } },
     { name: "Done",        archetype: "terminal",
       policy: { "ai" => false, "plan_approval" => false, "arrivals" => "top",
-                "accepts_from_names" => ["Review", "QA"],
+                "accepts_from_names" => ["Review", "QA", "Planning"],
                 "on_entry" => [{ "action" => "merge_pr" }] } }
   ].freeze
 

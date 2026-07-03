@@ -99,6 +99,37 @@ class ColumnAutosaveTest < ActionDispatch::IntegrationTest
   end
 end
 
+class ArchetypeRestampTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "AR", default_branch: "main")
+    @col = @board.columns.create!(name: "Stage", archetype: "review", position: 0, policy: {})
+  end
+
+  test "switching archetype re-stamps rules and instructions from the template" do
+    patch column_path(@col), params: { autosave: "1",
+            column: { name: "Stage", archetype: "planning",
+                      on_entry_text: "stale review text", instructions: "stale" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :success
+    @col.reload
+    assert_equal "planning", @col.archetype
+    assert_equal [{ "action" => "assistant_greeting" }], @col.policy["on_entry"]
+    assert_match(/planning assistant/, @col.policy["on_entry_text"])
+    assert_match(/acceptance criteria/, @col.policy["instructions"])
+    # The modal's fields changed server-side — the response must refresh it.
+    assert_match 'target="modal"', response.body
+  end
+
+  test "keeping the archetype leaves edited rules alone and skips the modal refresh" do
+    patch column_path(@col), params: { autosave: "1",
+            column: { name: "Stage", archetype: "review", instructions: "Mine." } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :success
+    assert_equal "Mine.", @col.reload.policy["instructions"]
+    assert_no_match 'target="modal"', response.body
+  end
+end
+
 class InboxUniquenessTest < ActionDispatch::IntegrationTest
   setup do
     @board = Board.create!(name: "IU", default_branch: "main")

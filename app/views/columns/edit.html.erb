@@ -41,7 +41,7 @@
           <% siblings = @column.board.columns.where.not(id: @column.id).order(:position) %>
           <% if siblings.any? %>
             <% allowed = Array(@column.accepts_from).map(&:to_s) %>
-            <label>Accepts moves from (inbound) <%= info_tip("INBOUND rule: which columns may drag cards INTO this one. It does not control where this column's cards may go — set that on the destination columns. Leave all unchecked to accept from anywhere. Example: check only Planning on In Progress so work can't skip triage.") %></label>
+            <label>Accepts moves from (inbound) <%= info_tip("INBOUND rule: which columns may drag cards INTO this one. EXPLICIT ONLY — nothing checked means nothing may enter (there is no accept-from-anywhere). It does not control where this column's cards may go; set that on the destinations.") %></label>
             <div class="accepts-from">
               <% siblings.each do |sib| %>
                 <label class="check-row inline">
@@ -108,7 +108,7 @@
             </div>
 
             <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior shown below.") %></label>
-            <p class="default-rule">Archetype default: <%= Rules::DEFAULT_DESCRIPTIONS[@column.archetype] %></p>
+            <p class="default-rule">Archetype template: <%= Rules::DEFAULT_DESCRIPTIONS[@column.archetype] %></p>
             <% if @column.policy["on_entry"].present? %>
               <p class="default-rule active-rule">Currently active: <%= Rules.describe(@column.policy["on_entry"]) %><%= " — from your English rules below" if @column.policy["on_entry_text"].present? %></p>
             <% end %>

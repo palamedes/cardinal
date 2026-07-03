@@ -37,9 +37,9 @@ export default class extends Controller {
   markBlockedColumns() {
     const sourceId = this.element.dataset.columnId
     document.querySelectorAll(".column").forEach(section => {
-      const accepts = section.dataset.accepts
-      if (!accepts || section.dataset.colId === sourceId) return
-      if (!accepts.split(",").includes(sourceId)) section.classList.add("drop-blocked")
+      if (section.dataset.colId === sourceId) return // reorder within is always fine
+      const allowed = (section.dataset.accepts || "").split(",").filter(Boolean)
+      if (!allowed.includes(sourceId)) section.classList.add("drop-blocked")
     })
   }
 

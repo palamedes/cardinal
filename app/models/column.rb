@@ -6,6 +6,31 @@ class Column < ApplicationRecord
 
   enum :archetype, ARCHETYPES.index_by(&:itself)
 
+  # Archetypes are TEMPLATES, not magic: choosing one stamps concrete,
+  # editable values into the policy fields. Nothing falls back to these at
+  # runtime — what the gear modal shows is everything there is.
+  ARCHETYPE_TEMPLATES = {
+    "inbox"     => {},
+    "planning"  => {
+      "on_entry"      => [{ "action" => "assistant_greeting" }],
+      "on_entry_text" => "The planning assistant reads the card and opens the discussion.",
+      "instructions"  => "Drive toward crisp acceptance criteria. Open with the 2-3 sharpest questions."
+    },
+    "execution" => {
+      "on_entry"      => [{ "action" => "start_agent_run" }],
+      "on_entry_text" => "Assign a dedicated worker agent to the card and start a run."
+    },
+    "review"    => {},
+    "terminal"  => {
+      "on_entry"      => [{ "action" => "merge_pr" }],
+      "on_entry_text" => "Merge the card's PR and ship it."
+    }
+  }.freeze
+
+  before_create :seed_archetype_template
+
+  def archetype_template = ARCHETYPE_TEMPLATES.fetch(archetype, {})
+
   # The policy blob is the column's entire behavior configuration (§1, §14.3).
   store_accessor :policy, :instructions, :model, :effort, :concurrency_limit,
                  :plan_approval, :budget_per_run_cents, :timeout_minutes,
@@ -27,11 +52,10 @@ class Column < ApplicationRecord
   end
 
   # Which columns may move cards INTO this one (§ accept policy, card #15).
-  # Stored as an array of column-id strings; blank = accept from anywhere, so
-  # existing boards keep their unrestricted behavior.
+  # Stored as an array of column-id strings. EXPLICIT ONLY: an empty list
+  # means this column accepts from nowhere — there is no permissive default.
   def accepts?(source_column)
-    ids = Array(accepts_from).map(&:to_s).reject(&:blank?)
-    ids.empty? || ids.include?(source_column.id.to_s)
+    Array(accepts_from).map(&:to_s).include?(source_column.id.to_s)
   end
 
   # Start the next queued card when a run slot frees up. A queued card whose
@@ -90,6 +114,13 @@ class Column < ApplicationRecord
 
   def ai_mode_description = AI_MODES[archetype]
 
+  # Stamp template values into any policy field the creator left blank.
+  def seed_archetype_template
+    archetype_template.each do |key, value|
+      policy[key] = value if policy[key].blank?
+    end
+  end
+
   # One-line consequence shown while dragging a card over this column (§14.1).
   def drag_hint
     case archetype
@@ -97,7 +128,7 @@ class Column < ApplicationRecord
     when "planning"  then "The board assistant will join the discussion"
     when "execution" then "An agent will be assigned and start work"
     when "review"    then "Work stops — ready for your verdict"
-    when "terminal"  then "Ships it — PR merged, branch deleted"
+    when "terminal"  then "Closes it — PR merged and branch deleted, if there is one"
     end
   end
 end

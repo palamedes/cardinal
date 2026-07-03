@@ -115,7 +115,7 @@ class ArrivalsPolicyTest < ActiveSupport::TestCase
   end
 
   test "arrivals top forces newcomers to position 0 regardless of drop position" do
-    @done.update!(policy: { "arrivals" => "top" })
+    @done.update!(policy: @done.policy.merge("arrivals" => "top"))
     first = create_card(@board, "inbox", title: "one")
     second = create_card(@board, "inbox", title: "two")
     CardTransition.new(first, to_column: @done, position: 5).call
@@ -124,7 +124,7 @@ class ArrivalsPolicyTest < ActiveSupport::TestCase
   end
 
   test "arrivals bottom forces newcomers to the end" do
-    @done.update!(policy: { "arrivals" => "bottom" })
+    @done.update!(policy: @done.policy.merge("arrivals" => "bottom"))
     first = create_card(@board, "inbox", title: "one")
     second = create_card(@board, "inbox", title: "two")
     CardTransition.new(first, to_column: @done, position: 0).call
@@ -133,7 +133,7 @@ class ArrivalsPolicyTest < ActiveSupport::TestCase
   end
 
   test "in-column reordering stays manual even with arrivals top" do
-    @done.update!(policy: { "arrivals" => "top" })
+    @done.update!(policy: @done.policy.merge("arrivals" => "top"))
     a = create_card(@board, "inbox", title: "a")
     b = create_card(@board, "inbox", title: "b")
     CardTransition.new(a, to_column: @done).call

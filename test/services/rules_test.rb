@@ -36,7 +36,7 @@ class RulesTest < ActiveSupport::TestCase
 
   test "custom ai_task rule enqueues a maintenance agent" do
     col = column(@board, "planning")
-    col.update!(policy: { "on_entry" => [{ "action" => "ai_task", "prompt" => "Summarize %{title}" }] })
+    col.update!(policy: col.policy.merge("on_entry" => [{ "action" => "ai_task", "prompt" => "Summarize %{title}" }]))
     card = create_card(@board)
     assert_enqueued_with(job: AiTaskJob) do
       Rules.fire_entry(card, col)
@@ -47,7 +47,7 @@ class RulesTest < ActiveSupport::TestCase
 
   test "string rules are normalized" do
     col = column(@board, "review") # inbox is never-AI; use an AI-capable column
-    col.update!(policy: { "on_entry" => "assistant_greeting" })
+    col.update!(policy: col.policy.merge("on_entry" => "assistant_greeting"))
     card = create_card(@board)
     assert_enqueued_with(job: AssistantReplyJob) do
       Rules.fire_entry(card, col)
@@ -56,7 +56,7 @@ class RulesTest < ActiveSupport::TestCase
 
   test "unknown rule logs an error event instead of raising" do
     col = column(@board, "inbox")
-    col.update!(policy: { "on_entry" => [{ "action" => "explode" }] })
+    col.update!(policy: col.policy.merge("on_entry" => [{ "action" => "explode" }]))
     card = create_card(@board)
     assert_nothing_raised { Rules.fire_entry(card, col) }
     assert_match(/Unknown column rule/, card.events.where(kind: "error").last.text)

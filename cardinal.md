@@ -591,6 +591,15 @@ admin surface.
   (5) review surface = in-card final report + file-level diff summary, deep link to the
   GitHub PR for line-level review. Scaffolding started: Rails 8 + Ruby 3.4 (Fullstaq) +
   Postgres 15 inside the cage container, repo at github.com/palamedes/cardinal.
+- **2026-07-03 (de-magic pass)** — **Archetypes are templates, not magic.** Choosing an
+  archetype stamps concrete on-entry rules, rule text, and starter instructions into the
+  column's policy at creation (and re-stamps them when the archetype is switched in the
+  gear modal); there is no hidden runtime fallback — a blank on-entry box means nothing
+  happens, visibly. **Accept rails are explicit-only:** "Accepts moves from" is a
+  whitelist and an empty list means the column accepts from nowhere; there is no
+  permissive blank default. Default board: Done also accepts from Planning — dragging
+  planning→Done means "closed/terminated without work" (merge_pr on a card with no PR
+  just finalizes it).
 
 ---
 

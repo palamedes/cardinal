@@ -1,12 +1,11 @@
 # Column rules (cardinal.md §17): a column's on_entry policy is a list of rule
-# actions fired when a card lands in it. Archetypes only supply defaults —
-# any column can carry any rules, including one-shot AI maintenance tasks.
+# actions fired when a card lands in it. Archetypes stamp starting rules at
+# creation (templates, not magic) — any column can carry any rules after that,
+# including one-shot AI maintenance tasks.
 module Rules
-  DEFAULTS = {
-    "planning"  => [{ "action" => "assistant_greeting" }],
-    "execution" => [{ "action" => "start_agent_run" }],
-    "terminal"  => [{ "action" => "merge_pr" }]
-  }.freeze
+  # NOTE: there is deliberately NO runtime fallback to archetype defaults —
+  # archetypes are creation-time templates (Column::ARCHETYPE_TEMPLATES).
+  # A column with no on_entry rules does nothing on entry, visibly.
 
   # Shown in the gear modal so the archetype's built-in behavior is visible,
   # not implied (the on-entry box being blank doesn't mean nothing happens).
@@ -15,17 +14,17 @@ module Rules
     "planning"  => "The planning assistant inspects the card and opens the conversation: it reads the title and description, then asks its sharpest clarifying questions to improve the card before execution. Tune its focus with the Instructions field above.",
     "execution" => "A dedicated worker agent is assigned to the card and a run starts (plan-first if plan approval is on).",
     "review"    => "Nothing automatic — the card waits for your verdict.",
-    "terminal"  => "The card's PR is marked ready, squash-merged, and its branch deleted."
+    "terminal"  => "The card's PR is squash-merged and its branch deleted. A card with no PR is simply closed — planning can send work straight here to terminate it."
   }.freeze
 
   def self.fire_entry(card, column)
-    each_rule(column.policy["on_entry"], column.archetype) do |rule|
+    each_rule(column.policy["on_entry"]) do |rule|
       apply(rule, card, column)
     end
   end
 
-  def self.each_rule(configured, archetype, &block)
-    rules = configured.presence || DEFAULTS[archetype] || []
+  def self.each_rule(configured, &block)
+    rules = configured.presence || []
     rules = [rules] if rules.is_a?(Hash) || rules.is_a?(String)
     rules.map { |r| r.is_a?(String) ? { "action" => r } : r }.each(&block)
   end

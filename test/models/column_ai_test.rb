@@ -15,7 +15,7 @@ class ColumnAiTest < ActiveSupport::TestCase
 
   test "AI rules are skipped in non-AI columns" do
     col = column(@board, "execution")
-    col.update!(policy: { "ai" => false })
+    col.update!(policy: col.policy.merge("ai" => false))
     card = create_card(@board)
     assert_no_enqueued_jobs(only: StartRunJob) do
       Rules.fire_entry(card, col)
@@ -25,7 +25,7 @@ class ColumnAiTest < ActiveSupport::TestCase
 
   test "entering a non-AI execution column reads as human work" do
     col = column(@board, "execution")
-    col.update!(policy: { "ai" => false })
+    col.update!(policy: col.policy.merge("ai" => false))
     card = create_card(@board)
     CardTransition.new(card, to_column: col).call
     assert_equal "working", card.reload.status
@@ -33,7 +33,7 @@ class ColumnAiTest < ActiveSupport::TestCase
 
   test "sweeper leaves human-working cards alone" do
     col = column(@board, "execution")
-    col.update!(policy: { "ai" => false })
+    col.update!(policy: col.policy.merge("ai" => false))
     card = create_card(@board, "execution", status: "working")
     RunSweeper.sweep
     assert_equal "working", card.reload.status

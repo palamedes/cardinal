@@ -38,13 +38,22 @@ class ColumnsController < ApplicationController
     policy["plan_approval"] = attrs[:plan_approval] == "1"
     policy["arrivals"] = attrs[:arrivals].presence_in(%w[top bottom])
     policy["ai"] = (attrs[:ai] == "1") if attrs.key?(:ai) # inbox forms omit it — never AI anyway
-    # Accept policy (card #15): store allowed source column ids as strings;
-    # blank means accept from any column (backward-compatible default).
+    # Accept policy (card #15): store allowed source column ids as strings.
+    # EXPLICIT ONLY — an empty list means the column accepts from nowhere.
     policy["accepts_from"] = attrs[:accepts_from].to_a.map(&:to_s).reject(&:blank?).presence
+
+    # Archetype is a TEMPLATE: switching it re-stamps rules + instructions
+    # from the new archetype (the submitted fields belong to the old one).
+    new_archetype = @column.inbox? ? "inbox" : (attrs[:archetype].presence_in(Column::ARCHETYPES - %w[inbox]) || @column.archetype)
+    @archetype_changed = new_archetype != @column.archetype
+    if @archetype_changed
+      template = Column::ARCHETYPE_TEMPLATES.fetch(new_archetype, {})
+      %w[on_entry on_entry_text instructions].each { |k| policy[k] = template[k] }
+    end
 
     # Rules: plain English is the source of truth (compiled on change); the
     # advanced JSON editor applies only when the English box is empty.
-    if attrs[:on_entry_text].present?
+    if !@archetype_changed && attrs[:on_entry_text].present?
       if attrs[:on_entry_text].strip != policy["on_entry_text"].to_s.strip
           begin
           policy["on_entry"] = Rules::Compiler.compile(attrs[:on_entry_text])
@@ -53,33 +62,35 @@ class ColumnsController < ApplicationController
         end
       end
       policy["on_entry_text"] = attrs[:on_entry_text].strip
-    elsif attrs[:on_entry_json].present?
+    elsif !@archetype_changed && attrs[:on_entry_json].present?
       begin
         policy["on_entry"] = JSON.parse(attrs[:on_entry_json])
         policy.delete("on_entry_text")
       rescue JSON::ParserError => e
         return column_error("on_entry is not valid JSON: #{e.message.truncate(120)}")
       end
-    else
+    elsif !@archetype_changed
       policy.delete("on_entry")
       policy.delete("on_entry_text")
     end
 
     @column.update!(
       name: attrs[:name].presence || @column.name,
-      # Exactly one inbox per board: the intake's archetype is immutable, and
-      # no other column may become an inbox.
-      archetype: @column.inbox? ? "inbox" : (attrs[:archetype].presence_in(Column::ARCHETYPES - %w[inbox]) || @column.archetype),
+      archetype: new_archetype,
       policy: policy.compact
     )
 
     if params[:autosave]
       # Silent save: patch the board's column section + clear any prior error.
       # No modal replace — it would steal focus mid-edit.
-      render turbo_stream: [
+      streams = [
         turbo_stream.replace(helpers.dom_id(@column), partial: "columns/column", locals: { column: @column.reload }),
         turbo_stream.update("column-form-errors", "")
       ]
+      # A re-stamped archetype must re-render the modal (its fields changed
+      # server-side); focus loss is fine — the user just picked from a select.
+      streams << turbo_stream.replace("modal", template: "columns/edit", formats: [:html]) if @archetype_changed
+      render turbo_stream: streams
     else
       redirect_to root_path
     end
