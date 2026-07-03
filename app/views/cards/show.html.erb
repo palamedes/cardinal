@@ -68,16 +68,19 @@
         </section>
 
         <aside class="work-panel">
-          <h3>Details</h3>
-          <%= form_with model: @card, class: "card-edit" do |f| %>
-            <label>Title</label>
-            <%= f.text_field :title, required: true %>
-            <label>Tags <span class="hint">(comma separated)</span></label>
-            <%= f.text_field :tags, value: @card.tags.join(", ") %>
-            <label>Description</label>
-            <%= f.text_area :description, rows: 6 %>
-            <%= f.submit "Save" %>
-          <% end %>
+          <div data-controller="autosave">
+            <h3>Details <span class="autosave-status" data-autosave-target="status"></span></h3>
+            <%= form_with model: @card, class: "card-edit",
+                  data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
+              <%= hidden_field_tag :autosave, "1" %>
+              <label>Title</label>
+              <%= f.text_field :title, required: true %>
+              <label>Tags <span class="hint">(comma separated)</span></label>
+              <%= f.text_field :tags, value: @card.tags.join(", ") %>
+              <label>Description</label>
+              <%= f.text_area :description, rows: 6 %>
+            <% end %>
+          </div>
 
           <% if @card.column.review? %>
             <h3>Review</h3>
@@ -86,7 +89,7 @@
                 <p><strong>Your verdict.</strong><% if @card.pr_url %> Check the <%= link_to "pull request", @card.pr_url, target: "_blank" %> and the final report in the timeline.<% end %>
                 Approve, or just say what's wrong in the conversation — that marks it changes-requested,
                 and dragging the card back to a work column carries your feedback into the next run.</p>
-                <%= button_to "✅ Approve", approve_card_path(@card), class: "approve-btn" %>
+                <%= button_to "✅ Approve", approve_card_path(@card), class: "approve-btn", form_class: "align-right" %>
               </div>
             <% elsif @card.approved? %>
               <div class="panel-callout callout-plan"><p><strong>Approved.</strong> Drag the card to Done to merge and ship.</p></div>
@@ -101,7 +104,7 @@
           <% if parked&.phase == "plan" %>
             <div class="panel-callout callout-plan">
               <p><strong>Plan proposed.</strong> Approve to let the agent execute, or reply in the timeline to redirect.</p>
-              <%= button_to "👍 Approve plan", approve_run_path(parked), class: "approve-btn" %>
+              <%= button_to "👍 Approve plan", approve_run_path(parked), class: "approve-btn", form_class: "align-right" %>
             </div>
           <% elsif parked %>
             <div class="panel-callout callout-question">

@@ -35,18 +35,23 @@ class CardsController < ApplicationController
   end
 
   def update
-    @card.update!(card_params)
-    @card.log!("status_change", actor: "user", text: "Card details updated")
+    attrs = card_params
+    attrs.delete(:title) if params[:autosave] && attrs[:title].blank? # mid-edit blank, not a delete
+    @card.update!(attrs)
+    log_changelog!
+
     respond_to do |format|
       # Explicitly patch the board face in this tab too — Turbo suppresses a
       # tab's own refresh broadcasts, so the morph won't cover the originator.
+      # Autosave must NOT replace the modal (it would steal focus mid-typing).
       format.turbo_stream do
-        @zoom = "conversation"
-        @events = @card.events.conversation
-        render turbo_stream: [
-          turbo_stream.replace(helpers.dom_id(@card), partial: "cards/card", locals: { card: @card }),
-          turbo_stream.replace("modal", template: "cards/show", formats: [:html])
-        ]
+        streams = [turbo_stream.replace(helpers.dom_id(@card), partial: "cards/card", locals: { card: @card })]
+        unless params[:autosave]
+          @zoom = "conversation"
+          @events = @card.events.conversation
+          streams << turbo_stream.replace("modal", template: "cards/show", formats: [:html])
+        end
+        render turbo_stream: streams
       end
       format.html { redirect_to card_path(@card) }
     end
@@ -88,5 +93,21 @@ class CardsController < ApplicationController
     attrs = params.require(:card).permit(:title, :description, :tags)
     attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
     attrs.to_h.symbolize_keys
+  end
+
+  # Changelog in the activity timeline (the mechanism already exists). A burst
+  # of autosaves coalesces into one entry instead of one per pause-in-typing.
+  def log_changelog!
+    changed = @card.previous_changes.keys & %w[title description tags]
+    return if changed.empty?
+
+    last = @card.events.order(:id).last
+    if last&.kind == "status_change" && last.payload["changelog"] && last.created_at > 10.minutes.ago
+      fields = (Array(last.payload["fields"]) | changed)
+      last.update!(payload: last.payload.merge("fields" => fields, "text" => "Details edited: #{fields.join(", ")}"))
+    else
+      @card.log!("status_change", actor: "user", changelog: true, fields: changed,
+                 text: "Details edited: #{changed.join(", ")}")
+    end
   end
 end

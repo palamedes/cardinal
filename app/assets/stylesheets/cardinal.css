@@ -359,6 +359,8 @@ body.dragging .drop-hint { display: block; }
 .callout-plan { border: 1px solid var(--blue); background: rgba(107, 147, 201, .08); }
 .callout-question { border: 1px solid var(--amber); background: rgba(217, 164, 65, .08); }
 .approve-btn { background: var(--green); }
+.align-right { display: flex; justify-content: flex-end; }
+.autosave-status { font-size: 11px; color: var(--green); text-transform: none; letter-spacing: 0; margin-left: 6px; }
 
 .field-row { display: flex; gap: 10px; }
 .field-row > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }

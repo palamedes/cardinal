@@ -31,3 +31,34 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to card_path(card)
   end
 end
+
+class CardAutosaveTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "A", default_branch: "main")
+    col = @board.columns.create!(name: "t", archetype: "inbox", position: 0, policy: {})
+    @card = @board.cards.create!(column: col, title: "orig")
+  end
+
+  test "autosave patches the face only and coalesces changelog entries" do
+    patch card_path(@card), params: { autosave: "1", card: { title: "better title" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_no_match 'target="modal"', response.body
+    assert_match "card_#{@card.id}", response.body
+
+    patch card_path(@card), params: { autosave: "1", card: { description: "words" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    logs = @card.events.where(kind: "status_change").select { |e| e.payload["changelog"] }
+    assert_equal 1, logs.size
+    assert_equal %w[title description], logs.first.payload["fields"]
+    assert_equal "better title", @card.reload.title
+    assert_equal "words", @card.description
+  end
+
+  test "blank title on autosave is ignored, not destructive" do
+    patch card_path(@card), params: { autosave: "1", card: { title: "", description: "d" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal "orig", @card.reload.title
+    assert_equal "d", @card.description
+  end
+end
