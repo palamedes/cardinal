@@ -3,6 +3,8 @@
 <header class="topbar">
   <h1>Cardinal <span class="sep">▸</span> <%= @board.name %></h1>
   <div class="topbar-right">
+    <button type="button" class="theme-toggle"
+            data-controller="theme" data-action="theme#toggle">☀ Light</button>
     <% attention = @board.attention_cards %>
     <% if attention.any? %>
       <details class="attention">
