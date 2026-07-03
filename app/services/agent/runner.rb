@@ -171,6 +171,7 @@ module Agent
         end
       when "result"
         result[:success] = json["subtype"] == "success" && !json["is_error"]
+        result[:subtype] = json["subtype"]
         result[:report] = json["result"].to_s
         result[:cost] = json["total_cost_usd"]
         result[:turns] = json["num_turns"]
@@ -231,9 +232,10 @@ module Agent
       card.log!("status_change", run: run, text: note)
     end
 
-    # Say WHY, not just that it died: timeout vs error result vs crash.
+    # Say WHY, not just that it died: timeout vs turn cap vs error vs crash.
     def failure_reason(result)
       return "timed out after #{result[:timeout_min]} minutes and was stopped — raise the column's timeout for bigger tasks, or split the card" if result[:timed_out]
+      return "hit this segment's max-turns budget — raise Max turns in the column's gear settings, or split the card" if result[:subtype] == "error_max_turns"
       parts = ["agent did not finish cleanly (exit #{result[:exit_status]&.exitstatus || "?"})"]
       parts << "last output: #{result[:report].truncate(300)}" if result[:report].present?
       parts << "stderr: #{result[:stderr].truncate(300)}" if result[:stderr].present?

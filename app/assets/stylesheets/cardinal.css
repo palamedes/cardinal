@@ -404,6 +404,10 @@ body.dragging .drop-hint { display: block; }
 .event-final_report .event-body { background: rgba(95, 174, 111, .07); border-radius: 8px; padding: 8px 10px; }
 .event-plan_proposed .event-body { background: rgba(107, 147, 201, .08); border-radius: 8px; padding: 8px 10px; }
 .event-question .event-body { background: rgba(217, 164, 65, .1); border-radius: 8px; padding: 8px 10px; }
+.event-error .event-body { background: rgba(214, 102, 102, .08); border-radius: 8px; padding: 8px 10px; }
+.event-error .event-body > p:first-of-type { color: var(--red); }
+.error-detail summary { font-size: 11px; color: var(--text-dim); cursor: pointer; }
+.error-detail pre { font-size: 11px; max-height: 180px; overflow: auto; }
 
 .panel-callout { border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
 .panel-callout p { margin: 0 0 8px; }

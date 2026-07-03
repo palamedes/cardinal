@@ -21,6 +21,6 @@ class AiTaskJob < ApplicationJob
     )
     card.log!("assistant_message", actor: "assistant", text: text) if text.present?
   rescue ClaudeCli::Error => e
-    card.log!("error", text: "Maintenance agent error: #{e.message}")
+    card.log!("error", text: "The maintenance agent #{e.message}.", detail: e.detail)
   end
 end

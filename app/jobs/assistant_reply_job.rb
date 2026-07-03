@@ -29,7 +29,7 @@ class AssistantReplyJob < ApplicationJob
                              cwd: repo, max_turns: repo ? 10 : 1)
     card.log!("assistant_message", actor: "assistant", text: reply) if reply.present?
   rescue ClaudeCli::Error => e
-    card.log!("error", text: "Planning assistant error: #{e.message}")
+    card.log!("error", text: "The planning assistant #{e.message}.", detail: e.detail)
   end
 
   private

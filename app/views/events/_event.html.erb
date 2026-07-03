@@ -12,6 +12,12 @@
       <% else %>
         <code class="event-kind"><%= event.kind %></code>
       <% end %>
+      <% if event.kind == "error" && event.payload["detail"].present? %>
+        <details class="error-detail">
+          <summary>technical detail</summary>
+          <pre><%= event.payload["detail"] %></pre>
+        </details>
+      <% end %>
       <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
     </div>
   </div>
