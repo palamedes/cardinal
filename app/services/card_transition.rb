@@ -16,9 +16,8 @@ class CardTransition
   def call
     return failure("Card is already in #{@to.name}") if @from == @to
     return failure("Column belongs to a different board") if @to.board_id != @card.board_id
-    if @card.running? && @from.execution?
-      # The cancel-or-finish-in-place prompt ships with the runner; until then
-      # a mid-run card simply refuses to move (§3 — no silent kills).
+    if @card.working? && @from.execution?
+      # An agent process is live — no silent kills (§3). Cancel it first.
       return failure("##{@card.number} has an active run — cancel it before moving the card")
     end
 
@@ -35,8 +34,12 @@ class CardTransition
   private
 
   def leave_policy!
-    # Nothing yet for inbox/planning/review. Execution leave (pause/teardown)
-    # arrives with the runner.
+    return unless @from.execution?
+    # Dequeue / abandon parked runs — nothing live is killed (working cards
+    # were already blocked above).
+    @card.runs.where(status: %w[queued needs_input]).each do |run|
+      run.update!(status: "cancelled", finished_at: Time.current)
+    end
   end
 
   def place_in_column!

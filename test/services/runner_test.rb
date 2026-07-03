@@ -1,0 +1,93 @@
+require "test_helper"
+
+class RunnerTest < ActiveSupport::TestCase
+  class FakeWorkspace
+    attr_reader :pushed
+    def initialize(commits) = @commits = commits
+    def commits_since(_) = @commits
+    def push! = @pushed = true
+    def head = "abc123"
+  end
+
+  setup do
+    @board = create_board
+    @card = create_card(@board, "execution", status: "working",
+                        branch_name: "cardinal/1-test", description: "Do the thing")
+    @run = create_run(@card, briefing: { "base_sha" => "base" })
+    @runner = Agent::Runner.new(@run)
+  end
+
+  test "stream init captures the claude session id" do
+    @runner.send(:handle_stream_event,
+                 { "type" => "system", "subtype" => "init", "session_id" => "sess-123", "model" => "sonnet" }, {})
+    assert_equal "sess-123", @run.reload.external_session_id
+    assert_equal 1, @card.events.where(kind: "progress").count
+  end
+
+  test "assistant text and tool_use become timeline events" do
+    json = { "type" => "assistant", "message" => { "content" => [
+      { "type" => "text", "text" => "Working on it" },
+      { "type" => "tool_use", "name" => "Edit", "input" => { "file" => "a.rb" } }
+    ] } }
+    @runner.send(:handle_stream_event, json, {})
+    assert_equal 1, @card.events.where(kind: "progress").count
+    assert_equal 1, @card.events.where(kind: "tool_call").count
+  end
+
+  test "result event fills the result hash" do
+    result = {}
+    @runner.send(:handle_stream_event,
+                 { "type" => "result", "subtype" => "success", "is_error" => false,
+                   "result" => "Done.", "total_cost_usd" => 0.5, "num_turns" => 3,
+                   "usage" => { "input_tokens" => 10, "output_tokens" => 20 } }, result)
+    assert result[:success]
+    assert_equal "Done.", result[:report]
+    assert_equal 0.5, result[:cost]
+  end
+
+  test "QUESTION report parks run and card as needs_input" do
+    @runner.send(:conclude_execute, FakeWorkspace.new([]),
+                 { success: true, report: "QUESTION: apples or oranges?" })
+    assert_equal "needs_input", @run.reload.status
+    assert_equal "needs_input", @card.reload.status
+    assert_equal "apples or oranges?", @card.events.where(kind: "question").last.text
+  end
+
+  test "successful execute with commits pushes and completes" do
+    ws = FakeWorkspace.new(["abc fix thing"])
+    @runner.define_singleton_method(:ensure_pull_request) { |_| } # skip gh
+    @runner.send(:conclude_execute, ws, { success: true, report: "All done", turns: 4, cost: 0.2 })
+    assert ws.pushed
+    assert_equal "succeeded", @run.reload.status
+    assert_equal "work_complete", @card.reload.status
+    assert_match(/All done/, @card.events.where(kind: "final_report").last.text)
+  end
+
+  test "successful execute with no commits skips push" do
+    ws = FakeWorkspace.new([])
+    @runner.send(:conclude_execute, ws, { success: true, report: "Nothing to do" })
+    assert_nil ws.pushed
+    assert_equal "work_complete", @card.reload.status
+  end
+
+  test "plan success parks with plan_proposed" do
+    @run.update!(phase: "plan")
+    @runner.send(:conclude_plan, { success: true, report: "1. Do X\n2. Do Y" })
+    assert_equal "needs_input", @run.reload.status
+    assert_equal "needs_input", @card.reload.status
+    assert_match(/Do X/, @card.events.where(kind: "plan_proposed").last.text)
+  end
+
+  test "failed result marks run and card failed" do
+    @runner.send(:conclude_execute, FakeWorkspace.new([]), { success: false, stderr: "boom" })
+    assert_equal "failed", @run.reload.status
+    assert_equal "failed", @card.reload.status
+  end
+
+  test "usage accumulates across segments" do
+    @runner.send(:accumulate_usage, { cost: 0.1, input_tokens: 5, output_tokens: 7 })
+    @runner.send(:accumulate_usage, { cost: 0.2, input_tokens: 5, output_tokens: 3 })
+    assert_in_delta 0.3, @run.reload.cost.to_f
+    assert_equal 10, @run.output_tokens
+  end
+end
