@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_120000) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -33,6 +33,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_000002) do
   end
 
   create_table "boards", force: :cascade do |t|
+    t.datetime "brief_generated_at"
+    t.string "brief_model"
+    t.string "brief_sha"
+    t.string "brief_status"
     t.datetime "created_at", null: false
     t.string "default_branch", default: "main", null: false
     t.string "local_path"

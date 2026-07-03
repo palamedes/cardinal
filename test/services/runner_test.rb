@@ -121,6 +121,27 @@ class RunnerBriefingTest < ActiveSupport::TestCase
     @card.log!("assistant_message", actor: "assistant", text: "Just chatting")
     assert_no_match(/Brief from planning/, Agent::Runner.new(@run).send(:briefing_prompt))
   end
+
+  test "repo brief is injected ahead of the planning brief in both prompts" do
+    @card.log!("assistant_message", actor: "assistant",
+               text: "Ready for execution: build the thing; acceptance: it works.")
+    runner = Agent::Runner.new(@run)
+    board = runner.instance_variable_get(:@card).board
+    board.define_singleton_method(:repo_brief) { "## Overview\nA Rails app." }
+
+    %i[briefing_prompt plan_prompt].each do |which|
+      prompt = runner.send(which)
+      assert_match(/## Repo brief\n## Overview\nA Rails app\./, prompt)
+      assert_operator prompt.index("## Repo brief"), :<, prompt.index("## Brief from planning"),
+                      "repo brief should precede the planning brief in #{which}"
+    end
+  end
+
+  test "no repo brief section when there is no brief" do
+    runner = Agent::Runner.new(@run)
+    runner.instance_variable_get(:@card).board.define_singleton_method(:repo_brief) { nil }
+    assert_no_match(/## Repo brief/, runner.send(:briefing_prompt))
+  end
 end
 
 class RunnerSalvagePrTest < ActiveSupport::TestCase

@@ -329,7 +329,7 @@ module Agent
         ## Brief
         #{card.description.presence || "(no description — infer scope from the title and conversation)"}
 
-        #{"## Brief from planning (authoritative — refined with the user)\n#{planning_brief}\n" if planning_brief}
+        #{repo_brief_section}#{"## Brief from planning (authoritative — refined with the user)\n#{planning_brief}\n" if planning_brief}
         ## Card conversation so far
         #{conversation_excerpt.presence || "(none)"}
 
@@ -346,7 +346,7 @@ module Agent
         ## Brief
         #{card.description.presence || "(no description — infer scope from the title and conversation)"}
 
-        #{"## Brief from planning (authoritative — refined with the user)\n#{planning_brief}\n" if planning_brief}
+        #{repo_brief_section}#{"## Brief from planning (authoritative — refined with the user)\n#{planning_brief}\n" if planning_brief}
         ## Card conversation so far
         #{conversation_excerpt.presence || "(none)"}
 
@@ -361,6 +361,14 @@ module Agent
         running commands); never ask who should run a command or plan around not having
         a shell.
       PROMPT
+    end
+
+    # The one-time repo deep dive (card #12), injected ahead of the planning
+    # brief so the agent starts oriented instead of re-exploring the tree each
+    # run. Empty string (not nil) when there's no brief, so the heredoc stays clean.
+    def repo_brief_section
+      brief = card.board.repo_brief.presence or return ""
+      "## Repo brief\n#{brief.strip}\n\n"
     end
 
     # The planning assistant's distilled "Ready for execution" brief, if the
