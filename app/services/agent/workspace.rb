@@ -13,6 +13,13 @@ module Agent
       new(card).tap(&:provision)
     end
 
+    # Reattach to an existing checkout without resetting it — used when
+    # resuming a parked run whose local commits aren't pushed yet.
+    def self.attach(card)
+      ws = new(card)
+      File.directory?(ws.path.join(".git")) ? ws : ws.tap(&:provision)
+    end
+
     def initialize(card)
       @card = card
       @path = ROOT.join("card-#{card.number}")

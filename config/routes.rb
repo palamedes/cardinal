@@ -8,7 +8,10 @@ Rails.application.routes.draw do
   end
   resources :columns, only: [:create, :edit]
   resources :runs, only: [] do
-    member { post :cancel }
+    member do
+      post :cancel
+      post :approve
+    end
   end
 
   get "up" => "rails/health#show", as: :rails_health_check

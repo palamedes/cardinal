@@ -56,15 +56,26 @@
 
           <h3>Work</h3>
           <% runs = @card.runs.order(:id) %>
+          <% parked = runs.select(&:needs_input?).last %>
+          <% if parked&.phase == "plan" %>
+            <div class="panel-callout callout-plan">
+              <p><strong>Plan proposed.</strong> Approve to let the agent execute, or reply in the timeline to redirect.</p>
+              <%= button_to "👍 Approve plan", approve_run_path(parked), class: "approve-btn" %>
+            </div>
+          <% elsif parked %>
+            <div class="panel-callout callout-question">
+              <p><strong>The agent has a question</strong> — answer it in the timeline message box.</p>
+            </div>
+          <% end %>
           <% if runs.any? %>
             <ul class="run-list">
               <% runs.each do |run| %>
                 <li class="run run-<%= run.status %>">
-                  <span>Run #<%= run.id %> — <%= run.status %></span>
-                  <% if run.finished? && run.cost.positive? %>
+                  <span>Run #<%= run.id %> — <%= run.status %><%= " (#{run.phase})" if run.needs_input? %></span>
+                  <% if run.cost.positive? %>
                     <span class="hint"><%= run.output_tokens %> out · $<%= run.cost.round(2) %></span>
                   <% end %>
-                  <% if run.running? %>
+                  <% if run.running? || run.needs_input? %>
                     <%= button_to "✖ Cancel", cancel_run_path(run), class: "cancel-btn" %>
                   <% end %>
                 </li>

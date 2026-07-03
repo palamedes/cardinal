@@ -8,6 +8,6 @@ class StartRunJob < ApplicationJob
 
     session = card.agent_sessions.create!(status: "provisioning", model: card.column.model)
     run = session.runs.create!(status: "queued", briefing: { "card" => card.title, "column" => card.column.name })
-    Agent::Runner.new(run).call
+    Agent::Runner.start(run)
   end
 end

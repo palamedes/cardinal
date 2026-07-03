@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_03_000002) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -35,6 +35,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
   create_table "boards", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "default_branch", default: "main", null: false
+    t.string "local_path"
     t.string "name", null: false
     t.string "repo_url"
     t.datetime "updated_at", null: false
@@ -90,10 +91,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_000001) do
     t.json "briefing", default: {}, null: false
     t.decimal "cost", precision: 10, scale: 4, default: "0.0", null: false
     t.datetime "created_at", null: false
+    t.string "external_session_id"
     t.datetime "finished_at"
     t.datetime "heartbeat_at"
     t.integer "input_tokens", default: 0, null: false
     t.integer "output_tokens", default: 0, null: false
+    t.string "phase", default: "execute", null: false
     t.text "result_summary"
     t.datetime "started_at"
     t.string "status", default: "queued", null: false

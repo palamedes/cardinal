@@ -225,3 +225,11 @@ button, input[type="submit"] {
 .run-failed, .run-cancelled { color: var(--red); }
 .cancel-btn { font-size: 11px; padding: 3px 8px; background: var(--red); }
 .event-final_report .event-body { background: rgba(95, 174, 111, .07); border-radius: 8px; padding: 8px 10px; }
+.event-plan_proposed .event-body { background: rgba(107, 147, 201, .08); border-radius: 8px; padding: 8px 10px; }
+.event-question .event-body { background: rgba(217, 164, 65, .1); border-radius: 8px; padding: 8px 10px; }
+
+.panel-callout { border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+.panel-callout p { margin: 0 0 8px; }
+.callout-plan { border: 1px solid var(--blue); background: rgba(107, 147, 201, .08); }
+.callout-question { border: 1px solid var(--amber); background: rgba(217, 164, 65, .08); }
+.approve-btn { background: var(--green); }
