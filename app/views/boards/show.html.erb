@@ -1,7 +1,13 @@
 <%= turbo_stream_from @board %>
 
 <header class="topbar">
-  <h1>Cardinal AI <span class="sep">▸</span> <%= @board.name %></h1>
+  <div class="topbar-left">
+    <h1>Cardinal AI <span class="sep">▸</span> <%= @board.name %></h1>
+    <%= button_to "⇣ Pull", pull_board_path, form_class: "pull-form",
+          form: { title: "git pull --ff-only in #{@board.local_path} — fetch what Done has merged" },
+          data: { turbo_submits_with: "⇣ Pulling…" }, class: "theme-toggle" %>
+    <span id="repo-pull-status"></span>
+  </div>
   <div class="topbar-right">
     <%# Repo deep dive (card #12): one-shot read-only mapping of the repo, stored
         as a brief and injected into worker prompts. The button greys→reds as the
@@ -20,10 +26,6 @@
         🔍 Deep dive
       <% end %>
     <% end %>
-    <span id="repo-pull-status"></span>
-    <%= button_to "⇣ Pull", pull_board_path, form_class: "pull-form",
-          form: { title: "git pull --ff-only in #{@board.local_path} — fetch what Done has merged" },
-          data: { turbo_submits_with: "⇣ Pulling…" }, class: "theme-toggle" %>
     <button type="button" class="theme-toggle"
             data-controller="theme" data-action="theme#toggle">☀ Light</button>
     <% if ENV["CARDINAL_AUTH"].present? %>
