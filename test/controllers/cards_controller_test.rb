@@ -32,6 +32,29 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
   end
 end
 
+class CardReviewButtonTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "R", default_branch: "main")
+    @review = @board.columns.create!(name: "review", archetype: "review", position: 0, policy: {})
+  end
+
+  test "a card in review with a PR shows the full-width View Pull Request button" do
+    card = @board.cards.create!(column: @review, title: "reviewable", status: "in_review",
+                                pr_url: "https://github.com/o/r/pull/9")
+    get card_path(card)
+    assert_response :success
+    assert_select "a.pr-view-btn[href=?][target=_blank]",
+                  "https://github.com/o/r/pull/9", text: "View Pull Request"
+  end
+
+  test "a card in review without a PR shows no button" do
+    card = @board.cards.create!(column: @review, title: "no pr", status: "in_review")
+    get card_path(card)
+    assert_response :success
+    assert_select "a.pr-view-btn", false
+  end
+end
+
 class CardLinkableTest < ActionDispatch::IntegrationTest
   setup do
     @board = Board.create!(name: "L", default_branch: "main")

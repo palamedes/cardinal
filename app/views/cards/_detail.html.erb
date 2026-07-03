@@ -100,9 +100,12 @@
 
           <% if @card.column.review? %>
             <h3>Review</h3>
+            <% if @card.pr_url %>
+              <%= link_to "View Pull Request", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-view-btn" %>
+            <% end %>
             <% if @card.in_review? %>
               <div class="panel-callout callout-plan">
-                <p><strong>Your verdict.</strong><% if @card.pr_url %> Check the <%= link_to "pull request", @card.pr_url, target: "_blank" %> and the final report in the timeline.<% end %>
+                <p><strong>Your verdict.</strong> Check the final report in the timeline.
                 Approve, or just say what's wrong in the conversation — that marks it changes-requested,
                 and dragging the card back to a work column carries your feedback into the next run.</p>
                 <%= button_to "✅ Approve", approve_card_path(@card), class: "approve-btn", form_class: "align-right" %>
