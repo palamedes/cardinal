@@ -45,8 +45,12 @@
             </div>
           <% end %>
 
-          <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — the planning assistant's or worker agent's standing orders (e.g. \"follow the repo style guide, always write tests\").") %></label>
-          <%= f.text_area :instructions, rows: 3, value: @column.instructions %>
+          <label>Instructions <%= info_tip("Extra guidance given to any AI servicing cards in this column — added ON TOP of the built-in role shown below (which is enforced in code and can't be edited away).") %></label>
+          <% if @column.built_in_role %>
+            <p class="default-rule">Built-in role: <%= @column.built_in_role %></p>
+          <% end %>
+          <%= f.text_area :instructions, rows: 3, value: @column.instructions,
+                placeholder: "Your additions — e.g. “always press for acceptance criteria”, “follow the repo style guide”…" %>
 
           <div class="field-row">
             <div>
