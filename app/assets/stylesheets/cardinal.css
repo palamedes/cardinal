@@ -78,6 +78,11 @@ a { color: var(--blue); text-decoration: none; }
   50%      { opacity: .7; box-shadow: 0 0 0 3px rgba(212, 51, 51, 0); }
 }
 
+.pull-form { display: inline; }
+#repo-pull-status { font-size: 0.85rem; }
+#repo-pull-status .pull-ok  { color: var(--green); }
+#repo-pull-status .pull-err { color: var(--red); }
+
 .attention summary {
   cursor: pointer;
   color: var(--amber);
