@@ -137,3 +137,40 @@ class RunnerSalvagePrTest < ActiveSupport::TestCase
     assert called
   end
 end
+
+class RunnerBudgetTest < ActiveSupport::TestCase
+  setup do
+    @board = create_board
+    @card = create_card(@board, "execution", status: "working", branch_name: "cardinal/9-b")
+    @run = create_run(@card, briefing: { "base_sha" => "base" })
+    @run.update!(external_session_id: "sess-77")
+    @runner = Agent::Runner.new(@run)
+  end
+
+  test "execute turn-cap parks with a continue question instead of failing" do
+    ws = RunnerTest::FakeWorkspace.new(["abc partial work"])
+    @runner.define_singleton_method(:ensure_pull_request) { |_| }
+    @runner.send(:conclude_execute, ws, { success: false, subtype: "error_max_turns" })
+    assert_equal "needs_input", @run.reload.status
+    assert_equal "needs_input", @card.reload.status
+    assert_match(/fresh budget/, @card.events.where(kind: "question").last.text)
+    assert ws.pushed # partial commits salvaged
+  end
+
+  test "plan turn-cap triggers one tool-less wrap-up segment" do
+    @run.update!(phase: "plan")
+    wrapped = []
+    @runner.define_singleton_method(:stream_agent) { |**kw| wrapped << kw }
+    @runner.send(:conclude_plan, { success: false, subtype: "error_max_turns" })
+    assert_equal 1, wrapped.size
+    assert_equal "plan_wrap", wrapped.first[:mode]
+    assert wrapped.first[:resuming]
+  end
+
+  test "plan wrap-up failing a second time records failure" do
+    @run.update!(phase: "plan")
+    @runner.instance_variable_set(:@plan_wrap_attempted, true)
+    @runner.send(:conclude_plan, { success: false, subtype: "error_max_turns" })
+    assert_equal "failed", @run.reload.status
+  end
+end

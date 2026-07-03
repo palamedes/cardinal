@@ -4,7 +4,7 @@ class Board < ApplicationRecord
     { name: "Planning",    archetype: "planning",  policy: { "model" => "claude-haiku-4-5-20251001" } },
     { name: "In Progress", archetype: "execution",
       policy: { "model" => "claude-sonnet-4-6", "effort" => "high", "concurrency_limit" => 3,
-                "plan_approval" => true, "max_turns" => 25, "timeout_minutes" => 30,
+                "plan_approval" => true, "max_turns" => 80, "timeout_minutes" => 30,
                 "on_entry" => [{ "action" => "start_agent_run" }] } },
     { name: "Review",      archetype: "review",    policy: {} },
     { name: "QA",          archetype: "review",

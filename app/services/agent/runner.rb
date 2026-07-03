@@ -13,6 +13,8 @@ module Agent
   class Runner
     STRIP_ENV = %w[ANTHROPIC_API_KEY CLAUDECODE CLAUDE_CODE_ENTRYPOINT GH_TOKEN GITHUB_TOKEN].freeze
     HEARTBEAT_EVERY = 10 # seconds
+    PLAN_TURNS = 20
+    DEFAULT_EXECUTE_TURNS = 80 # turn caps are runaway guards, not work limits
 
     EXECUTE_RULES = <<~RULES.freeze
       ## Rules
@@ -94,12 +96,16 @@ module Agent
 
       cmd = ["claude", "-p", prompt, "--output-format", "stream-json", "--verbose",
              "--permission-mode", "bypassPermissions"]
-      if mode == "plan"
+      case mode
+      when "plan"
         # Read-only exploration for the plan phase. (--permission-mode plan
         # hangs headless: ExitPlanMode waits for an approval that never comes.)
-        cmd += ["--max-turns", "10", "--tools", "Read,Glob,Grep"]
+        cmd += ["--max-turns", PLAN_TURNS.to_s, "--tools", "Read,Glob,Grep"]
+      when "plan_wrap"
+        # Turn-capped plan: force the plan out of the context already gathered.
+        cmd += ["--max-turns", "3", "--tools", ""]
       else
-        cmd += ["--max-turns", (column.max_turns.presence || 25).to_s]
+        cmd += ["--max-turns", (column.max_turns.presence || DEFAULT_EXECUTE_TURNS).to_s]
       end
       cmd += ["--model", column.model] if column.model.present?
       cmd += ["--effort", column.effort] if column.effort.present?
@@ -145,7 +151,7 @@ module Agent
         result[:timeout_min] = timeout_min
       end
 
-      mode == "plan" ? conclude_plan(result) : conclude_execute(workspace, result)
+      mode == "execute" ? conclude_execute(workspace, result) : conclude_plan(result)
     end
 
     def handle_stream_event(json, result)
@@ -183,6 +189,14 @@ module Agent
     def conclude_plan(result)
       accumulate_usage(result)
       unless result[:success] && result[:report].present?
+        # Turn-capped mid-exploration: one tool-less wrap-up pass to force the
+        # plan out of the context it already gathered.
+        if result[:subtype] == "error_max_turns" && run.external_session_id.present? && !@plan_wrap_attempted
+          @plan_wrap_attempted = true
+          card.log!("progress", actor: "agent", run: run, text: "Hit the exploration budget — wrapping up the plan from what was learned")
+          return stream_agent(prompt: "You have hit your exploration limit. Present your best plan-of-attack now, using only what you have already learned. Do not use any tools.",
+                              mode: "plan_wrap", resuming: true)
+        end
         return record_failure(RuntimeError.new("plan phase failed — #{failure_reason(result)}"))
       end
       park!("plan_proposed", result[:report],
@@ -192,6 +206,14 @@ module Agent
     def conclude_execute(workspace, result)
       accumulate_usage(result)
       unless result[:success]
+        # Budget exhaustion isn't failure — park and offer to continue (§8).
+        # The session survives; an answer resumes it with a fresh turn budget.
+        if result[:subtype] == "error_max_turns" && run.external_session_id.present?
+          commits = salvage_commits(workspace)
+          return park!("question",
+                       "I've used this segment's turn budget mid-work#{" — #{commits} commit(s) so far are saved to the branch" if commits.to_i.positive?}. Reply (anything) to continue with a fresh budget, or cancel the run.",
+                       note: "Agent paused at the turn budget — reply on the card to continue.")
+        end
         salvage_commits(workspace)
         return record_failure(RuntimeError.new(failure_reason(result)))
       end
@@ -247,11 +269,13 @@ module Agent
     # next provision's reset wiping it.
     def salvage_commits(workspace)
       commits = workspace.commits_since(base_sha)
-      return if commits.empty?
+      return 0 if commits.empty?
       workspace.push!
-      card.log!("progress", run: run, text: "Partial work preserved: #{commits.size} commit(s) pushed to #{card.branch_name} before failure")
+      card.log!("progress", run: run, text: "Partial work preserved: #{commits.size} commit(s) pushed to #{card.branch_name}")
+      commits.size
     rescue => e
       card.log!("progress", run: run, text: "Could not preserve partial work: #{e.message.truncate(120)}")
+      0
     end
 
     def record_failure(error)
