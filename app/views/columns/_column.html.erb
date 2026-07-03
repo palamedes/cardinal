@@ -5,14 +5,6 @@
                 data: { turbo_frame: "modal" } %>
   </header>
   <p class="drop-hint">→ <%= column.drag_hint %></p>
-  <% if column.execution? %>
-    <p class="ticker">
-      <%= column.running_count %> running · <%= column.queued_count %> queued
-      <% if column.model %>
-        <span class="chip agent-chip">🤖 <%= column.model_short %><%= " · #{column.effort}" if column.effort %></span>
-      <% end %>
-    </p>
-  <% end %>
   <div class="cards"
        data-controller="board-column"
        data-board-column-hint-value="<%= column.drag_hint %>"

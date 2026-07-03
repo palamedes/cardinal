@@ -143,9 +143,9 @@ button, input[type="submit"] {
   display: flex;
   flex-direction: column;
 }
-.column-execution { background: #20222c; border-color: #3a3f52; }
+.column-execution { background: #1c2a21; border-color: #375844; }
 .column-review    { background: #24211c; border-color: #4a4232; }
-[data-theme="light"] .column-execution { background: #eef1f8; border-color: #ccd3e6; }
+[data-theme="light"] .column-execution { background: #e9f3ec; border-color: #bcd8c4; }
 [data-theme="light"] .column-review    { background: #f6f1e6; border-color: #e3d7bf; }
 .column-header { display: flex; justify-content: space-between; align-items: center; }
 .column-header h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 2px 4px 8px; color: var(--text-dim); }

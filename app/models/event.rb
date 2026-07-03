@@ -26,12 +26,16 @@ class Event < ApplicationRecord
     broadcast_append_to card, target: "card_events", partial: "events/event", locals: { event: self }
   }, unless: -> { actor == "user" }
 
-  # Progress lines render on the card face (§6) — nudge the board to morph.
-  after_create_commit -> { card.broadcast_refresh_to card.board },
-                      if: -> { %w[progress run_started run_finished].include?(kind) }
-
   # These kinds mean the AI has delivered what the typing indicator promised.
   RESOLVES_THINKING = %w[assistant_message final_report question plan_proposed error].freeze
+
+  # Kinds that change what a card FACE shows (progress lines, thinking chip,
+  # replied chip) — the board must morph on these, not just the open modal.
+  REFRESHES_BOARD = (%w[progress run_started run_finished] + RESOLVES_THINKING).freeze
+
+  after_create_commit -> { card.broadcast_refresh_to card.board },
+                      if: -> { REFRESHES_BOARD.include?(kind) }
+
   after_create_commit -> { broadcast_remove_to card, target: "typing-indicator" },
                       if: -> { RESOLVES_THINKING.include?(kind) }
 
