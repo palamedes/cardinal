@@ -1,14 +1,17 @@
 <%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
   <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
-    <div class="modal modal-sm">
+    <div class="modal modal-sm" data-controller="autosave">
       <header class="modal-header">
-        <h1>⚙ <%= @column.name %> <span class="chip"><%= @column.archetype %></span></h1>
+        <h1>⚙ <%= @column.name %> <span class="chip"><%= @column.archetype %></span>
+            <span class="autosave-status" data-autosave-target="status"></span></h1>
         <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
       </header>
       <div class="modal-body">
-        <% if @json_error %><p class="form-error"><%= @json_error %></p><% end %>
+        <div id="column-form-errors"><% if @json_error %><p class="form-error"><%= @json_error %></p><% end %></div>
 
-        <%= form_with model: @column, class: "card-edit" do |f| %>
+        <%= form_with model: @column, class: "card-edit",
+              data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
+          <%= hidden_field_tag :autosave, "1" %>
           <div class="field-row">
             <div>
               <label>Name <%= info_tip("The column's display name on the board.") %></label>
@@ -103,8 +106,6 @@
                     placeholder: '[{"action": "ai_task", "prompt": "Suggest tags for: %{title}"}]' %>
             </details>
           <% end %>
-
-          <%= f.submit "Save" %>
         <% end %>
 
         <details class="advanced-rules panel-advanced">

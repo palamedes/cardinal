@@ -71,3 +71,30 @@ class ColumnsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "execution", @board.columns.order(:position).last.archetype
   end
 end
+
+class ColumnAutosaveTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "AS", default_branch: "main")
+    @col = @board.columns.create!(name: "Work", archetype: "execution", position: 0, policy: {})
+  end
+
+  test "autosave patches the board column only and clears errors" do
+    patch column_path(@col), params: { autosave: "1", column: { name: "Working", archetype: "execution" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :success
+    assert_match "column_#{@col.id}", response.body
+    assert_match 'target="column-form-errors"', response.body
+    assert_no_match 'target="modal"', response.body
+    assert_equal "Working", @col.reload.name
+  end
+
+  test "autosave with invalid rules JSON reports in-modal without nuking the form" do
+    patch column_path(@col), params: { autosave: "1", column: { name: "Work", archetype: "execution",
+                                                                on_entry_json: "not json" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :unprocessable_entity
+    assert_match "column-form-errors", response.body
+    assert_match "NOT saved", response.body
+    assert_no_match(/modal-body/, response.body)
+  end
+end

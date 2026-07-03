@@ -45,11 +45,10 @@ class ColumnsController < ApplicationController
     # advanced JSON editor applies only when the English box is empty.
     if attrs[:on_entry_text].present?
       if attrs[:on_entry_text].strip != policy["on_entry_text"].to_s.strip
-        begin
+          begin
           policy["on_entry"] = Rules::Compiler.compile(attrs[:on_entry_text])
         rescue Rules::Compiler::Error => e
-          @json_error = e.message
-          return render :edit, status: :unprocessable_entity
+          return column_error(e.message)
         end
       end
       policy["on_entry_text"] = attrs[:on_entry_text].strip
@@ -58,8 +57,7 @@ class ColumnsController < ApplicationController
         policy["on_entry"] = JSON.parse(attrs[:on_entry_json])
         policy.delete("on_entry_text")
       rescue JSON::ParserError => e
-        @json_error = "on_entry is not valid JSON: #{e.message.truncate(120)}"
-        return render :edit, status: :unprocessable_entity
+        return column_error("on_entry is not valid JSON: #{e.message.truncate(120)}")
       end
     else
       policy.delete("on_entry")
@@ -71,7 +69,30 @@ class ColumnsController < ApplicationController
       archetype: attrs[:archetype].presence_in(Column::ARCHETYPES) || @column.archetype,
       policy: policy.compact
     )
-    redirect_to root_path
+
+    if params[:autosave]
+      # Silent save: patch the board's column section + clear any prior error.
+      # No modal replace — it would steal focus mid-edit.
+      render turbo_stream: [
+        turbo_stream.replace(helpers.dom_id(@column), partial: "columns/column", locals: { column: @column.reload }),
+        turbo_stream.update("column-form-errors", "")
+      ]
+    else
+      redirect_to root_path
+    end
+  end
+
+  # Autosave-friendly error: surface in the modal without re-rendering the form.
+  def column_error(message)
+    if params[:autosave]
+      render turbo_stream: turbo_stream.update(
+        "column-form-errors",
+        helpers.tag.p("#{message} — this field was NOT saved.", class: "form-error")
+      ), status: :unprocessable_entity
+    else
+      @json_error = message
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def destroy
