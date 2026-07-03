@@ -26,7 +26,7 @@
 
           <div class="timeline-scroll" data-scroll-target="scroller">
             <% if @card.description.present? %>
-              <div class="event event-description"><%= simple_format @card.description %></div>
+              <div class="event event-description"><%= render_markdown @card.description %></div>
             <% end %>
 
             <div id="card_events">

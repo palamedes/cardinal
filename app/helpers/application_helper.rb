@@ -13,6 +13,19 @@ module ApplicationHelper
     options
   end
 
+  # Timeline text is Markdown (agents write it constantly). escape_html turns
+  # any raw HTML in the text into visible text instead of live DOM — an agent
+  # pasting `<div class=...>` inside a code fence must never restyle the page.
+  MARKDOWN = Redcarpet::Markdown.new(
+    Redcarpet::Render::HTML.new(escape_html: true, hard_wrap: true, safe_links_only: true),
+    fenced_code_blocks: true, tables: true, autolink: true,
+    strikethrough: true, no_intra_emphasis: true, lax_spacing: true
+  )
+
+  def render_markdown(text)
+    MARKDOWN.render(text.to_s).html_safe
+  end
+
   def info_tip(text)
     tag.span("i", class: "info",
              data: { controller: "tooltip", tooltip_text_value: text,
