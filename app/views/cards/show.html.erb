@@ -1,0 +1,49 @@
+<div class="card-detail">
+  <header class="topbar">
+    <h1>
+      <%= link_to "← Board", board_path, class: "back" %>
+      <span class="card-number">#<%= @card.number %></span> <%= @card.title %>
+      <span class="chip status-chip status-<%= @card.status %>"><%= @card.status.humanize %></span>
+    </h1>
+    <% if @card.branch_name %>
+      <p class="git-line">🌿 <%= @card.branch_name %><% if @card.pr_url %> → <%= link_to "PR", @card.pr_url %> (<%= @card.pr_state %>)<% end %></p>
+    <% end %>
+  </header>
+
+  <div class="detail-panes">
+    <section class="timeline">
+      <nav class="zoom-tabs">
+        <% %w[conversation activity debug].each do |zoom| %>
+          <%= link_to zoom.capitalize, card_path(@card, zoom: zoom),
+                      class: ("active" if @zoom == zoom) %>
+        <% end %>
+      </nav>
+
+      <% if @card.description.present? %>
+        <div class="event event-description"><%= simple_format @card.description %></div>
+      <% end %>
+
+      <% @events.each do |event| %>
+        <div class="event event-<%= event.kind %> actor-<%= event.actor %>">
+          <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>
+          <div class="event-body">
+            <% if event.text %>
+              <%= simple_format event.text %>
+            <% else %>
+              <code class="event-kind"><%= event.kind %></code>
+            <% end %>
+            <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
+          </div>
+        </div>
+      <% end %>
+      <% if @events.empty? %>
+        <p class="empty">No events yet — this card hasn't been anywhere.</p>
+      <% end %>
+    </section>
+
+    <aside class="work-panel">
+      <h3>Work panel</h3>
+      <p class="empty">Plan progress, artifacts, and run controls appear here once the runner lands.</p>
+    </aside>
+  </div>
+</div>

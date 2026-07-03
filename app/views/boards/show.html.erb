@@ -1,0 +1,28 @@
+<%= turbo_stream_from @board %>
+
+<header class="topbar">
+  <h1>Cardinal <span class="sep">▸</span> <%= @board.name %></h1>
+  <div class="topbar-right">
+    <% attention = @board.attention_cards %>
+    <% if attention.any? %>
+      <details class="attention">
+        <summary>⚠ <%= attention.size %> need you</summary>
+        <ul>
+          <% attention.each do |card| %>
+            <li><%= link_to "##{card.number} #{card.title} — #{card.status.humanize.downcase}", card_path(card) %></li>
+          <% end %>
+        </ul>
+      </details>
+    <% end %>
+    <%= form_with url: cards_path, class: "new-card" do |f| %>
+      <%= f.text_field "card[title]", placeholder: "New card…", required: true %>
+      <%= f.submit "+ Card" %>
+    <% end %>
+  </div>
+</header>
+
+<main class="board">
+  <% @board.columns.each do |column| %>
+    <%= render "columns/column", column: column %>
+  <% end %>
+</main>

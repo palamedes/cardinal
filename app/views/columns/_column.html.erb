@@ -1,0 +1,19 @@
+<section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>">
+  <header class="column-header">
+    <h2><%= column.name %></h2>
+    <span class="gear" title="Column settings (coming soon)">⚙</span>
+  </header>
+  <% if column.execution? %>
+    <p class="ticker">
+      <%= column.running_count %> running · <%= column.queued_count %> queued
+    </p>
+  <% end %>
+  <div class="cards"
+       data-controller="board-column"
+       data-board-column-hint-value="<%= column.drag_hint %>"
+       data-column-id="<%= column.id %>">
+    <% column.cards.each do |card| %>
+      <%= render "cards/card", card: card %>
+    <% end %>
+  </div>
+</section>

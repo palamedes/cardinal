@@ -384,19 +384,7 @@ without touching the product model.
 
 (Resolved questions move to the decision log, §15.)
 
-1. **Plan-approval gate default:** on for everything, or only for columns with write tools?
-2. **Auto-advance:** should `work_complete` ever move the card to Review automatically, or
-   is human-drags-only a product principle?
-3. **When does the PR open?** Draft PR at run start (work visible on GitHub immediately) vs.
-   PR only when the run succeeds (less noise). Recommendation: draft PR on first push,
-   marked ready on `work_complete`.
-4. **What does "approve" do?** Does approving in Review merge the PR, or does merging
-   happen when the card enters Done (merge as the terminal column's entry policy)?
-   Recommendation: merge-on-Done-entry — it keeps "approve" reversible and makes the
-   terminal column's policy do the irreversible thing.
-5. **Review surface:** embed a diff viewer in the card's work panel, or lean on GitHub's PR
-   UI and just deep-link? Recommendation for MVP: show the final report + file-level diff
-   summary in-card, link out to the PR for line-level review.
+_None currently — next open items will come out of implementation._
 
 ---
 
@@ -585,3 +573,11 @@ admin surface.
   Hotwire + Postgres (SolidQueue/SolidCable). Cards get tags/descriptions now, richer
   metadata later; multi-board (one repo per board) is post-MVP. Next step agreed: nail
   down UI/UX and workflow before scaffolding (§14 drafted).
+- **2026-07-03 (later)** — Five review/git seam questions resolved per recommendation:
+  (1) plan-approval gate defaults ON for columns with write tools, per-column toggleable;
+  (2) human-drags-only is a product principle for MVP — no auto-advance;
+  (3) draft PR opens on first push, flipped to ready on `work_complete`;
+  (4) "approve" is a reversible verdict — **the merge is Done's entry policy**;
+  (5) review surface = in-card final report + file-level diff summary, deep link to the
+  GitHub PR for line-level review. Scaffolding started: Rails 8 + Ruby 3.4 (Fullstaq) +
+  Postgres 15 inside the cage container, repo at github.com/palamedes/cardinal.
