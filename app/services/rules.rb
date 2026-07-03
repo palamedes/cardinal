@@ -32,6 +32,25 @@ module Rules
 
   AI_ACTIONS = %w[assistant_greeting start_agent_run ai_task].freeze
 
+  # Human names for compiled rule actions — so "currently active" behavior is
+  # readable in the gear modal without opening the JSON drawer (no-magic).
+  ACTION_DESCRIPTIONS = {
+    "assistant_greeting" => "the assistant opens the discussion",
+    "start_agent_run"    => "assign a worker agent and start a run",
+    "ai_task"            => "run a one-shot AI task",
+    "mark_pr_ready"      => "take the PR out of draft",
+    "merge_pr"           => "merge the PR and ship",
+    "set_status"         => "set the card's status"
+  }.freeze
+
+  def self.describe(rules)
+    normalized = rules.is_a?(Hash) || rules.is_a?(String) ? [rules] : Array(rules)
+    normalized.map { |r| r.is_a?(String) ? { "action" => r } : r }.map do |rule|
+      base = ACTION_DESCRIPTIONS[rule["action"]] || rule["action"].to_s
+      rule["action"] == "ai_task" && rule["prompt"].present? ? "#{base} (“#{rule["prompt"].truncate(60)}”)" : base
+    end.join("; then ")
+  end
+
   def self.apply(rule, card, column)
     if AI_ACTIONS.include?(rule["action"]) && !column.ai?
       card.log!("status_change", text: "AI is off for #{column.name} — skipped #{rule["action"]}")

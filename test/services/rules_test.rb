@@ -84,3 +84,18 @@ class MarkPrReadyRuleTest < ActiveSupport::TestCase
     assert_match(/No PR/, card.events.last.text)
   end
 end
+
+class RulesDescribeTest < ActiveSupport::TestCase
+  test "compiled rules describe themselves in English" do
+    rules = [{ "action" => "mark_pr_ready" },
+             { "action" => "ai_task", "prompt" => "Suggest tags for %{title}" }]
+    desc = Rules.describe(rules)
+    assert_match(/take the PR out of draft; then run a one-shot AI task/, desc)
+    assert_match(/Suggest tags/, desc)
+  end
+
+  test "describe handles string and hash shorthands" do
+    assert_equal "merge the PR and ship", Rules.describe("merge_pr")
+    assert_equal "assign a worker agent and start a run", Rules.describe({ "action" => "start_agent_run" })
+  end
+end

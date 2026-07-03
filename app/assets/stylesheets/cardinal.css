@@ -520,3 +520,5 @@ body.dragging .drop-hint { display: block; }
 .card-edit [data-controller="reveal"],
 .card-edit [data-reveal-target="panel"] { display: contents; }
 .card-edit textarea, .card-edit input[type="text"] { width: 100%; }
+
+.default-rule.active-rule { border-left-color: var(--green); }
