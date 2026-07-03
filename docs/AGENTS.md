@@ -1,0 +1,3 @@
+# Cardinal Worker Agents
+
+A Cardinal worker agent is an AI agent that is automatically spawned when a card moves into an execution column (such as "In Progress"). It operates on a dedicated git branch for the card, working inside an isolated workspace so that changes stay scoped to a single task. As it works, the agent appends updates and findings to the card's timeline, giving the board a live record of what happened and why. When the work is done, the agent's output ships as a draft pull request, ready for human review before being merged.
