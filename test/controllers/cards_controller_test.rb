@@ -32,6 +32,32 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
   end
 end
 
+class CardLinkableTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "L", default_branch: "main")
+    col = @board.columns.create!(name: "t", archetype: "inbox", position: 0, policy: {})
+    @card = @board.cards.create!(column: col, title: "linkable card")
+  end
+
+  test "a direct visit to a card renders the whole board with the modal open" do
+    get card_path(@card)
+    assert_response :success
+    # The board is rendered behind the modal (topbar + columns)...
+    assert_select "header.topbar"
+    assert_select "main.board"
+    # ...with the card detail populated inside the permanent modal frame.
+    assert_select "turbo-frame#modal .modal.card-detail h1", /linkable card/
+  end
+
+  test "a turbo-frame request returns only the modal, not the board" do
+    get card_path(@card), headers: { "Turbo-Frame" => "modal" }
+    assert_response :success
+    assert_select "turbo-frame#modal .modal.card-detail h1", /linkable card/
+    assert_select "header.topbar", false
+    assert_select "main.board", false
+  end
+end
+
 class CardAutosaveTest < ActionDispatch::IntegrationTest
   setup do
     @board = Board.create!(name: "A", default_branch: "main")

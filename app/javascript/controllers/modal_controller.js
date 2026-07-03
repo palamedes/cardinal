@@ -27,5 +27,12 @@ export default class extends Controller {
     const frame = this.element.closest("turbo-frame")
     frame.removeAttribute("src")
     frame.innerHTML = ""
+    // Opening a card advances the URL to /cards/:id; closing must return the
+    // address bar to the board. The board is still rendered behind the permanent
+    // frame, so just rewrite the URL — no navigation needed. Back/forward still
+    // work via Turbo's history snapshots.
+    if (window.location.pathname.startsWith("/cards/")) {
+      window.history.pushState({}, "", "/")
+    }
   }
 }

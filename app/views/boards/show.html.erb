@@ -26,7 +26,7 @@
             <ul>
               <% attention.each do |card| %>
                 <li><%= link_to "##{card.number} #{card.title} — #{card.status.humanize.downcase}",
-                                card_path(card), data: { turbo_frame: "modal" } %></li>
+                                card_path(card), data: { turbo_frame: "modal", turbo_action: "advance" } %></li>
               <% end %>
             </ul>
           <% end %>
@@ -36,7 +36,7 @@
               <% working.each do |card| %>
                 <li class="attn-working">
                   <span class="pulse-dot"></span>
-                  <%= link_to card_path(card), data: { turbo_frame: "modal" } do %>
+                  <%= link_to card_path(card), data: { turbo_frame: "modal", turbo_action: "advance" } do %>
                     #<%= card.number %> <%= card.title %><span class="hint"> — <%= card.latest_progress&.truncate(60) || "starting…" %></span>
                   <% end %>
                 </li>
@@ -48,7 +48,7 @@
             <ul>
               <% queued.each_with_index do |card, index| %>
                 <li><%= link_to "##{card.number} #{card.title} — #{index.zero? ? "next up" : "#{index} ahead"}",
-                                card_path(card), data: { turbo_frame: "modal" } %></li>
+                                card_path(card), data: { turbo_frame: "modal", turbo_action: "advance" } %></li>
               <% end %>
             </ul>
           <% end %>
@@ -73,4 +73,6 @@
   <% end %>
 </main>
 
-<%= turbo_frame_tag "modal", data: { turbo_permanent: true } %>
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
+  <%= render "cards/detail" if @card %>
+<% end %>

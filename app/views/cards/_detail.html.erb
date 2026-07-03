@@ -1,0 +1,163 @@
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal card-detail">
+      <%= turbo_stream_from @card %>
+      <header class="modal-header">
+        <h1>
+          <%= @card.title %>
+          <span class="chip status-chip status-<%= @card.status %>"><%= @card.status.humanize %></span>
+          <span class="card-number-sub">#<%= @card.number %></span>
+        </h1>
+        <div class="modal-header-right">
+          <% if @card.branch_name %>
+            <span class="git-line">
+              <span class="branch-base"><%= @card.board.default_branch %></span>
+              <span class="git-arrow">→</span>
+              <span class="branch-pill" data-controller="clipboard" data-clipboard-text-value="<%= @card.branch_name %>">
+                <code><%= @card.branch_name %></code>
+                <button type="button" class="copy-btn" data-clipboard-target="button"
+                        data-action="clipboard#copy" title="Copy branch name">⧉</button>
+              </span>
+              <% if @card.pr_url %>
+                <span class="git-arrow">→</span>
+                <%= link_to "##{@card.pr_url[%r{/pull/(\d+)}, 1]}", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-link" %>
+                <span class="pr-state">(<%= @card.pr_state %>)</span>
+              <% end %>
+            </span>
+          <% end %>
+          <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+        </div>
+      </header>
+
+      <div class="detail-panes">
+        <section class="timeline" data-controller="scroll">
+          <nav class="zoom-tabs">
+            <% %w[conversation activity debug].each do |zoom| %>
+              <%= link_to zoom.capitalize, card_path(@card, zoom: zoom),
+                          class: ("active" if @zoom == zoom) %>
+            <% end %>
+          </nav>
+
+          <div class="timeline-scroll" data-scroll-target="scroller">
+            <% if @card.description.present? %>
+              <div class="event event-description"><%= render_markdown @card.description %></div>
+            <% end %>
+
+            <div id="card_events">
+              <%= render partial: "events/event", collection: @events %>
+              <% if @events.empty? %>
+                <p class="empty">No events yet — this card hasn't been anywhere.</p>
+              <% end %>
+            </div>
+
+            <% if @card.thinking? %>
+              <div class="event typing" id="typing-indicator">
+                <span class="event-actor"><%= @card.working? ? "🤖" : "🪶" %></span>
+                <div class="typing-dots"><span></span><span></span><span></span></div>
+              </div>
+            <% end %>
+          </div>
+
+          <button type="button" class="new-messages-pill" data-scroll-target="pill"
+                  data-action="scroll#jump">↓ New messages</button>
+
+          <%= form_with url: card_messages_path(@card), class: "message-form" do |f| %>
+            <%= f.text_area "message[text]", rows: 2, required: true,
+                  data: { controller: "composer", action: "keydown->composer#keydown" },
+                  placeholder: (@card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…") + " (Enter sends, Shift+Enter for a new line)" %>
+          <% end %>
+        </section>
+
+        <aside class="work-panel">
+          <div data-controller="autosave">
+            <h3>Details <span class="autosave-status" data-autosave-target="status"></span></h3>
+            <%= form_with model: @card, class: "card-edit",
+                  data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
+              <%= hidden_field_tag :autosave, "1" %>
+              <label>Title</label>
+              <%= f.text_field :title, required: true %>
+              <label>Tags</label>
+              <%= render "cards/tag_picker", board: @card.board, tags: @card.tags %>
+              <label>Description</label>
+              <%= f.text_area :description, rows: 6 %>
+            <% end %>
+          </div>
+
+          <% if @card.parent || @card.children.any? %>
+            <h3>Related</h3>
+            <ul class="related-list">
+              <% if @card.parent %>
+                <li>↑ <%= link_to @card.parent.title, card_path(@card.parent), data: { turbo_frame: "modal", turbo_action: "advance" } %>
+                    <span class="hint"><%= @card.parent.status.humanize.downcase %></span></li>
+              <% end %>
+              <% @card.children.each do |child| %>
+                <li>↳ <%= link_to child.title, card_path(child), data: { turbo_frame: "modal", turbo_action: "advance" } %>
+                    <span class="hint"><%= child.status.humanize.downcase %></span></li>
+              <% end %>
+            </ul>
+          <% end %>
+          <%= link_to "+ Child card", new_card_path(parent_id: @card.id),
+                class: "child-card-link", data: { turbo_frame: "modal" } %>
+
+          <% if @card.column.review? %>
+            <h3>Review</h3>
+            <% if @card.in_review? %>
+              <div class="panel-callout callout-plan">
+                <p><strong>Your verdict.</strong><% if @card.pr_url %> Check the <%= link_to "pull request", @card.pr_url, target: "_blank" %> and the final report in the timeline.<% end %>
+                Approve, or just say what's wrong in the conversation — that marks it changes-requested,
+                and dragging the card back to a work column carries your feedback into the next run.</p>
+                <%= button_to "✅ Approve", approve_card_path(@card), class: "approve-btn", form_class: "align-right" %>
+              </div>
+            <% elsif @card.approved? %>
+              <div class="panel-callout callout-plan"><p><strong>Approved.</strong> Drag the card to Done to merge and ship.</p></div>
+            <% elsif @card.changes_requested? %>
+              <div class="panel-callout callout-question"><p><strong>Changes requested.</strong> Drag the card back to an execution column for a revision run — your conversation feedback rides along.</p></div>
+            <% end %>
+          <% end %>
+
+          <h3>Work</h3>
+          <% runs = @card.runs.order(:id) %>
+          <% parked = runs.select(&:needs_input?).last %>
+          <% if parked&.phase == "plan" %>
+            <div class="panel-callout callout-plan">
+              <p><strong>Plan proposed.</strong> Approve to let the agent execute, or reply in the timeline to redirect.</p>
+              <%= button_to "👍 Approve plan", approve_run_path(parked), class: "approve-btn", form_class: "align-right" %>
+            </div>
+          <% elsif parked %>
+            <div class="panel-callout callout-question">
+              <p><strong>The agent has a question</strong> — answer it in the timeline message box.</p>
+            </div>
+          <% end %>
+          <% if runs.any? %>
+            <ul class="run-list">
+              <% runs.each do |run| %>
+                <li class="run run-<%= run.status %>">
+                  <span>Run #<%= run.id %> — <%= run.status %><%= " (#{run.phase})" if run.needs_input? %></span>
+                  <% if run.cost.positive? %>
+                    <span class="hint"><%= run.output_tokens %> out · $<%= run.cost.round(2) %></span>
+                  <% end %>
+                  <% if run.running? || run.needs_input? %>
+                    <%= button_to "✖ Cancel", cancel_run_path(run), class: "cancel-btn" %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+            <% if @card.pr_url %>
+              <p>🌿 <%= link_to "View pull request", @card.pr_url, target: "_blank" %> (<%= @card.pr_state %>)</p>
+            <% end %>
+          <% else %>
+            <p class="empty">No runs yet — drag the card into an execution column to assign an agent.</p>
+          <% end %>
+
+          <details class="advanced-rules panel-advanced">
+            <summary>Advanced</summary>
+            <p class="hint">Deleting removes the card and its entire history (events, runs, workspace). The remote branch and PR, if any, are left untouched.</p>
+            <%= button_to "🗑 Delete card", card_path(@card), method: :delete,
+                  class: "cancel-btn delete-card",
+                  form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess",
+                                  turbo_confirm: "Delete ##{@card.number} \"#{@card.title}\" and its entire history? This cannot be undone." } },
+                  disabled: @card.working? %>
+          </details>
+        </aside>
+      </div>
+    </div>
+  </div>
