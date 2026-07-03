@@ -22,4 +22,52 @@ class ColumnsControllerTest < ActionDispatch::IntegrationTest
                                                  color: "red;} body{display:none", custom_color: "1" } }
     assert_nil @col.reload.safe_color
   end
+
+  # Card #17: the Tasks/inbox column is the board's intake — the AI-work and
+  # on-entry settings don't apply, and it can never be deleted.
+  test "inbox edit form hides AI-work and on-entry settings, and the delete button" do
+    get edit_column_path(@col)
+    assert_response :success
+    %w[column[instructions] column[model] column[effort] column[concurrency_limit]
+       column[max_turns] column[timeout_minutes] column[plan_approval]
+       column[on_entry_text] column[on_entry_json]].each do |field|
+      assert_select "[name=?]", field, false, "expected #{field} to be hidden for the inbox column"
+    end
+    assert_select ".delete-column", false, "inbox column must not offer a delete button"
+  end
+
+  test "non-inbox edit form still shows AI-work settings and the delete button" do
+    exec = @board.columns.create!(name: "In Progress", archetype: "execution", position: 1, policy: {})
+    get edit_column_path(exec)
+    assert_response :success
+    assert_select "[name=?]", "column[model]"
+    assert_select "[name=?]", "column[plan_approval]"
+    assert_select ".delete-column"
+  end
+
+  test "inbox column can never be deleted" do
+    assert_no_difference -> { Column.count } do
+      delete column_path(@col)
+    end
+    assert_response :unprocessable_entity
+    assert Column.exists?(@col.id)
+  end
+
+  # Card #17: the Tasks/inbox column is the board's single intake — a second one
+  # can't be created, even from a crafted request asking for the inbox archetype.
+  test "create refuses to add a second inbox column" do
+    assert_no_difference -> { @board.columns.inbox.count } do
+      post columns_path, params: { column: { name: "Intake 2", archetype: "inbox" } }
+    end
+    created = @board.columns.order(:position).last
+    assert_not_equal "inbox", created.archetype
+    assert_equal "Intake 2", created.name
+  end
+
+  test "create still adds a normal execution column" do
+    assert_difference -> { @board.columns.count }, 1 do
+      post columns_path, params: { column: { name: "Build", archetype: "execution" } }
+    end
+    assert_equal "execution", @board.columns.order(:position).last.archetype
+  end
 end
