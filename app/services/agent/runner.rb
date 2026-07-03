@@ -16,7 +16,11 @@ module Agent
 
     EXECUTE_RULES = <<~RULES.freeze
       ## Rules
+      - You have the FULL toolset now: shell (bash, git), file editing, everything. Run
+        commands yourself — never ask who should run them.
       - Work only inside this repository checkout (you are already on the card's branch).
+      - If the branch conflicts with origin's default branch, merge it into the card
+        branch yourself and resolve the conflicts as part of the work.
       - Commit your work as you go with clear messages. Do NOT push — the runner pushes for you.
       - Stay strictly within the card's scope. Prefer the smallest reasonable interpretation and note assumptions.
       - If you are blocked on a decision only the user can make, output a single line starting with
@@ -102,21 +106,29 @@ module Agent
       cmd += ["--resume", run.external_session_id] if resuming && run.external_session_id.present?
 
       result = {}
+      @base_in, @base_out = run.input_tokens, run.output_tokens
+      @seg_in = @seg_out = 0
       env = STRIP_ENV.index_with { nil }
       spawn_cmd, spawn_opts = workspace.agent_spawn(cmd)
       Open3.popen3(env, *spawn_cmd, **spawn_opts) do |stdin, stdout, stderr, wait|
         stdin.close
         run.agent_session.update!(status: "ready", config: run.agent_session.config.merge("pid" => wait.pid))
+        timeout_min = (column.timeout_minutes.presence || 30).to_i
         watchdog = Thread.new do
-          sleep (column.timeout_minutes.presence || 30).to_i * 60
+          sleep timeout_min * 60
+          @timed_out = true
           Process.kill("TERM", wait.pid) rescue nil
         end
-        err_tail = +""
-        drain = Thread.new { stderr.each_line { |l| err_tail = l } }
+        err_lines = []
+        drain = Thread.new { stderr.each_line { |l| err_lines << l.strip; err_lines.shift while err_lines.size > 4 } }
         last_beat = Time.current
         stdout.each_line do |line|
           if Time.current - last_beat > HEARTBEAT_EVERY
-            run.update_column(:heartbeat_at, Time.current)
+            # Heartbeat + live token tally: tokens survive even if this
+            # segment is killed before its result event.
+            run.update_columns(heartbeat_at: Time.current,
+                               input_tokens: @base_in + @seg_in,
+                               output_tokens: @base_out + @seg_out)
             last_beat = Time.current
           end
           begin
@@ -128,7 +140,9 @@ module Agent
         drain.join(1)
         watchdog.kill
         result[:exit_status] = wait.value
-        result[:stderr] = err_tail.strip
+        result[:stderr] = err_lines.join(" | ")
+        result[:timed_out] = @timed_out
+        result[:timeout_min] = timeout_min
       end
 
       mode == "plan" ? conclude_plan(result) : conclude_execute(workspace, result)
@@ -142,6 +156,10 @@ module Agent
           card.log!("progress", actor: "agent", run: run, text: "Agent session started (#{json["model"]})")
         end
       when "assistant"
+        if (usage = json.dig("message", "usage"))
+          @seg_in += usage["input_tokens"].to_i
+          @seg_out += usage["output_tokens"].to_i
+        end
         Array(json.dig("message", "content")).each do |block|
           case block["type"]
           when "text"
@@ -164,7 +182,7 @@ module Agent
     def conclude_plan(result)
       accumulate_usage(result)
       unless result[:success] && result[:report].present?
-        return record_failure(RuntimeError.new("plan phase failed#{": #{result[:stderr]}" if result[:stderr].present?}"))
+        return record_failure(RuntimeError.new("plan phase failed — #{failure_reason(result)}"))
       end
       park!("plan_proposed", result[:report],
             note: "Plan proposed — approve it in the work panel, or reply to redirect.")
@@ -173,7 +191,8 @@ module Agent
     def conclude_execute(workspace, result)
       accumulate_usage(result)
       unless result[:success]
-        return record_failure(RuntimeError.new("agent did not finish cleanly#{" — #{result[:stderr]}" if result[:stderr].present?} (exit #{result[:exit_status]&.exitstatus})"))
+        salvage_commits(workspace)
+        return record_failure(RuntimeError.new(failure_reason(result)))
       end
 
       report = result[:report].to_s
@@ -188,6 +207,11 @@ module Agent
         ensure_pull_request(workspace)
         run.artifacts.create!(kind: "pull_request", name: "PR for #{card.branch_name}",
                               payload: { url: card.pr_url, commits: commits })
+      elsif card.pr_url.blank? && workspace.ahead_of_default?
+        # No new commits this run, but the branch carries earlier work (e.g. a
+        # salvage commit) that still needs a PR.
+        workspace.push!
+        ensure_pull_request(workspace)
       end
 
       run.update!(status: "succeeded", finished_at: Time.current,
@@ -207,6 +231,27 @@ module Agent
       card.log!("status_change", run: run, text: note)
     end
 
+    # Say WHY, not just that it died: timeout vs error result vs crash.
+    def failure_reason(result)
+      return "timed out after #{result[:timeout_min]} minutes and was stopped — raise the column's timeout for bigger tasks, or split the card" if result[:timed_out]
+      parts = ["agent did not finish cleanly (exit #{result[:exit_status]&.exitstatus || "?"})"]
+      parts << "last output: #{result[:report].truncate(300)}" if result[:report].present?
+      parts << "stderr: #{result[:stderr].truncate(300)}" if result[:stderr].present?
+      parts.join(" — ")
+    end
+
+    # A failed/timed-out segment may still hold real local commits; push them
+    # so the branch (and any PR) keeps the partial progress instead of the
+    # next provision's reset wiping it.
+    def salvage_commits(workspace)
+      commits = workspace.commits_since(base_sha)
+      return if commits.empty?
+      workspace.push!
+      card.log!("progress", run: run, text: "Partial work preserved: #{commits.size} commit(s) pushed to #{card.branch_name} before failure")
+    rescue => e
+      card.log!("progress", run: run, text: "Could not preserve partial work: #{e.message.truncate(120)}")
+    end
+
     def record_failure(error)
       run.update!(status: "failed", finished_at: Time.current,
                   result_summary: error.message.truncate(500))
@@ -214,11 +259,17 @@ module Agent
       card.log!("error", run: run, text: "Run failed: #{error.message.truncate(500)}")
     end
 
-    # Cost/tokens accumulate across segments of the same run (plan + execute + resumes).
+    # Cost/tokens accumulate across segments of the same run (plan + execute +
+    # resumes). Tokens were live-tallied during the stream; the result event's
+    # figures are authoritative when present, the live tally is the fallback
+    # for killed segments (which never emit a result).
     def accumulate_usage(result)
+      base_in = @base_in || run.input_tokens
+      base_out = @base_out || run.output_tokens
       run.update!(cost: run.cost + (result[:cost] || 0),
-                  input_tokens: run.input_tokens + (result[:input_tokens] || 0),
-                  output_tokens: run.output_tokens + (result[:output_tokens] || 0))
+                  input_tokens: base_in + (result[:input_tokens] || @seg_in || 0),
+                  output_tokens: base_out + (result[:output_tokens] || @seg_out || 0))
+      @base_in = @base_out = @seg_in = @seg_out = nil
     end
 
     def remember_base_sha(workspace)
@@ -277,6 +328,12 @@ module Agent
         Explore the repository as needed, then present a short numbered plan-of-attack
         (files you'll touch, approach, how you'll verify) and stop. The user will approve
         or redirect before any changes are made.
+
+        IMPORTANT: you are read-only ONLY during this planning pass. Once the plan is
+        approved you will have the full toolset — shell, git, file editing — in this same
+        session. Plan every step as something YOU will do (including git merges and
+        running commands); never ask who should run a command or plan around not having
+        a shell.
       PROMPT
     end
 

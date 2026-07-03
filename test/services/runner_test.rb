@@ -3,10 +3,11 @@ require "test_helper"
 class RunnerTest < ActiveSupport::TestCase
   class FakeWorkspace
     attr_reader :pushed
-    def initialize(commits) = @commits = commits
+    def initialize(commits, ahead: false) = (@commits, @ahead = commits, ahead)
     def commits_since(_) = @commits
     def push! = @pushed = true
     def head = "abc123"
+    def ahead_of_default? = @ahead
   end
 
   setup do
@@ -119,5 +120,20 @@ class RunnerBriefingTest < ActiveSupport::TestCase
   test "no brief section when planning never converged" do
     @card.log!("assistant_message", actor: "assistant", text: "Just chatting")
     assert_no_match(/Brief from planning/, Agent::Runner.new(@run).send(:briefing_prompt))
+  end
+end
+
+class RunnerSalvagePrTest < ActiveSupport::TestCase
+  test "a no-commit success with a branch ahead of default still ensures the PR" do
+    board = create_board
+    card = create_card(board, "execution", status: "working", branch_name: "cardinal/9-x")
+    run = create_run(card, briefing: { "base_sha" => "base" })
+    runner = Agent::Runner.new(run)
+    ws = RunnerTest::FakeWorkspace.new([], ahead: true)
+    called = false
+    runner.define_singleton_method(:ensure_pull_request) { |_| called = true }
+    runner.send(:conclude_execute, ws, { success: true, report: "verified" })
+    assert ws.pushed
+    assert called
   end
 end

@@ -57,3 +57,5 @@ group :development do
 end
 
 gem "minitest-mock", "~> 5.27", group: :test
+
+gem "redcarpet", "~> 3.6"

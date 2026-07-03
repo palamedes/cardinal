@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "modal" do %>
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
   <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
     <div class="modal modal-sm">
       <header class="modal-header">
@@ -17,6 +17,13 @@
             <div>
               <label>Archetype <%= info_tip("What kind of stage this is. Inbox: parking lot, no AI. Planning: a shared assistant discusses cards with you. Execution: each card gets its own worker agent that does the work. Review: work stops for your verdict. Terminal: finalizes the card (Done merges the PR).") %></label>
               <%= f.select :archetype, Column::ARCHETYPES.map { |a| [a.capitalize, a] } %>
+            </div>
+            <div class="color-cell">
+              <label>Background <%= info_tip("Custom background color for this column on the board. Uncheck to fall back to the archetype's default tint.") %></label>
+              <span class="color-row">
+                <%= f.color_field :color, value: @column.safe_color || "#1e2128" %>
+                <label class="check-row inline"><%= check_box_tag "column[custom_color]", "1", @column.safe_color.present? %> use</label>
+              </span>
             </div>
           </div>
 
@@ -74,9 +81,17 @@
           <%= f.submit "Save" %>
         <% end %>
 
-        <% if @column.cards.none? %>
-          <%= button_to "Delete column", column_path(@column), method: :delete, class: "cancel-btn delete-column" %>
-        <% end %>
+        <details class="advanced-rules panel-advanced">
+          <summary>Advanced</summary>
+          <% if @column.cards.none? %>
+            <p class="hint">Deleting removes this column and its policy. Cards are unaffected — the column must already be empty.</p>
+            <%= button_to "🗑 Delete column", column_path(@column), method: :delete, class: "cancel-btn delete-column",
+                  form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess",
+                                  turbo_confirm: "Delete the \"#{@column.name}\" column and its policy?" } } %>
+          <% else %>
+            <p class="hint">This column still has <%= pluralize(@column.cards.count, "card") %> — move them before it can be deleted.</p>
+          <% end %>
+        </details>
       </div>
     </div>
   </div>

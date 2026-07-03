@@ -5,16 +5,54 @@
   <div class="topbar-right">
     <button type="button" class="theme-toggle"
             data-controller="theme" data-action="theme#toggle">☀ Light</button>
+    <% if ENV["CARDINAL_AUTH"].present? %>
+      <span class="auth-chip" title="<%= ENV["CARDINAL_AUTH"] == "dedicated" ? "This board runs as its own linked Claude account (.cardinal/claude). Switch with: cardinal login" : "This board inherits the machine's claude login (CARDINAL_INHERIT_AUTH=1)" %>">
+        🔐 <%= ENV["CARDINAL_AUTH"] == "dedicated" ? "board account" : "machine account" %>
+      </span>
+    <% end %>
     <% attention = @board.attention_cards %>
-    <% if attention.any? %>
+    <% working = @board.cards.where(status: "working").order(:updated_at) %>
+    <% queued = @board.cards.where(status: "queued").order(:position) %>
+    <% if attention.any? || working.any? || queued.any? %>
       <details class="attention">
-        <summary>⚠ <%= attention.size %> need you</summary>
-        <ul>
-          <% attention.each do |card| %>
-            <li><%= link_to "##{card.number} #{card.title} — #{card.status.humanize.downcase}",
-                            card_path(card), data: { turbo_frame: "modal" } %></li>
+        <summary>
+          <% if attention.any? %><span class="attn-part">⚠ <%= attention.size %> need you</span><% end %>
+          <% if working.any? %><span class="attn-part working-part"><span class="pulse-dot"></span> <%= working.size %> working</span><% end %>
+          <% if queued.any? %><span class="attn-part">⏳ <%= queued.size %> queued</span><% end %>
+        </summary>
+        <div class="attention-list">
+          <% if attention.any? %>
+            <p class="attn-header">Needs you</p>
+            <ul>
+              <% attention.each do |card| %>
+                <li><%= link_to "##{card.number} #{card.title} — #{card.status.humanize.downcase}",
+                                card_path(card), data: { turbo_frame: "modal" } %></li>
+              <% end %>
+            </ul>
           <% end %>
-        </ul>
+          <% if working.any? %>
+            <p class="attn-header">Working</p>
+            <ul>
+              <% working.each do |card| %>
+                <li class="attn-working">
+                  <span class="pulse-dot"></span>
+                  <%= link_to card_path(card), data: { turbo_frame: "modal" } do %>
+                    #<%= card.number %> <%= card.title %><span class="hint"> — <%= card.latest_progress&.truncate(60) || "starting…" %></span>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+          <% if queued.any? %>
+            <p class="attn-header">Queued</p>
+            <ul>
+              <% queued.each_with_index do |card, index| %>
+                <li><%= link_to "##{card.number} #{card.title} — #{index.zero? ? "next up" : "#{index} ahead"}",
+                                card_path(card), data: { turbo_frame: "modal" } %></li>
+              <% end %>
+            </ul>
+          <% end %>
+        </div>
       </details>
     <% end %>
     <details class="new-column">
@@ -35,4 +73,4 @@
   <% end %>
 </main>
 
-<%= turbo_frame_tag "modal" %>
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } %>

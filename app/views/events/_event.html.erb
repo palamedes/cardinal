@@ -1,11 +1,18 @@
-<div class="event event-<%= event.kind %> actor-<%= event.actor %>">
-  <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>
-  <div class="event-body">
-    <% if event.text %>
-      <%= simple_format event.text %>
-    <% else %>
-      <code class="event-kind"><%= event.kind %></code>
-    <% end %>
+<% if event.kind == "column_move" %>
+  <div class="stage-divider">
+    <span><%= event.payload["from"] %> → <%= event.payload["to"] %></span>
     <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
   </div>
-</div>
+<% else %>
+  <div class="event event-<%= event.kind %> actor-<%= event.actor %>">
+    <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>
+    <div class="event-body">
+      <% if event.text %>
+        <%= render_markdown event.text %>
+      <% else %>
+        <code class="event-kind"><%= event.kind %></code>
+      <% end %>
+      <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
+    </div>
+  </div>
+<% end %>
