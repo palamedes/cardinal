@@ -12,13 +12,12 @@ class RulesTest < ActiveSupport::TestCase
     end
   end
 
-  test "assistant kickoff without an API key posts the canned greeting" do
-    original = ENV.delete("ANTHROPIC_API_KEY")
+  test "assistant kickoff without the claude CLI posts the canned greeting" do
     card = create_card(@board)
-    AssistantReplyJob.perform_now(card, kickoff: true)
+    ClaudeCli.stub(:available?, false) do
+      AssistantReplyJob.perform_now(card, kickoff: true)
+    end
     assert_match(/help shape this card/, card.events.where(kind: "assistant_message").last.text)
-  ensure
-    ENV["ANTHROPIC_API_KEY"] = original if original
   end
 
   test "terminal default with a PR enqueues the merge job" do

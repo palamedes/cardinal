@@ -1,27 +1,10 @@
-# The shared planning assistant (cardinal.md §5): one reply per user message on
-# cards sitting in a planning column. Stateless between calls — the card's event
-# timeline IS the conversation.
+# The shared planning assistant (cardinal.md §5): one reply per user message
+# on cards sitting in a planning column, via the claude CLI (§ClaudeCli).
+# The card's event timeline IS the conversation, embedded as a transcript.
 class AssistantReplyJob < ApplicationJob
   queue_as :default
 
   FALLBACK_MODEL = "claude-haiku-4-5-20251001".freeze
-
-  # kickoff: true generates the opening message when a card enters planning —
-  # the assistant reads the card and asks its sharpest clarifying questions.
-  def perform(card, kickoff: false)
-    unless ENV["ANTHROPIC_API_KEY"].present?
-      card.log!("assistant_message", actor: "assistant",
-                text: kickoff ? "I'm here to help shape this card. What's the goal, and how will we know it's done?" \
-                              : "I can't reach the Claude API — set ANTHROPIC_API_KEY in Cardinal's environment and message me again.")
-      return
-    end
-
-    card.log!("assistant_message", actor: "assistant", text: request_reply(card, kickoff:))
-  rescue Anthropic::Errors::APIError => e
-    card.log!("error", text: "Planning assistant error: #{e.message}")
-  end
-
-  private
 
   KICKOFF_TURN = <<~MSG.freeze
     This card just entered the Planning column. Open the discussion: greet me in one short
@@ -30,17 +13,23 @@ class AssistantReplyJob < ApplicationJob
     card is already crystal clear, say so and propose a "Ready for execution" brief instead.
   MSG
 
-  def request_reply(card, kickoff: false)
-    client = Anthropic::Client.new
-    messages = kickoff ? [{ role: "user", content: KICKOFF_TURN }] : conversation(card)
-    response = client.messages.create(
-      model: card.column.model.presence || FALLBACK_MODEL,
-      max_tokens: 1024,
-      system_: system_prompt(card),
-      messages: messages
-    )
-    response.content.filter_map { |block| block.text if block.type == :text }.join("\n")
+  # kickoff: true generates the opening message when a card enters planning.
+  def perform(card, kickoff: false)
+    unless ClaudeCli.available?
+      card.log!("assistant_message", actor: "assistant",
+                text: "I'm here to help shape this card. What's the goal, and how will we know it's done? (Install the claude CLI for a smarter assistant.)")
+      return
+    end
+
+    prompt = kickoff ? KICKOFF_TURN : transcript_prompt(card)
+    reply = ClaudeCli.prompt(prompt, system: system_prompt(card),
+                             model: card.column.model.presence || FALLBACK_MODEL)
+    card.log!("assistant_message", actor: "assistant", text: reply) if reply.present?
+  rescue ClaudeCli::Error => e
+    card.log!("error", text: "Planning assistant error: #{e.message}")
   end
+
+  private
 
   def system_prompt(card)
     <<~PROMPT
@@ -58,14 +47,16 @@ class AssistantReplyJob < ApplicationJob
     PROMPT
   end
 
-  # The API requires alternating roles; merge consecutive same-role messages
-  # (e.g. two user messages sent before a reply landed).
-  def conversation(card)
-    turns = card.events.where(kind: %w[user_message assistant_message]).map do |event|
-      { role: event.kind == "user_message" ? "user" : "assistant", content: event.text.to_s }
+  def transcript_prompt(card)
+    turns = card.events.where(kind: %w[user_message assistant_message]).last(30).map do |event|
+      "#{event.kind == "user_message" ? "User" : "You"}: #{event.text}"
     end
-    turns.chunk_while { |a, b| a[:role] == b[:role] }.map do |chunk|
-      { role: chunk.first[:role], content: chunk.map { |t| t[:content] }.join("\n\n") }
-    end
+    <<~PROMPT
+      Conversation so far:
+
+      #{turns.join("\n\n")}
+
+      Reply to the user's latest message as the planning assistant. Output only your reply.
+    PROMPT
   end
 end

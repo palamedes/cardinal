@@ -14,11 +14,16 @@ class RulesCompilerTest < ActiveSupport::TestCase
     assert_raises(Rules::Compiler::Error) { Rules::Compiler.validate!({ "action" => "merge_pr" }) }
   end
 
-  test "compile without an API key raises a helpful error" do
-    original = ENV.delete("ANTHROPIC_API_KEY")
-    err = assert_raises(Rules::Compiler::Error) { Rules::Compiler.compile("do things") }
-    assert_match(/ANTHROPIC_API_KEY/, err.message)
-  ensure
-    ENV["ANTHROPIC_API_KEY"] = original if original
+  test "compile without the claude CLI raises a helpful error" do
+    ClaudeCli.stub(:available?, false) do
+      err = assert_raises(Rules::Compiler::Error) { Rules::Compiler.compile("do things") }
+      assert_match(/claude CLI/, err.message)
+    end
+  end
+
+  test "compile parses and validates the CLI's output" do
+    ClaudeCli.stub(:prompt, "```json\n[{\"action\": \"start_agent_run\"}]\n```") do
+      assert_equal [{ "action" => "start_agent_run" }], Rules::Compiler.compile("start the agent")
+    end
   end
 end

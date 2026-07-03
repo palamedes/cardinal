@@ -17,12 +17,12 @@ module Rules
     DOC
 
     def self.compile(text)
-      raise Error, "Rules compiler needs ANTHROPIC_API_KEY — use the advanced JSON editor instead." if ENV["ANTHROPIC_API_KEY"].blank?
+      raise Error, "Rules compiler needs the claude CLI — use the advanced JSON editor instead." unless ClaudeCli.available?
 
-      response = Anthropic::Client.new.messages.create(
+      raw = ClaudeCli.prompt(
+        text,
         model: AssistantReplyJob::FALLBACK_MODEL,
-        max_tokens: 1024,
-        system_: <<~SYS,
+        system: <<~SYS
           You compile plain-English descriptions of Kanban column automation into JSON rule
           arrays for the Cardinal board engine.
 
@@ -31,16 +31,14 @@ module Rules
           asks for something outside the vocabulary, approximate it with an ai_task whose
           prompt captures the intent.
         SYS
-        messages: [{ role: "user", content: text }]
-      )
-      raw = response.content.filter_map { |b| b.text if b.type == :text }.join.strip
+      ).strip
       raw = raw.sub(/\A```(?:json)?\s*/, "").sub(/```\z/, "").strip
       rules = JSON.parse(raw)
       validate!(rules)
       rules
     rescue JSON::ParserError
       raise Error, "Compiler returned invalid JSON — try rephrasing, or use the advanced editor."
-    rescue Anthropic::Errors::APIError => e
+    rescue ClaudeCli::Error => e
       raise Error, "Compiler call failed: #{e.message.truncate(120)}"
     end
 

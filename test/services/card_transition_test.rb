@@ -52,4 +52,17 @@ class CardTransitionTest < ActiveSupport::TestCase
     CardTransition.new(card, to_column: column(@board, "planning")).call
     assert_equal 1, card.events.where(kind: "column_move").count
   end
+
+  test "same-column drag reorders without firing policies or events" do
+    inbox = column(@board, "inbox")
+    a, b, c = 3.times.map { |i| create_card(@board, "inbox", title: "card #{i}") }
+
+    result = CardTransition.new(c, to_column: inbox, position: 0).call
+    assert result.success?
+    assert_equal [c, a, b].map(&:id), inbox.cards.order(:position).pluck(:id)
+    assert_equal 0, Event.count
+
+    CardTransition.new(c, to_column: inbox, position: 2).call
+    assert_equal [a, b, c].map(&:id), inbox.cards.order(:position).pluck(:id)
+  end
 end

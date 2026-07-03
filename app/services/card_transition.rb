@@ -14,7 +14,7 @@ class CardTransition
   end
 
   def call
-    return failure("Card is already in #{@to.name}") if @from == @to
+    return reposition! if @from == @to
     return failure("Column belongs to a different board") if @to.board_id != @card.board_id
     if @card.working? && @from.execution?
       # An agent process is live — no silent kills (§3). Cancel it first.
@@ -32,6 +32,18 @@ class CardTransition
   end
 
   private
+
+  # Same-column drag = prioritization (§8): top of the column runs first, so
+  # reordering queued cards IS the priority UI. No policies fire, no events.
+  def reposition!
+    ids = @to.cards.where.not(id: @card.id).order(:position).pluck(:id)
+    ids.insert([@position || ids.size, ids.size].min, @card.id)
+    Card.transaction do
+      ids.each_with_index { |id, index| Card.where(id: id).update_all(position: index) }
+      @card.touch # update_all skips callbacks; touch broadcasts to other windows
+    end
+    Result.new(success?: true, card: @card.reload, error: nil)
+  end
 
   def leave_policy!
     return unless @from.execution?
