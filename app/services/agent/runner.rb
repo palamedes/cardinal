@@ -16,7 +16,11 @@ module Agent
 
     EXECUTE_RULES = <<~RULES.freeze
       ## Rules
+      - You have the FULL toolset now: shell (bash, git), file editing, everything. Run
+        commands yourself — never ask who should run them.
       - Work only inside this repository checkout (you are already on the card's branch).
+      - If the branch conflicts with origin's default branch, merge it into the card
+        branch yourself and resolve the conflicts as part of the work.
       - Commit your work as you go with clear messages. Do NOT push — the runner pushes for you.
       - Stay strictly within the card's scope. Prefer the smallest reasonable interpretation and note assumptions.
       - If you are blocked on a decision only the user can make, output a single line starting with
@@ -324,6 +328,12 @@ module Agent
         Explore the repository as needed, then present a short numbered plan-of-attack
         (files you'll touch, approach, how you'll verify) and stop. The user will approve
         or redirect before any changes are made.
+
+        IMPORTANT: you are read-only ONLY during this planning pass. Once the plan is
+        approved you will have the full toolset — shell, git, file editing — in this same
+        session. Plan every step as something YOU will do (including git merges and
+        running commands); never ask who should run a command or plan around not having
+        a shell.
       PROMPT
     end
 

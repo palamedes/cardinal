@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "modal" do %>
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
   <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
     <div class="modal modal-sm">
       <header class="modal-header">
