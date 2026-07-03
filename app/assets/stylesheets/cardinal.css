@@ -98,12 +98,11 @@ a { color: var(--blue); text-decoration: none; }
   50%      { opacity: 1; transform: scale(1.15); }
 }
 
-.new-card-btn {
-  display: block; text-align: center; margin-top: 8px; padding: 9px;
-  border: 1px dashed var(--border); border-radius: 8px;
-  color: var(--text-dim); font-weight: 600;
+.add-card {
+  cursor: pointer; color: var(--text-dim); font-weight: 700;
+  line-height: 1; padding: 0 4px; margin-bottom: 6px; text-decoration: none;
 }
-.new-card-btn:hover { color: var(--text); border-color: var(--text-dim); background: var(--surface-2); }
+.add-card:hover { color: var(--text); }
 
 button, input[type="submit"] {
   background: var(--accent); color: #fff; border: 0; border-radius: 6px;
@@ -148,6 +147,7 @@ button, input[type="submit"] {
 [data-theme="light"] .column-execution { background: #e9f3ec; border-color: #bcd8c4; }
 [data-theme="light"] .column-review    { background: #f6f1e6; border-color: #e3d7bf; }
 .column-header { display: flex; justify-content: space-between; align-items: center; }
+.column-title { display: flex; align-items: center; gap: 2px; }
 .column-header h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 2px 4px 8px; color: var(--text-dim); }
 .gear { cursor: pointer; color: var(--text-dim); }
 .drop-hint { display: none; font-size: 11px; color: var(--amber); margin: 0 4px 8px; }
@@ -155,6 +155,7 @@ body.dragging .drop-hint { display: block; }
 .ticker { font-size: 11px; color: var(--text-dim); margin: 0 4px 8px; }
 
 .cards { min-height: 40px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
+.cards-clickable { cursor: pointer; }
 .agent-chip { color: var(--blue); }
 
 /* ── Cards ───────────────────────────────────────────── */

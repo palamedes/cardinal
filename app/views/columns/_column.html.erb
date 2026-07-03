@@ -1,20 +1,24 @@
 <section class="column column-<%= column.archetype %>" id="<%= dom_id(column) %>"<%= " style=\"background-color: #{column.safe_color}\"".html_safe if column.safe_color %>>
   <header class="column-header">
-    <h2><%= column.name %></h2>
+    <span class="column-title">
+      <h2><%= column.name %></h2>
+      <% if column.inbox? %>
+        <%= link_to "+", new_card_path, class: "add-card", title: "New card",
+                    data: { turbo_frame: "modal" } %>
+      <% end %>
+    </span>
     <%= link_to "⚙", edit_column_path(column), class: "gear", title: "Column settings",
                 data: { turbo_frame: "modal" } %>
   </header>
   <p class="drop-hint">→ <%= column.drag_hint %></p>
-  <div class="cards"
+  <div class="cards<%= " cards-clickable" if column.inbox? %>"
        data-controller="board-column"
        data-board-column-hint-value="<%= column.drag_hint %>"
+       <% if column.inbox? %>data-action="click->board-column#newCard"
+       data-board-column-new-url-value="<%= new_card_path %>"<% end %>
        data-column-id="<%= column.id %>">
     <% column.cards.each do |card| %>
       <%= render "cards/card", card: card %>
     <% end %>
   </div>
-  <% if column.inbox? %>
-    <%= link_to "+ New Card", new_card_path, class: "new-card-btn",
-                data: { turbo_frame: "modal" } %>
-  <% end %>
 </section>
