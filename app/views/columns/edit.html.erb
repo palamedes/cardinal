@@ -51,7 +51,7 @@
               <%= f.number_field :concurrency_limit, value: @column.concurrency_limit, min: 1, placeholder: "∞" %>
             </div>
             <div>
-              <label>Max turns <%= info_tip("Budget: the most conversation/tool turns an agent may take per run segment before it's stopped.") %></label>
+              <label>Max turns <%= info_tip("Check-in cadence and loop guard: after this many actions the agent pauses, saves progress, and asks whether to continue (one reply = fresh budget). Catches busy-but-stuck loops a wall-clock timeout can't. Not a work limit.") %></label>
               <%= f.number_field :max_turns, value: @column.max_turns, min: 1, placeholder: "25" %>
             </div>
             <div>
