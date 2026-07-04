@@ -22,7 +22,8 @@ gem install cardinal-ai
 
 ## Use it
 
-Go to any project that lives in git, and start Cardinal:
+Go to any project and start Cardinal (a brand-new folder is fine — it offers to
+`git init` for you):
 
 ```sh
 cd your-project

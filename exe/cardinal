@@ -23,7 +23,20 @@ def say(msg) = puts("cardinal ▸ #{msg}")
 def die(msg) = abort("cardinal: #{msg}")
 
 cmd = ARGV[0] || "up"
-die "#{TARGET} is not a git repository" unless File.directory?(File.join(TARGET, ".git"))
+unless File.directory?(File.join(TARGET, ".git"))
+  # A brand-new project shouldn't need ceremony — cards are branches and PRs,
+  # so a repo must exist, but Cardinal can lay that rail itself.
+  if cmd == "up" && $stdin.tty?
+    print "cardinal ▸ #{TARGET} isn't a git repository yet — initialize one here? [Y/n] "
+    answer = $stdin.gets.to_s.strip.downcase
+    die "aborted — run cardinal inside a git repository" unless answer.empty? || answer.start_with?("y")
+    system("git", "init", "-q", "-b", "main", TARGET) || die("git init failed")
+    say "initialized empty git repository (branch: main)"
+    say "tip: add a GitHub remote later so agents can push branches and open PRs"
+  else
+    die "#{TARGET} is not a git repository — run `git init` first"
+  end
+end
 
 case cmd
 when "logout"
