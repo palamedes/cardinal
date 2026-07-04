@@ -8,18 +8,28 @@
           data: { turbo_submits_with: "⇣ Pulling…" }, class: "theme-toggle" %>
     <%# Repo deep dive (card #12): one-shot read-only mapping of the repo, stored
         as a brief and injected into worker prompts. The button greys→reds as the
-        brief falls behind HEAD; a stale brief over-anchors, so it nags at 10+. %>
+        brief falls behind HEAD; a stale brief over-anchors, so it nags at 10+.
+        Once a brief exists the button opens it for inspection (the modal holds
+        the Regenerate action) — a fresh brief is never silently re-run. %>
     <% behind = @board.commits_behind_brief %>
-    <%= button_to deep_dive_board_path,
-          class: "deep-dive#{' stale-critical' if @board.brief_stale?}#{' working' if @board.brief_working?}",
-          disabled: @board.brief_working?,
-          style: @board.brief? ? "color: #{@board.brief_staleness_color}; border-color: #{@board.brief_staleness_color}" : nil,
-          title: @board.brief? ? "Repo brief from #{@board.brief_sha&.first(7)} · #{@board.brief_generated_at&.to_date}" : "Map this repo into a brief agents reuse — saves exploration on every run" do %>
-      <% if @board.brief_working? %>
+    <% if @board.brief_working? %>
+      <button type="button" class="deep-dive working" disabled>
         <span class="pulse-dot"></span> Deep dive · working…
-      <% elsif behind&.positive? %>
-        🔍 Deep dive · <%= behind %> commit<%= "s" if behind != 1 %> behind
-      <% else %>
+      </button>
+    <% elsif @board.brief? %>
+      <%= link_to brief_board_path, data: { turbo_frame: "modal" },
+            class: "deep-dive#{' stale-critical' if @board.brief_stale?}",
+            style: "color: #{@board.brief_staleness_color}; border-color: #{@board.brief_staleness_color}",
+            title: "Repo brief from #{@board.brief_sha&.first(7)} · #{@board.brief_generated_at&.to_date} — click to inspect" do %>
+        <% if behind&.positive? %>
+          🔍 Repo brief · <%= behind %> commit<%= "s" if behind != 1 %> behind
+        <% else %>
+          🔍 Repo brief
+        <% end %>
+      <% end %>
+    <% else %>
+      <%= button_to deep_dive_board_path, class: "deep-dive",
+            title: "Map this repo into a brief agents reuse — saves exploration on every run" do %>
         🔍 Deep dive
       <% end %>
     <% end %>

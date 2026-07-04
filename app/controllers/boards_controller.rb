@@ -5,16 +5,27 @@ class BoardsController < ApplicationController
 
   # Kick off the repo deep dive (card #12). Non-blocking: flip the board into
   # its "Working" state, morph the topbar so the button reflects it, and let
-  # DeepDiveJob do the read-only exploration in the background. Ignored if a
-  # dive is already running.
+  # DeepDiveJob do the read-only exploration in the background. Skipped when a
+  # dive is already running, or when the brief already matches HEAD — nothing
+  # changed, so a re-dive would just burn a run (the brief modal's Regenerate
+  # button passes force=1 to override).
   def deep_dive
     board = Board.first!
-    unless board.brief_working?
+    fresh = board.brief? && board.commits_behind_brief == 0
+    unless board.brief_working? || (fresh && params[:force].blank?)
       board.update!(brief_status: "working")
       board.broadcast_refresh_to board
       DeepDiveJob.perform_later(board)
     end
     redirect_to root_path
+  end
+
+  # Inspect the repo brief: what the deep dive wrote, when, from which SHA.
+  def brief
+    @board = Board.first!
+    redirect_to root_path and return unless turbo_frame_request?
+
+    render :brief
   end
 
   # Cards reaching Done merge PRs on GitHub, so the checkout Cardinal runs
@@ -49,7 +60,20 @@ class BoardsController < ApplicationController
       ["Already up to date", true]
     else
       count, = Open3.capture2e("git", "-C", repo, "rev-list", "--count", "#{before.strip}..#{after.strip}")
-      ["Pulled #{helpers.pluralize(count.strip.to_i, "new commit")}", true]
+      migrated = run_pending_migrations
+      note = migrated.positive? ? " · ran #{helpers.pluralize(migrated, "migration")}" : ""
+      ["Pulled #{helpers.pluralize(count.strip.to_i, "new commit")}#{note}", true]
     end
+  end
+
+  # When the board's repo IS this Cardinal instance (dogfooding) a pull can
+  # bring schema changes; without this the running server 500s until someone
+  # runs db:migrate by hand. A no-op everywhere else — `cardinal up` already
+  # covers cold boots via db:prepare.
+  def run_pending_migrations
+    context = ActiveRecord::Base.connection_pool.migration_context
+    pending = context.migrations.map(&:version) - context.get_all_versions
+    context.migrate if pending.any?
+    pending.size
   end
 end

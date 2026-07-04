@@ -1,0 +1,48 @@
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal modal-sm">
+      <header class="modal-header">
+        <h1>🔍 Repo brief</h1>
+        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+      </header>
+      <div class="modal-body">
+        <p class="hint">
+          A deep dive is a one-shot, read-only agent (Read/Glob/Grep only — it cannot change
+          anything) that maps this repo into the brief below. Every worker agent gets the brief
+          in its prompt, so runs skip re-exploring the codebase. It costs one bounded AI call
+          using the planning column's model.
+        </p>
+
+        <% if @board.brief? %>
+          <p class="brief-meta">
+            Generated <%= @board.brief_generated_at&.strftime("%b %-d, %H:%M") %>
+            from <code><%= @board.brief_sha&.first(7) %></code>
+            with <%= @board.brief_model %>
+            <% behind = @board.commits_behind_brief %>
+            <% if behind&.positive? %>
+              · <span class="brief-behind"><%= pluralize(behind, "commit") %> behind HEAD</span>
+            <% else %>
+              · current with HEAD
+            <% end %>
+          </p>
+
+          <div class="brief-content">
+            <%= render_markdown(@board.repo_brief.to_s) %>
+          </div>
+        <% else %>
+          <p class="brief-meta">No brief yet — run a deep dive from the topbar.</p>
+        <% end %>
+
+        <div class="card-edit-actions">
+          <%= button_to "↻ Regenerate brief", deep_dive_board_path(force: 1),
+                form: { data: { turbo_frame: "_top" } },
+                disabled: @board.brief_working? %>
+        </div>
+        <p class="hint">
+          Regenerating replaces the brief. When the brief already matches HEAD the deep dive
+          button won't re-run it — only this button forces a fresh dive.
+        </p>
+      </div>
+    </div>
+  </div>
+<% end %>

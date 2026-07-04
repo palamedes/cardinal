@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   resource :board, only: :show do
     post :deep_dive
     post :pull
+    get :brief
   end
   resources :cards, only: [:new, :create, :show, :update, :destroy] do
     member do

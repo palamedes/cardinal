@@ -94,7 +94,11 @@ class Board < ApplicationRecord
   # underneath later without a migration.
   BRIEF_STALE_AT = 10 # commits behind → the "refresh me" red/flashing state
 
-  def brief_path = Rails.root.join(".cardinal", "repo-brief.md")
+  # Honor CARDINAL_DATA_DIR: in gem mode Rails.root is the installed gem
+  # (read-only); the instance's data lives in the target repo's .cardinal/.
+  def brief_path
+    Pathname(File.expand_path(ENV["CARDINAL_DATA_DIR"].presence || Rails.root.join(".cardinal"))).join("repo-brief.md")
+  end
 
   def repo_brief
     File.read(brief_path) if File.exist?(brief_path)

@@ -11,7 +11,7 @@ class Card < ApplicationRecord
     "planning"  => %w[draft discussing archived],
     "execution" => %w[queued working needs_input blocked failed work_complete archived],
     "review"    => %w[in_review changes_requested approved archived],
-    "terminal"  => %w[done archived]
+    "terminal"  => %w[done blocked archived] # blocked: merge gate refused (CI red/pending)
   }.freeze
 
   belongs_to :board

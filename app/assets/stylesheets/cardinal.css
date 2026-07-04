@@ -79,6 +79,14 @@ a { color: var(--blue); text-decoration: none; }
   50%      { opacity: .7; box-shadow: 0 0 0 3px rgba(212, 51, 51, 0); }
 }
 
+.brief-meta { font-size: 12px; color: var(--text-dim); }
+.brief-behind { color: var(--amber); }
+.brief-content {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 4px 14px; margin: 10px 0; max-height: 50vh; overflow-y: auto;
+  font-size: 13px;
+}
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

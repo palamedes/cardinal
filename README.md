@@ -43,11 +43,25 @@ That's the whole setup. Now:
 4. **Review** — read the final report and the pull request. Say what's wrong in the
    card's conversation to send it back, or approve.
 5. **QA** — the pull request goes live for formal review on GitHub.
-6. **Drag to Done** — the pull request merges. Shipped.
+6. **Drag to Done** — the pull request merges. Shipped. (If the project has CI and it's
+   red or still running, Cardinal refuses to merge and tells you why on the card.)
 
 Every column has a ⚙ gear where you can change the rules — which AI model works there,
 how many cards can run at once, spending limits, and what happens when a card arrives
 (written in plain English; Cardinal figures out the rest).
+
+### The deep dive
+
+The **🔍 Deep dive** button in the topbar sends a read-only agent (it can look, never
+touch) through your repo once and saves what it learns as a **repo brief** — what the
+project is, where things live, how to build and test it, the traps to avoid. Every worker
+agent gets the brief with its assignment, so agents skip re-exploring your codebase on
+every single card. It costs one AI call.
+
+Once a brief exists the button shows **🔍 Repo brief** — click it to read exactly what
+agents are being told, and to regenerate it. The button drifts from grey toward red as
+commits land that the brief hasn't seen; Cardinal won't silently re-run a dive that's
+already current.
 
 ## Good to know
 

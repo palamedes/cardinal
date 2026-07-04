@@ -6,6 +6,7 @@ class MergePrJob < ApplicationJob
   def perform(card_id)
     card = Card.find(card_id)
     return if card.pr_url.blank? || card.pr_state == "merged"
+    return unless checks_green?(card)
 
     # Best-effort undraft — a QA column may already have done it, and gh
     # errors on an already-ready PR; the merge step is the real gate.
@@ -17,6 +18,27 @@ class MergePrJob < ApplicationJob
   end
 
   private
+
+  # The merge gate: never ship over failing CI. A repo with no checks
+  # configured passes (nothing to gate on); failing or still-running checks
+  # park the card as blocked with the reason — drag it out and back into Done
+  # to retry once CI is green.
+  def checks_green?(card)
+    out, status = Open3.capture2e("gh", "pr", "checks", card.pr_url)
+    return true if status.success?
+    return true if out.match?(/no checks reported/i)
+
+    reason =
+      if status.exitstatus == 8
+        "CI checks are still running — not merged. Drag out of Done and back once they finish."
+      else
+        failing = out.lines.map(&:strip).grep(/fail/i).first(3).join("; ").presence || out.strip.truncate(160)
+        "CI checks failing — not merged. #{failing}"
+      end
+    card.log!("error", text: reason)
+    card.update!(status: "blocked")
+    false
+  end
 
   def run_step(card, cmd)
     out, status = Open3.capture2e(*cmd)
