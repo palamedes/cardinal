@@ -73,7 +73,7 @@ class CardCostFooterTest < ActionDispatch::IntegrationTest
     get root_path
     footer = css_select("[data-card-id='#{card.number}'] .card-footer").first
     assert footer, "a card with run cost should render a footer"
-    assert_equal "Opus - High", footer.css(".footer-left").text.strip
+    assert_equal "🤖 Opus - High", footer.css(".footer-left").text.strip
     assert_equal "$12.34 · 350 out", footer.css(".footer-cost").text.strip
   end
 
@@ -105,7 +105,7 @@ class CardCostFooterTest < ActionDispatch::IntegrationTest
     get card_path(card)
     footer = css_select(".work-footer").first
     assert footer, "the work panel should show a cost footer"
-    assert_equal "Opus - High", footer.css(".footer-left").text.strip
+    assert_equal "🤖 Opus - High", footer.css(".footer-left").text.strip
     assert_equal "$0.56 · 100 out", footer.css(".footer-cost").text.strip
   end
 end
