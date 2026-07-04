@@ -125,8 +125,11 @@ module Agent
         # list itself, not a request in the prompt.
         cmd += ["--tools", "Read,Glob,Grep,Edit,Write"] unless column.shell_access?
       end
-      cmd += ["--model", column.model] if column.model.present?
-      cmd += ["--effort", column.effort] if column.effort.present?
+      # Effective (possibly card-overridden) config, read fresh here at spawn
+      # time — so a mid-run override takes effect on the next segment (start,
+      # restart, resume), never on one already streaming (card #33).
+      cmd += ["--model", card.effective_model] if card.effective_model.present?
+      cmd += ["--effort", card.effective_effort] if card.effective_effort.present?
       cmd += ["--resume", run.external_session_id] if resuming && run.external_session_id.present?
 
       result = {}

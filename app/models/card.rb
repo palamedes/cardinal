@@ -1,4 +1,6 @@
 class Card < ApplicationRecord
+  include ModelLabeling
+
   STATUSES = %w[
     draft discussing queued working needs_input blocked failed
     work_complete in_review changes_requested approved done archived
@@ -74,6 +76,27 @@ class Card < ApplicationRecord
   # Latest one-line progress event, shown live on the card face (§6).
   def latest_progress
     events.where(kind: "progress").last&.payload&.[]("text")
+  end
+
+  # Per-card model/effort override (card #33). Nil fields mean "use the column
+  # default", so existing cards are unaffected. Read fresh at every segment
+  # spawn (start, restart, resume) by the runner and the planning assistant, so
+  # a change takes effect on the next segment — never on an already-running one.
+  def effective_model  = model.presence || column.model
+  def effective_effort = effort.presence || column.effort
+
+  # Does this card override either half of the column's "how much brain" pair?
+  # Drives the de-magic marker on the card face: the board must never hide that
+  # a card will spend on a model other than its column's default.
+  def config_overridden? = model.present? || effort.present?
+
+  # "Opus - High*" — the effective model label for card faces and footers, with
+  # a trailing * when overridden so the override is visible without opening the
+  # card. Nil when no model resolves (AI off / unset), matching Column#model_label.
+  def effective_model_label
+    label = model_label_of(effective_model, effective_effort)
+    return if label.blank?
+    config_overridden? ? "#{label}*" : label
   end
 
   # Running tally across every run on the card — the closed-card cost footer

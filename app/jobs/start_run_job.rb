@@ -21,7 +21,9 @@ class StartRunJob < ApplicationJob
       return
     end
 
-    session = card.agent_sessions.create!(status: "provisioning", model: column.model)
+    # Record the model the session actually runs on — the card's effective
+    # (possibly overridden) model, not the raw column default (card #33).
+    session = card.agent_sessions.create!(status: "provisioning", model: card.effective_model)
     run = session.runs.create!(status: "queued", briefing: { "card" => card.title, "column" => column.name })
     Agent::Runner.start(run)
   end

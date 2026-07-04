@@ -29,6 +29,25 @@ class AssistantReplyJobTest < ActiveSupport::TestCase
     end
   end
 
+  # Card #33: a per-card override drives the planning assistant's model too —
+  # one effective_model resolves everywhere the card picks a model.
+  test "a card model override drives the assistant's model" do
+    @card.update!(model: "claude-opus-4-8")
+    calls = []
+    fake = lambda do |_text, **opts|
+      calls << opts
+      ["reply", "sess"]
+    end
+
+    ClaudeCli.stub(:available?, true) do
+      ClaudeCli.stub(:prompt, fake) do
+        @card.log!("user_message", actor: "user", text: "hi")
+        AssistantReplyJob.perform_now(@card)
+      end
+    end
+    assert_equal "claude-opus-4-8", calls[0][:model]
+  end
+
   test "a dead session falls back to a fresh transcript conversation" do
     @card.update!(assistant_session_id: "sess-dead")
     @card.log!("user_message", actor: "user", text: "hello again")

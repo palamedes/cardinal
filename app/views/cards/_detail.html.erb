@@ -140,6 +140,38 @@
             <% end %>
           <% end %>
 
+          <%# Per-card model/effort override (card #33). Its own autosave form so a
+              change saves and re-renders the card face (override marker) without
+              replacing this modal mid-interaction. The summary names the effective
+              state even when collapsed — the board must not hide what will spend. %>
+          <div class="model-override" data-controller="autosave">
+            <%= form_with model: @card, data: { autosave_target: "form", action: "change->autosave#save" } do |f| %>
+              <%= hidden_field_tag :autosave, "1" %>
+              <details class="advanced-rules">
+                <summary>
+                  🧠 Model:
+                  <% if @card.config_overridden? %>
+                    <strong>override</strong> (<%= @card.effective_model_label&.delete_suffix("*") || "none" %>)
+                  <% else %>
+                    column default (<%= @card.column.model_label || "none" %>)
+                  <% end %>
+                  <span class="autosave-status" data-autosave-target="status"></span>
+                </summary>
+                <div class="field-row">
+                  <div>
+                    <label>Model <%= info_tip("Overrides the column's model for THIS card only — worker runs and this card's planning replies both. Leave on \"Use column default\" to follow the column.") %></label>
+                    <%= f.select :model, card_model_options(@card), selected: @card.model.to_s %>
+                  </div>
+                  <div>
+                    <label>Effort <%= info_tip("How hard the model thinks per step, for this card only. Higher = smarter but slower and pricier. Leave on default to follow the column.") %></label>
+                    <%= f.select :effort, [["Use column default", ""], "low", "medium", "high", "max"], selected: @card.effort %>
+                  </div>
+                </div>
+                <p class="hint">Overrides this card's model and effort. Only model + effort — budget, timeout, and concurrency are column policy. Takes effect on the next run segment (a run already going finishes on the model it started with).</p>
+              </details>
+            <% end %>
+          </div>
+
           <h3>Work</h3>
           <% runs = @card.runs.order(:id) %>
           <% parked = runs.select(&:needs_input?).last %>
@@ -187,7 +219,7 @@
 
           <% if latest && (latest.cost.positive? || latest.output_tokens.positive?) %>
             <div class="work-footer">
-              <span class="footer-left"><%= "🤖 #{@card.column.model_label}" if @card.column.model_label %></span>
+              <span class="footer-left"><%= "🤖 #{@card.effective_model_label}" if @card.effective_model_label %></span>
               <span class="footer-cost">$<%= latest.cost.round(2) %> · <%= latest.output_tokens %> out</span>
             </div>
           <% end %>

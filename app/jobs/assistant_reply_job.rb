@@ -45,7 +45,9 @@ class AssistantReplyJob < ApplicationJob
   # assistant's last reply, not just the latest message.
   def converse(card, kickoff:)
     repo = card.board.local_path.presence
-    common = { model: card.column.model.presence || FALLBACK_MODEL,
+    # Effective model honors a per-card override (card #33) — the same
+    # effective_model the worker uses, so one card resolves one model everywhere.
+    common = { model: card.effective_model.presence || FALLBACK_MODEL,
                tools: repo ? "Read,Glob,Grep" : nil,
                cwd: repo, max_turns: MAX_TURNS, with_session: true }
 

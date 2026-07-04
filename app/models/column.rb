@@ -1,4 +1,6 @@
 class Column < ApplicationRecord
+  include ModelLabeling
+
   ARCHETYPES = %w[inbox planning execution review terminal].freeze
 
   belongs_to :board
@@ -105,17 +107,11 @@ class Column < ApplicationRecord
   end
 
   # "claude-sonnet-4-6" → "sonnet", for compact chips on card faces.
-  def model_short
-    model.to_s[/claude-([a-z]+)/, 1] || model
-  end
+  def model_short = model_short_of(model)
 
   # "Opus - High" — human label for cost footers (card #20). Effort is optional,
   # so a model with no configured effort renders just "Opus".
-  def model_label
-    return if model.blank?
-    label = model_short.to_s.capitalize
-    effort.present? ? "#{label} - #{effort.to_s.capitalize}" : label
-  end
+  def model_label = model_label_of(model, effort)
 
   validates :name, presence: true
   validates :position, presence: true

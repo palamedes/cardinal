@@ -39,7 +39,7 @@
       <% else %>
         <span class="footer-pr"></span>
       <% end %>
-      <span class="footer-center"><%= "🤖 #{card.column.model_label}" if has_cost && card.column.model_label %></span>
+      <span class="footer-center"><%= "🤖 #{card.effective_model_label}" if has_cost && card.effective_model_label %></span>
       <span class="footer-cost"><%= "$#{card.total_cost.round(2)}" if has_cost %></span>
     </div>
   <% end %>
