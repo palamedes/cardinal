@@ -35,7 +35,7 @@
 
         <div class="card-edit-actions">
           <%= button_to "↻ Regenerate brief", deep_dive_board_path(force: 1),
-                form: { data: { turbo_frame: "_top" } },
+                form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess" } },
                 disabled: @board.brief_working? %>
         </div>
         <p class="hint">
