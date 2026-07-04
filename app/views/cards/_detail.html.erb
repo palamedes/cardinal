@@ -127,7 +127,7 @@
               <%= link_to "View Pull Request", @card.pr_url, target: "_blank", rel: "noopener", class: "pr-view-btn" %>
             <% end %>
             <% if @card.in_review? %>
-              <div class="panel-callout callout-plan">
+              <div class="panel-callout callout-plan" id="review-callout">
                 <p><strong>Your verdict.</strong> Check the final report in the timeline.
                 Approve, or just say what's wrong in the conversation — that marks it changes-requested,
                 and dragging the card back to a work column carries your feedback into the next run.</p>
@@ -145,7 +145,7 @@
           <% parked = runs.select(&:needs_input?).last %>
           <% latest = runs.last %>
           <% if parked&.phase == "plan" %>
-            <div class="panel-callout callout-plan">
+            <div class="panel-callout callout-plan" id="plan-callout">
               <p><strong>Plan proposed.</strong> Approve to let the agent execute, or reply in the timeline to redirect.</p>
               <%= button_to "👍 Approve plan", approve_run_path(parked), class: "approve-btn", form_class: "align-right" %>
             </div>

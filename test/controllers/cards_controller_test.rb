@@ -167,6 +167,30 @@ class CardReviewButtonTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a.pr-view-btn", false
   end
+
+  # Card #37: approving flips the verdict, then flashes a self-dismissing callout
+  # and re-paints the board face so the modal can minimize back to the columns.
+  test "approve marks the card approved and streams a self-dismissing flash" do
+    card = @board.cards.create!(column: @review, title: "ship it", status: "in_review")
+    post approve_card_path(card), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    assert_response :success
+    assert_equal "approved", card.reload.status
+    assert card.events.exists?(kind: "status_change"),
+           "approving should log a status_change event"
+    # Flash carries the dismiss controller (auto-close) and re-paints the face.
+    assert_match "review-callout", response.body
+    assert_match 'data-controller="dismiss"', response.body
+    assert_match "card_#{card.id}", response.body
+  end
+
+  test "approve is a no-op for a card that is not in review" do
+    card = @board.cards.create!(column: @review, title: "already", status: "approved")
+    post approve_card_path(card), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_response :success
+    assert_equal "approved", card.reload.status
+    assert_equal 0, card.events.where(kind: "status_change").count
+  end
 end
 
 class CardLinkableTest < ActionDispatch::IntegrationTest
