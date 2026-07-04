@@ -55,6 +55,61 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
   end
 end
 
+# Cost footer — running tally on the closed card face and latest-run cost on the
+# open card's work panel (card #20).
+class CardCostFooterTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = create_board
+    column(@board, "execution").update!(
+      policy: column(@board, "execution").policy.merge("model" => "claude-opus-4-8", "effort" => "high")
+    )
+  end
+
+  test "closed card sums run costs into the footer with the model label" do
+    card = create_card(@board, "execution", status: "working")
+    create_run(card).update!(cost: 1.25, output_tokens: 100)
+    create_run(card).update!(cost: 11.09, output_tokens: 250)
+
+    get root_path
+    footer = css_select("[data-card-id='#{card.number}'] .card-footer").first
+    assert footer, "a card with run cost should render a footer"
+    assert_equal "Opus - High", footer.css(".footer-left").text.strip
+    assert_equal "$12.34 · 350 out", footer.css(".footer-cost").text.strip
+  end
+
+  test "closed card footer shows both the cost tally and the PR link" do
+    card = create_card(@board, "execution", status: "working",
+                       pr_url: "https://github.com/o/r/pull/7")
+    create_run(card).update!(cost: 2.0, output_tokens: 40)
+
+    get root_path
+    footer = css_select("[data-card-id='#{card.number}'] .card-footer").first
+    assert footer
+    assert_equal "$2.0 · 40 out", footer.css(".footer-cost").text.strip
+    assert_includes footer.css(".footer-pr").text, "GitHub #7"
+  end
+
+  test "a card with no runs and no PR renders no footer" do
+    card = create_card(@board, "execution", status: "queued")
+    get root_path
+    face = css_select("[data-card-id='#{card.number}']").first
+    assert face
+    assert_empty face.css(".card-footer")
+  end
+
+  test "open card work panel shows the latest run cost and model label" do
+    card = create_card(@board, "execution", status: "working")
+    create_run(card).update!(cost: 0.10, output_tokens: 5)
+    create_run(card).update!(cost: 0.56, output_tokens: 100)
+
+    get card_path(card)
+    footer = css_select(".work-footer").first
+    assert footer, "the work panel should show a cost footer"
+    assert_equal "Opus - High", footer.css(".footer-left").text.strip
+    assert_equal "$0.56 · 100 out", footer.css(".footer-cost").text.strip
+  end
+end
+
 class CardGitFieldsTest < ActionDispatch::IntegrationTest
   setup do
     @board = Board.create!(name: "G", default_branch: "main")

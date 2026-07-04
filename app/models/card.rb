@@ -46,6 +46,11 @@ class Card < ApplicationRecord
     events.where(kind: "progress").last&.payload&.[]("text")
   end
 
+  # Running tally across every run on the card — the closed-card cost footer
+  # (card #20). Sums stopped/restarted segments so the total reflects real spend.
+  def total_cost = runs.sum(:cost)
+  def total_output_tokens = runs.sum(:output_tokens)
+
   # Is the planning assistant expected to post next? True right after entering
   # a planning column (kickoff inspection pending) or after a user message.
   def awaiting_assistant?

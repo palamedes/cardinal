@@ -175,6 +175,13 @@
             <p class="empty">No runs yet — drag the card into an execution column to assign an agent.</p>
           <% end %>
 
+          <% if latest && (latest.cost.positive? || latest.output_tokens.positive?) %>
+            <div class="work-footer">
+              <span class="footer-left"><%= @card.column.model_label %></span>
+              <span class="footer-cost">$<%= latest.cost.round(2) %> · <%= latest.output_tokens %> out</span>
+            </div>
+          <% end %>
+
           <details class="advanced-rules panel-advanced">
             <summary>Advanced</summary>
             <p class="hint">Deleting removes the card and its entire history (events, runs, workspace). The remote branch and PR, if any, are left untouched.</p>
