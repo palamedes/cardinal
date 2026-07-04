@@ -215,7 +215,18 @@ body.dragging .drop-hint { display: block; }
   font-size: 11px; color: var(--text-dim); font-weight: 600;
 }
 .card-footer:hover .footer-pr { color: var(--blue); }
-.footer-left { min-width: 1px; }
+.footer-left { min-width: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.footer-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.footer-cost { white-space: nowrap; }
+.footer-pr { color: var(--text-dim); }
+
+/* Open-card cost tally: sits at the foot of the work panel, live-updating. */
+.work-footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim); font-weight: 600;
+}
+.work-footer .footer-cost { white-space: nowrap; }
 .card-ghost { opacity: .4; }
 .card-title { font-weight: 600; }
 .card-number { color: var(--text-dim); font-weight: 400; }

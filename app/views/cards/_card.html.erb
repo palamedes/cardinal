@@ -31,18 +31,23 @@
       <% elsif card.discussing? && card.events.conversation.last&.actor == "assistant" %>
         <span class="chip agent-chip">🪶 replied</span>
       <% end %>
-      <% if (card.running? || card.needs_attention?) && (last_run = card.runs.order(:id).last) && (last_run.cost.to_f.positive? || last_run.output_tokens.positive?) %>
-        <span class="chip">$<%= last_run.cost.round(2) %><%= " · #{(last_run.output_tokens / 1000.0).round(1)}k out" if card.working? %></span>
-      <% end %>
       <% if card.parent_id %><span class="chip">↑ sub</span><% end %>
       <% if card.children.any? %><span class="chip">↳ <%= card.children.where(status: %w[done archived]).count %>/<%= card.children.count %></span><% end %>
       <% if card.branch_name.present? && card.pr_url.blank? %><span class="chip branch">🌿 <%= card.branch_name.delete_prefix("cardinal/") %></span><% end %>
     </div>
   <% end %>
-  <% if card.pr_url.present? %>
-    <a class="card-footer" href="<%= card.pr_url %>" target="_blank" rel="noopener" title="Open the pull request on GitHub">
-      <span class="footer-left"><%# future: Asana / Trello / linked-ticket slot %></span>
-      <span class="footer-pr">GitHub #<%= card.pr_url[%r{/pull/(\d+)}, 1] %> ↗</span>
-    </a>
+  <% has_cost = card.total_cost.positive? || card.total_output_tokens.positive? %>
+  <% if has_cost || card.pr_url.present? %>
+    <div class="card-footer">
+      <span class="footer-left"><%= card.column.model_label if has_cost %></span>
+      <span class="footer-right">
+        <% if has_cost %>
+          <span class="footer-cost">$<%= card.total_cost.round(2) %> · <%= card.total_output_tokens %> out</span>
+        <% end %>
+        <% if card.pr_url.present? %>
+          <a class="footer-pr" href="<%= card.pr_url %>" target="_blank" rel="noopener" title="Open the pull request on GitHub">GitHub #<%= card.pr_url[%r{/pull/(\d+)}, 1] %> ↗</a>
+        <% end %>
+      </span>
+    </div>
   <% end %>
 </article>

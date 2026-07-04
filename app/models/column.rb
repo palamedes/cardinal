@@ -112,6 +112,14 @@ class Column < ApplicationRecord
     model.to_s[/claude-([a-z]+)/, 1] || model
   end
 
+  # "Opus - High" — human label for cost footers (card #20). Effort is optional,
+  # so a model with no configured effort renders just "Opus".
+  def model_label
+    return if model.blank?
+    label = model_short.to_s.capitalize
+    effort.present? ? "#{label} - #{effort.to_s.capitalize}" : label
+  end
+
   validates :name, presence: true
   validates :position, presence: true
 
