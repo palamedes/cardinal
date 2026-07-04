@@ -1,5 +1,5 @@
 class Board < ApplicationRecord
-  # Captured from the author's live board (2026-07-05) — the battle-tested
+  # Captured from the author's live board (2026-07-04, second capture) — the battle-tested
   # layout. accepts_from is stored as NAMES here and resolved to column ids
   # by install_default_columns! (ids don't exist until creation).
   DEFAULT_COLUMNS = [
@@ -32,7 +32,8 @@ class Board < ApplicationRecord
                 "on_entry" => [{ "action" => "mark_pr_ready" }] } },
     { name: "Done",        archetype: "terminal",
       policy: { "ai" => false, "plan_approval" => false, "arrivals" => "top",
-                "accepts_from_names" => ["Review", "QA", "Planning"],
+                "accepts_from_names" => ["Tasks", "Planning", "Review", "QA"],
+                "footer" => [{ "label" => "Total cost:", "compute" => "sum_cost" }],
                 "on_entry" => [{ "action" => "merge_pr" }] } }
   ].freeze
 
