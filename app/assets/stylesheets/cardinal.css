@@ -87,6 +87,27 @@ a { color: var(--blue); text-decoration: none; }
   font-size: 13px;
 }
 
+/* Board search & filter (card #51): global box center-top, per-column 🔍. */
+.topbar-center { flex: 1; display: flex; justify-content: center; padding: 0 14px; }
+.global-search {
+  width: min(340px, 38vw); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); padding: 5px 10px;
+}
+.global-search::placeholder, .col-search::placeholder { color: var(--text-dim); }
+.col-tools { display: flex; align-items: center; gap: 6px; }
+.col-search-toggle {
+  background: none; border: 0; padding: 0 2px; cursor: pointer;
+  font-size: 12px; opacity: .55; line-height: 1;
+}
+.col-search-toggle:hover { opacity: 1; }
+.col-search {
+  display: none; margin: 0 0 8px; width: 100%;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); padding: 4px 8px; font-size: 12px;
+}
+.col-search.open { display: block; }
+.filter-hidden { display: none !important; }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

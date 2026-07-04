@@ -1,5 +1,6 @@
 <%= turbo_stream_from @board %>
 
+<div data-controller="filter">
 <header class="topbar">
   <div class="topbar-left">
     <h1>Cardinal AI <span class="sep">▸</span> <span id="board-name"><%= @board.name %></span></h1>
@@ -36,6 +37,11 @@
       <% end %>
     <% end %>
     <span id="repo-pull-status"></span>
+  </div>
+  <div class="topbar-center">
+    <input type="search" id="global-search" class="global-search" placeholder="Search cards…  /"
+           data-filter-target="global"
+           data-action="input->filter#global keydown->filter#clear">
   </div>
   <div class="topbar-right">
     <button type="button" class="theme-toggle"
@@ -108,6 +114,7 @@
     <%= render "columns/column", column: column %>
   <% end %>
 </main>
+</div>
 
 <%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
   <%= render "cards/detail" if @card %>

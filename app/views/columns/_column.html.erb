@@ -8,9 +8,16 @@
                     data: { turbo_frame: "modal" } %>
       <% end %>
     </span>
-    <%= link_to "⚙", edit_column_path(column), class: "gear", title: "Column settings",
-                data: { turbo_frame: "modal" } %>
+    <span class="col-tools">
+      <button type="button" class="col-search-toggle" title="Filter this column"
+              data-action="filter#toggle">🔍</button>
+      <%= link_to "⚙", edit_column_path(column), class: "gear", title: "Column settings",
+                  data: { turbo_frame: "modal" } %>
+    </span>
   </header>
+  <input type="search" class="col-search" placeholder="Filter <%= column.name %>…"
+         data-col-id="<%= column.id %>"
+         data-action="input->filter#column keydown->filter#clear">
   <p class="drop-hint">→ <%= column.drag_hint %></p>
   <div class="cards<%= " cards-clickable" if column.inbox? %>"
        data-controller="board-column"
