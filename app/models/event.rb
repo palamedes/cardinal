@@ -1,7 +1,7 @@
 class Event < ApplicationRecord
   KINDS = %w[
     user_message agent_message assistant_message
-    status_change column_move move_rejected plan_proposed plan_approved
+    status_change config_change column_move move_rejected plan_proposed plan_approved
     question answer progress
     tool_call tool_result artifact_created
     run_started run_finished final_report error

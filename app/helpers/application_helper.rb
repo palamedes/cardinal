@@ -13,6 +13,16 @@ module ApplicationHelper
     options
   end
 
+  # Model options for a card's per-card override (card #33). Same list as the
+  # column gear, but the blank option reads "Use column default (<model>)" so the
+  # fallback names the concrete model the card runs on when left unset.
+  def card_model_options(card)
+    options = model_options(card.model)
+    default = card.column.model_short.presence
+    options[0] = ["Use column default#{" (#{default})" if default}", ""]
+    options
+  end
+
   # Timeline text is Markdown (agents write it constantly). escape_html turns
   # any raw HTML in the text into visible text instead of live DOM — an agent
   # pasting `<div class=...>` inside a code fence must never restyle the page.

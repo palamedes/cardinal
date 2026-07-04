@@ -307,6 +307,64 @@ class CardCompactTest < ActionDispatch::IntegrationTest
   end
 end
 
+# Per-card model/effort override (card #33): the work-panel twistie, its
+# autosave persistence, and the config_change timeline entry.
+class CardModelOverrideTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = create_board
+    column(@board, "execution").update!(
+      policy: column(@board, "execution").policy.merge("model" => "claude-haiku-4-5-20251001")
+    )
+    @card = create_card(@board, "execution", status: "queued")
+  end
+
+  test "the work panel renders the model override twistie with both dropdowns" do
+    get card_path(@card)
+    assert_response :success
+    assert_select ".model-override select[name=?]", "card[model]"
+    assert_select ".model-override select[name=?]", "card[effort]"
+    # Collapsed summary names the column default when there is no override.
+    assert_select ".model-override summary", /column default/
+  end
+
+  test "autosave persists a model+effort override and logs each config change" do
+    patch card_path(@card),
+          params: { autosave: "1", card: { model: "claude-opus-4-8", effort: "high" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    @card.reload
+    assert_equal "claude-opus-4-8", @card.model
+    assert_equal "high", @card.effort
+
+    changes = @card.events.where(kind: "config_change").order(:id)
+    assert_equal 2, changes.size
+    model_change = changes.find { |e| e.payload["field"] == "model" }
+    assert_equal "column default", model_change.payload["old"]
+    assert_match(/opus/, model_change.payload["new"])
+  end
+
+  test "clearing the override back to blank stores nil and follows the column again" do
+    @card.update!(model: "claude-opus-4-8")
+    patch card_path(@card), params: { autosave: "1", card: { model: "" } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    assert_nil @card.reload.model
+    assert_equal "claude-haiku-4-5-20251001", @card.effective_model
+    change = @card.events.where(kind: "config_change").last
+    assert_equal "column default", change.payload["new"]
+  end
+
+  test "an override paints the card face model label with an asterisk" do
+    @card.update!(model: "claude-opus-4-8")
+    create_run(@card).update!(cost: 0.5, output_tokens: 10)
+
+    get root_path
+    footer = css_select("[data-card-id='#{@card.number}'] .card-footer").first
+    assert footer
+    assert_equal "🤖 Opus*", footer.css(".footer-center").text.strip
+  end
+end
+
 class CardAutosaveTest < ActionDispatch::IntegrationTest
   setup do
     @board = Board.create!(name: "A", default_branch: "main")

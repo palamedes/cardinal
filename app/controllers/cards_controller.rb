@@ -56,6 +56,7 @@ class CardsController < ApplicationController
     attrs.delete(:pr_url) if @card.pr_url.present?
     @card.update!(attrs)
     log_changelog!
+    log_config_change!
 
     respond_to do |format|
       # Explicitly patch the board face in this tab too — Turbo suppresses a
@@ -146,8 +147,12 @@ class CardsController < ApplicationController
   end
 
   def card_params
-    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url, :summary, :compact)
+    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url, :summary, :compact, :model, :effort)
     attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
+    # Blank model/effort from the "Use column default" option mean "no override" —
+    # store nil so effective_* falls back to the column (card #33).
+    attrs[:model] = attrs[:model].presence if attrs.key?(:model)
+    attrs[:effort] = attrs[:effort].presence if attrs.key?(:effort)
     attrs.to_h.symbolize_keys
   end
 
@@ -164,6 +169,18 @@ class CardsController < ApplicationController
     else
       @card.log!("status_change", actor: "user", changelog: true, fields: changed,
                  text: "Details edited: #{changed.join(", ")}")
+    end
+  end
+
+  # A model/effort override is not a routine detail edit — it changes what the
+  # card will spend on. Log each change explicitly with its old→new value (the
+  # "config_change" kind, card #33) instead of coalescing it into the changelog
+  # above, so the timeline records exactly what the money will run on and when.
+  def log_config_change!
+    (@card.previous_changes.keys & %w[model effort]).each do |field|
+      old, new = @card.previous_changes[field].map { |v| v.presence || "column default" }
+      @card.log!("config_change", actor: "user", field: field, old: old, new: new,
+                 text: "#{field.capitalize} changed: #{old} → #{new}")
     end
   end
 end

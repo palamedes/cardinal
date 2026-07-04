@@ -91,6 +91,33 @@ class RunnerTest < ActiveSupport::TestCase
     assert_in_delta 0.3, @run.reload.cost.to_f
     assert_equal 10, @run.output_tokens
   end
+
+  # Card #33: the spawned CLI reads the card's EFFECTIVE model/effort, so a
+  # per-card override reaches the worker at spawn time. Capture the command by
+  # aborting at the workspace's agent_spawn seam before anything actually runs.
+  test "spawn command carries the card's effective model and effort override" do
+    @runner.card.update!(model: "claude-opus-4-8", effort: "high")
+
+    captured = nil
+    fake_ws = Object.new
+    fake_ws.define_singleton_method(:head) { "sha" }
+    fake_ws.define_singleton_method(:agent_spawn) { |cmd| captured = cmd; throw :spawned }
+
+    Agent::Workspace.stub(:provision, fake_ws) do
+      catch(:spawned) { @runner.send(:stream_agent, prompt: "go", mode: "execute") }
+    end
+
+    assert_equal "claude-opus-4-8", flag_after(captured, "--model")
+    assert_equal "high", flag_after(captured, "--effort")
+  end
+
+  private
+
+  # The value following a flag in a built argv array, or nil if absent.
+  def flag_after(cmd, flag)
+    i = cmd&.index(flag)
+    i && cmd[i + 1]
+  end
 end
 
 class RunnerBriefingTest < ActiveSupport::TestCase
