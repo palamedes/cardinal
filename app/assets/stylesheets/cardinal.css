@@ -374,6 +374,16 @@ body.dragging .drop-hint { display: block; }
 .zoom-tabs a { padding: 4px 12px; border-radius: 6px; color: var(--text-dim); }
 .zoom-tabs a.active { background: var(--surface-2); color: var(--text); }
 
+.summary-panel .summary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.summary-panel .summary-head h3 { margin: 0; }
+.summary-generate { white-space: nowrap; }
+.summary-blurb { margin: 6px 0 12px; }
+.summary-form textarea {
+  width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); padding: 8px 10px; font: inherit; resize: vertical;
+}
+.summary-stamp { margin-top: 8px; }
+
 .event { display: flex; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--surface-2); }
 
 /* Column moves are chapter markers in the card's story */

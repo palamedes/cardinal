@@ -140,6 +140,50 @@ class CardLinkableTest < ActionDispatch::IntegrationTest
   end
 end
 
+class CardSummaryTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
+  setup do
+    @board = Board.create!(name: "S", default_branch: "main")
+    %w[inbox planning execution].each_with_index do |arch, i|
+      @board.columns.create!(name: arch, archetype: arch, position: i, policy: {})
+    end
+    @col = @board.columns.find_by!(archetype: "inbox")
+    @card = @board.cards.create!(column: @col, title: "shipped a thing")
+  end
+
+  test "the summary tab renders the panel with a generate button" do
+    get card_path(@card, zoom: "summary")
+    assert_response :success
+    assert_select "#card_summary textarea[name=?]", "card[summary]"
+    assert_select "form[action=?]", summarize_card_path(@card)
+  end
+
+  test "summarize flips the card into working and enqueues the job" do
+    assert_enqueued_with(job: SummaryJob) do
+      post summarize_card_path(@card), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_equal "working", @card.reload.summary_status
+    assert_match "card_summary", response.body
+    assert_match "Generating…", response.body
+  end
+
+  test "summarize is a no-op while one is already running" do
+    @card.update!(summary_status: "working")
+    assert_no_enqueued_jobs(only: SummaryJob) do
+      post summarize_card_path(@card), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+  end
+
+  test "autosave persists a hand-edited summary and logs a changelog entry" do
+    patch card_path(@card), params: { autosave: "1", card: { summary: "We fixed the thing." } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal "We fixed the thing.", @card.reload.summary
+    log = @card.events.where(kind: "status_change").select { |e| e.payload["changelog"] }.first
+    assert_includes log.payload["fields"], "summary"
+  end
+end
+
 class CardAutosaveTest < ActionDispatch::IntegrationTest
   setup do
     @board = Board.create!(name: "A", default_branch: "main")

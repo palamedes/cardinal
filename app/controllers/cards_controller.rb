@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  before_action :set_card, only: [:show, :update, :move, :approve, :destroy]
+  before_action :set_card, only: [:show, :update, :move, :approve, :summarize, :destroy]
 
   def new
     @board = Board.first!
@@ -30,10 +30,11 @@ class CardsController < ApplicationController
   end
 
   def show
-    @zoom = params[:zoom].presence_in(%w[conversation activity debug]) || "conversation"
+    @zoom = params[:zoom].presence_in(%w[conversation activity debug summary]) || "conversation"
     @events = case @zoom
               when "conversation" then @card.events.conversation
               when "activity" then @card.events.activity
+              when "summary" then Event.none # the Summary tab shows the card summary, not events
               else @card.events
               end
 
@@ -83,6 +84,19 @@ class CardsController < ApplicationController
     redirect_to card_path(@card)
   end
 
+  # Generate a customer-friendly summary on demand (card #35). Non-blocking,
+  # mirroring the board's deep dive: flip the card into its "working" state,
+  # morph the Summary panel so the button reflects it, and let SummaryJob do the
+  # one-shot synthesis in the background. Skipped when one is already running.
+  def summarize
+    unless @card.summary_working?
+      @card.update!(summary_status: "working")
+      SummaryJob.perform_later(@card)
+    end
+    render turbo_stream: turbo_stream.replace("card_summary",
+             partial: "cards/summary_panel", locals: { card: @card })
+  end
+
   def move
     from_column = @card.column
     to_column = @card.board.columns.find(params[:column_id])
@@ -106,7 +120,7 @@ class CardsController < ApplicationController
   end
 
   def card_params
-    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url)
+    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url, :summary)
     attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
     attrs.to_h.symbolize_keys
   end
@@ -114,7 +128,7 @@ class CardsController < ApplicationController
   # Changelog in the activity timeline (the mechanism already exists). A burst
   # of autosaves coalesces into one entry instead of one per pause-in-typing.
   def log_changelog!
-    changed = @card.previous_changes.keys & %w[title description tags branch_name pr_url]
+    changed = @card.previous_changes.keys & %w[title description tags branch_name pr_url summary]
     return if changed.empty?
 
     last = @card.events.order(:id).last

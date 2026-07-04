@@ -39,6 +39,9 @@ class Card < ApplicationRecord
 
   def needs_attention? = %w[needs_input blocked failed work_complete].include?(status)
 
+  # A customer-friendly summary is being (re)generated in the background (§card #35).
+  def summary_working? = summary_status == "working"
+
   def running? = %w[queued working needs_input].include?(status)
 
   # Latest one-line progress event, shown live on the card face (§6).

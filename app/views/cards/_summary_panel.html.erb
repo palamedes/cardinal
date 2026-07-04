@@ -1,0 +1,28 @@
+<div id="card_summary" class="summary-panel" data-controller="autosave">
+  <div class="summary-head">
+    <h3>Customer summary <span class="autosave-status" data-autosave-target="status"></span></h3>
+    <% if card.summary_working? %>
+      <button type="button" class="deep-dive working summary-generate" disabled>
+        <span class="pulse-dot"></span> Generating…
+      </button>
+    <% else %>
+      <%= button_to summarize_card_path(card), class: "deep-dive summary-generate",
+            title: "Compress everything this card did into a couple of non-technical lines" do %>
+        ✨ <%= card.summary.present? ? "Regenerate" : "Generate summary" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <p class="hint summary-blurb">A plain-language recap of what this card delivered — ready to drop into a customer chat. Fully editable; your edits are respected when you regenerate.</p>
+
+  <%= form_with model: card, class: "summary-form",
+        data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
+    <%= hidden_field_tag :autosave, "1" %>
+    <%= f.text_area :summary, rows: 10, placeholder: "No summary yet — click Generate summary, or write your own.",
+          disabled: card.summary_working? %>
+  <% end %>
+
+  <% if card.summary_generated_at.present? %>
+    <p class="hint summary-stamp">Last generated <%= time_ago_in_words(card.summary_generated_at) %> ago</p>
+  <% end %>
+</div>

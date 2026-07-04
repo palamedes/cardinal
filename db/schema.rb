@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_130000) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -58,6 +58,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_120000) do
     t.string "pr_state"
     t.string "pr_url"
     t.string "status", default: "draft", null: false
+    t.text "summary"
+    t.datetime "summary_generated_at"
+    t.string "summary_status"
     t.json "tags", default: [], null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
