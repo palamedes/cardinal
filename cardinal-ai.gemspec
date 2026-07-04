@@ -30,6 +30,9 @@ Gem::Specification.new do |spec|
     "config.ru", "Rakefile",
     "README.md", "LICENSE", "cardinal.md"
   ].select { |f| File.file?(f) }
+   # Dir[] ignores .gitignore — never let key material on the build machine
+   # into the public package, whatever else the globs match.
+   .reject { |f| f.end_with?(".key", ".enc", ".pem") || f.include?("credentials") }
 
   spec.bindir      = "exe"
   spec.executables = ["cardinal"]
