@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir[
     "app/**/*",
     "config/**/*",
-    "db/migrate/**/*", "db/seeds.rb",
+    "db/migrate/**/*", "db/seeds.rb", "db/queue_schema.rb", "db/cable_schema.rb",
     "lib/**/*",
     "public/**/*",
     "vendor/javascript/**/*",
@@ -43,6 +43,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "turbo-rails"
   spec.add_dependency "stimulus-rails"
   spec.add_dependency "redcarpet", "~> 3.6"
+  spec.add_dependency "solid_queue", "~> 1.0"
+  spec.add_dependency "solid_cable", "~> 3.0"
 
   spec.post_install_message = <<~MSG
 

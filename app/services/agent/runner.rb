@@ -30,6 +30,21 @@ module Agent
       - Finish with a concise report: what you did, what to check, any open questions.
     RULES
 
+    # Column shell access OFF: the agent can read, search, and edit — nothing
+    # else. Enforced by the CLI tool list, not just these words.
+    RESTRICTED_EXECUTE_RULES = <<~RULES.freeze
+      ## Rules
+      - You have FILE TOOLS ONLY: read, search, edit, write. You cannot run shell
+        commands or git — do not attempt to; Cardinal commits and pushes your edits for you.
+      - Work only inside this repository checkout (you are already on the card's branch).
+      - Stay strictly within the card's scope. Prefer the smallest reasonable interpretation and note assumptions.
+      - If something must be RUN to finish the job (tests, generators, installs), do the file
+        work, then list the exact commands in your final report for the user to run.
+      - If you are blocked on a decision only the user can make, output a single line starting with
+        "QUESTION:" followed by the question, then stop immediately. Do not guess on genuinely ambiguous choices.
+      - Finish with a concise report: what you did, what to check, any open questions.
+    RULES
+
     def self.start(run) = new(run).start
     def self.resume(run, message, approve: false) = new(run).resume(message, approve: approve)
 
@@ -59,7 +74,7 @@ module Agent
       begin_segment!
       if run.phase == "plan" && approve
         run.update!(phase: "execute")
-        stream_agent(prompt: "Your plan is approved — execute it now.\n\n#{EXECUTE_RULES}",
+        stream_agent(prompt: "Your plan is approved — execute it now.\n\n#{execute_rules}",
                      mode: "execute", resuming: true)
       elsif run.phase == "plan"
         stream_agent(prompt: "Feedback on your plan:\n\n#{message}\n\nRevise the plan accordingly, present it, and stop again for approval. Stay in read-only mode.",
@@ -106,6 +121,9 @@ module Agent
         cmd += ["--max-turns", "3", "--tools", ""]
       else
         cmd += ["--max-turns", (column.max_turns.presence || DEFAULT_EXECUTE_TURNS).to_s]
+        # Shell access off: restrict to file tools — the sandbox is the tool
+        # list itself, not a request in the prompt.
+        cmd += ["--tools", "Read,Glob,Grep,Edit,Write"] unless column.shell_access?
       end
       cmd += ["--model", column.model] if column.model.present?
       cmd += ["--effort", column.effort] if column.effort.present?
@@ -205,6 +223,11 @@ module Agent
 
     def conclude_execute(workspace, result)
       accumulate_usage(result)
+      # A shell-less agent cannot commit its own edits — do it for it before
+      # any commit counting or salvage below.
+      unless column.shell_access?
+        workspace.commit_all!("Card ##{card.number}: #{card.title.truncate(60)}\n\nCommitted by Cardinal for a shell-less agent.")
+      end
       unless result[:success]
         # Budget exhaustion isn't failure — park and offer to continue (§8).
         # The session survives; an answer resumes it with a fresh turn budget.
@@ -334,8 +357,12 @@ module Agent
         #{conversation_excerpt.presence || "(none)"}
 
         #{"## Column instructions\n#{column.instructions}\n" if column.instructions.present?}
-        #{EXECUTE_RULES}
+        #{execute_rules}
       PROMPT
+    end
+
+    def execute_rules
+      column.shell_access? ? EXECUTE_RULES : RESTRICTED_EXECUTE_RULES
     end
 
     def plan_prompt

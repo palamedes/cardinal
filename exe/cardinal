@@ -106,6 +106,9 @@ end
 # scaffolding inside the engine/gem directory — read-only for sudo installs).
 ENV["PIDFILE"] = File.join(TARGET, ".cardinal", "tmp", "server.pid")
 ENV["CARDINAL_SWEEPER"] = "1" # the sweeper initializer keys off Rails::Server otherwise
+# Localhost only: the board drives your logged-in gh/claude sessions, so it
+# must not be reachable by others on the network. CARDINAL_HOST=0.0.0.0
+# deliberately exposes it (e.g. to browse from a phone on your LAN).
 exec(RbConfig.ruby, "-S", "puma",
-     "-b", "tcp://0.0.0.0:#{ENV["PORT"]}",
+     "-b", "tcp://#{ENV.fetch("CARDINAL_HOST", "127.0.0.1")}:#{ENV["PORT"]}",
      File.join(HOME_DIR, "config.ru"))

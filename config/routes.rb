@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   root "boards#show"
 
-  resource :board, only: :show do
+  resource :board, only: [:show, :edit, :update] do
     post :deep_dive
     post :pull
     get :brief

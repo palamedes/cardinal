@@ -56,6 +56,15 @@ class Column < ApplicationRecord
     policy["ai"] != false
   end
 
+  # Worker shell access (execution columns). ON (default): the agent gets the
+  # full toolset — shell, git, everything — inside its workspace clone, which
+  # means it can also touch the host beyond the clone. OFF: file tools only
+  # (read/search/edit); it physically cannot execute commands, and Cardinal
+  # commits and pushes its edits for it.
+  def shell_access?
+    policy["shell"] != false
+  end
+
   # Which columns may move cards INTO this one (§ accept policy, card #15).
   # Stored as an array of column-id strings. EXPLICIT ONLY: an empty list
   # means this column accepts from nowhere — there is no permissive default.
@@ -111,6 +120,12 @@ class Column < ApplicationRecord
 
   def at_wip_limit?
     execution? && concurrency_limit.present? && running_count >= concurrency_limit.to_i
+  end
+
+  # Post-claim variant (§ races): a starter first claims working atomically,
+  # THEN checks — over-subscription reads as strictly more running than allowed.
+  def at_wip_limit_exceeded?
+    execution? && concurrency_limit.present? && running_count > concurrency_limit.to_i
   end
 
   # Aggregate a single footer row over the runs/cards in this column (card #18).

@@ -22,7 +22,7 @@ require "securerandom"
 
 if ENV["CARDINAL_GEM"] == "1"
   # Installed-gem mode: no Bundler — load what Bundler.require would have.
-  %w[propshaft importmap-rails turbo-rails stimulus-rails redcarpet sqlite3].each { |g| require g }
+  %w[propshaft importmap-rails turbo-rails stimulus-rails redcarpet sqlite3 solid_queue solid_cable].each { |g| require g }
 else
   # Require the gems listed in Gemfile, including any gems
   # you've limited to :test, :development, or :production.

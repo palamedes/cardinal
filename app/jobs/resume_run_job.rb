@@ -20,6 +20,13 @@ class ResumeRunJob < ApplicationJob
       return
     end
 
+    # Atomic claim (§ races): two finishing runs can both kick the queue and
+    # double-fire this job — exactly one claimer resumes the session. The
+    # claim value is "running", which is what a resume sets anyway.
+    return unless Run.where(id: run.id, status: "needs_input")
+                     .update_all(status: "running", updated_at: Time.current) == 1
+    run.reload
+
     if (pending = run.briefing["pending_resume"])
       run.update!(briefing: run.briefing.except("pending_resume"))
       message = [pending["message"], message].compact_blank.join("\n\n")

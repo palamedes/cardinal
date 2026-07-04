@@ -74,6 +74,15 @@ module Agent
         end
       end
 
+      # Shell-less agents (column shell access off) edit files but cannot run
+      # git — the runner commits on their behalf when a segment ends.
+      def commit_all!(message)
+        return false if git_out(path, "status", "--porcelain").strip.empty?
+        git!(path, "add", "-A")
+        git!(path, "commit", "--quiet", "-m", message)
+        true
+      end
+
       # How the runner should spawn the agent process for this workspace.
       def agent_spawn(cmd) = [cmd, { chdir: path.to_s }]
 

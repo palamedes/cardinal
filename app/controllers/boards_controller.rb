@@ -20,6 +20,31 @@ class BoardsController < ApplicationController
     redirect_to root_path
   end
 
+  # Board settings gear (the board-level analog of the column gear): name and
+  # default branch — the branch agents fork from and Done merges toward.
+  def edit
+    @board = Board.first!
+    redirect_to root_path and return unless turbo_frame_request?
+  end
+
+  def update
+    board = Board.first!
+    attrs = params.require(:board).permit(:name, :default_branch)
+    board.update!(
+      name: attrs[:name].presence || board.name,
+      default_branch: attrs[:default_branch].presence || board.default_branch
+    )
+    board.broadcast_refresh_to board
+    if params[:autosave]
+      render turbo_stream: [
+        turbo_stream.update("board-name", board.name),
+        turbo_stream.update("board-form-errors", "")
+      ]
+    else
+      redirect_to root_path
+    end
+  end
+
   # Inspect the repo brief: what the deep dive wrote, when, from which SHA.
   def brief
     @board = Board.first!

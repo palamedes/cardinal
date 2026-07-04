@@ -71,6 +71,11 @@ already current.
   `cardinal logout` to unlink).
 - Agents can only push to their own card branches — merging is always your drag.
 - AI usage bills the Claude account you linked, the same as using Claude Code.
+- The board is only reachable from **your own machine** (localhost). To browse it from
+  another device on your network — a phone or tablet — start with `CARDINAL_HOST=0.0.0.0
+  cardinal`, and know that anyone on that network can then drive your board.
+- In a worker column's ⚙ gear you can turn off **Shell access**: the agent can then only
+  read and edit files — it can't run commands — and Cardinal commits its work for it.
 
 ## For developers
 

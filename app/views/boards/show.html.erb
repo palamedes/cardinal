@@ -2,7 +2,9 @@
 
 <header class="topbar">
   <div class="topbar-left">
-    <h1>Cardinal AI <span class="sep">▸</span> <%= @board.name %></h1>
+    <h1>Cardinal AI <span class="sep">▸</span> <span id="board-name"><%= @board.name %></span></h1>
+    <%= link_to "⚙", edit_board_path, data: { turbo_frame: "modal" }, class: "gear",
+          title: "Board settings — name, default branch" %>
     <%= button_to "⇣ Pull", pull_board_path, form_class: "pull-form",
           form: { title: "git pull --ff-only in #{@board.local_path} — fetch what Done has merged" },
           data: { turbo_submits_with: "⇣ Pulling…" }, class: "theme-toggle" %>

@@ -60,16 +60,28 @@ class Board < ApplicationRecord
     # Raw configured URL (get-url applies insteadOf rewrites, which can embed
     # credential-helper tokens); strip any userinfo defensively either way.
     origin, origin_ok = Open3.capture2e("git", "-C", repo_path, "config", "--get", "remote.origin.url")
-    branch, branch_ok = Open3.capture2e("git", "-C", repo_path, "rev-parse", "--abbrev-ref", "HEAD")
 
     board = create!(
       name: File.basename(repo_path),
       repo_url: origin_ok.success? ? sanitize_remote_url(origin.strip) : nil,
-      default_branch: branch_ok.success? && branch.strip.present? ? branch.strip : "main",
+      default_branch: detect_default_branch(repo_path),
       local_path: repo_path
     )
     board.install_default_columns!
     board
+  end
+
+  # The REMOTE's default branch, not whatever happened to be checked out when
+  # `cardinal up` first ran — launching from a feature branch must not make
+  # Done merge toward that feature branch forever. Fallback chain: origin's
+  # HEAD → current branch → "main". Editable later in board settings.
+  def self.detect_default_branch(repo_path)
+    head, ok = Open3.capture2e("git", "-C", repo_path, "symbolic-ref", "refs/remotes/origin/HEAD")
+    return head.strip.delete_prefix("refs/remotes/origin/") if ok.success? && head.strip.present?
+
+    # symbolic-ref, not rev-parse: works even on an unborn branch (fresh init).
+    branch, ok = Open3.capture2e("git", "-C", repo_path, "symbolic-ref", "--short", "HEAD")
+    ok.success? && branch.strip.present? ? branch.strip : "main"
   end
 
   def self.sanitize_remote_url(url)

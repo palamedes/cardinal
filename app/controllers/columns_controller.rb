@@ -26,7 +26,7 @@ class ColumnsController < ApplicationController
       :name, :archetype, :instructions, :model, :effort,
       :concurrency_limit, :max_turns, :timeout_minutes, :plan_approval,
       :on_entry_text, :on_entry_json, :color, :custom_color, :arrivals, :ai,
-      :footer_text, accepts_from: []
+      :shell, :footer_text, accepts_from: []
     )
 
     policy = @column.policy.dup
@@ -38,6 +38,7 @@ class ColumnsController < ApplicationController
     policy["plan_approval"] = attrs[:plan_approval] == "1"
     policy["arrivals"] = attrs[:arrivals].presence_in(%w[top bottom])
     policy["ai"] = (attrs[:ai] == "1") if attrs.key?(:ai) # inbox forms omit it — never AI anyway
+    policy["shell"] = (attrs[:shell] == "1") if attrs.key?(:shell) # worker shell access (execution gear only)
     # Accept policy (card #15): store allowed source column ids as strings.
     # EXPLICIT ONLY — an empty list means the column accepts from nowhere.
     policy["accepts_from"] = attrs[:accepts_from].to_a.map(&:to_s).reject(&:blank?).presence

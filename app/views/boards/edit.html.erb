@@ -1,0 +1,29 @@
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal modal-sm" data-controller="autosave">
+      <header class="modal-header">
+        <h1>⚙ Board settings
+            <span class="autosave-status" data-autosave-target="status"></span></h1>
+        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+      </header>
+      <div class="modal-body">
+        <div id="board-form-errors"></div>
+
+        <%= form_with model: @board, url: board_path(autosave: 1), class: "card-edit",
+              data: { autosave_target: "form" } do |f| %>
+          <label>Board name</label>
+          <%= f.text_field :name %>
+
+          <label>Default branch <%= info_tip("The branch agents fork card branches from and Done merges pull requests toward. Detected from the repo at first boot; fix it here if that guess was wrong.") %></label>
+          <%= f.text_field :default_branch, placeholder: "main" %>
+        <% end %>
+
+        <label>Repository</label>
+        <p class="locked-field"><code><%= @board.repo_url.presence || "(no remote)" %></code></p>
+
+        <label>Local checkout</label>
+        <p class="locked-field"><code><%= @board.local_path %></code></p>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -105,6 +105,14 @@
               <%= info_tip("The agent's first pass is read-only: it explores and proposes a plan, then waits. You approve with one click or reply to redirect. Your main safety rail.") %>
             </label>
 
+            <% if @column.execution? %>
+              <label class="check-row">
+                <%= f.check_box :shell, checked: @column.shell_access? %>
+                Shell access — the agent may run commands (tests, builds, git)
+                <%= info_tip("Unchecked: the agent gets file tools only (read, search, edit, write) and physically cannot execute anything — Cardinal commits and pushes its edits for it. Safer, but it can't run your tests or generators, and the agent process runs on this machine either way.") %>
+              </label>
+            <% end %>
+
             </div>
 
             <label>On-entry rules <%= info_tip("What happens when a card lands in this column, in plain English — e.g. \"start the worker agent\" or \"have an AI suggest tags and a better title\". Cardinal compiles it to rule actions when you save. Blank = the archetype's default behavior shown below.") %></label>
