@@ -33,15 +33,13 @@
   <% has_cost = card.total_cost.positive? || card.total_output_tokens.positive? %>
   <% if has_cost || card.pr_url.present? %>
     <div class="card-footer">
-      <span class="footer-left"><%= "🤖 #{card.column.model_label}" if has_cost && card.column.model_label %></span>
-      <span class="footer-right">
-        <% if has_cost %>
-          <span class="footer-cost">$<%= card.total_cost.round(2) %> · <%= card.total_output_tokens %> out</span>
-        <% end %>
-        <% if card.pr_url.present? %>
-          <a class="footer-pr" href="<%= card.pr_url %>" target="_blank" rel="noopener" title="Open the pull request on GitHub">GitHub #<%= card.pr_url[%r{/pull/(\d+)}, 1] %> ↗</a>
-        <% end %>
-      </span>
+      <% if card.pr_url.present? %>
+        <a class="footer-pr" href="<%= card.pr_url %>" target="_blank" rel="noopener" title="Open the pull request on GitHub">GitHub #<%= card.pr_url[%r{/pull/(\d+)}, 1] %> ↗</a>
+      <% else %>
+        <span class="footer-pr"></span>
+      <% end %>
+      <span class="footer-center"><%= "🤖 #{card.column.model_label}" if has_cost && card.column.model_label %></span>
+      <span class="footer-cost"><%= "$#{card.total_cost.round(2)}" if has_cost %></span>
     </div>
   <% end %>
 </article>
