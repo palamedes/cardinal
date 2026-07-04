@@ -20,6 +20,18 @@ merged. You never leave the board.
 gem install cardinal-ai
 ```
 
+**If `cardinal` says "command not found" afterwards:** on many systems (Arch, Fedora,
+any install without sudo) gems land in a per-user folder your shell doesn't look in —
+the install output even warns about it, easy to miss. Add it to your PATH once:
+
+```sh
+# bash / zsh — add to ~/.bashrc or ~/.zshrc:
+export PATH="$(ruby -e 'puts Gem.user_dir')/bin:$PATH"
+
+# fish — run once, it sticks:
+fish_add_path (ruby -e 'puts Gem.user_dir')/bin
+```
+
 ## Use it
 
 Go to any project and start Cardinal (a brand-new folder is fine — it offers to
