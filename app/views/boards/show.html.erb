@@ -6,9 +6,6 @@
     <%= button_to "⇣ Pull", pull_board_path, form_class: "pull-form",
           form: { title: "git pull --ff-only in #{@board.local_path} — fetch what Done has merged" },
           data: { turbo_submits_with: "⇣ Pulling…" }, class: "theme-toggle" %>
-    <span id="repo-pull-status"></span>
-  </div>
-  <div class="topbar-right">
     <%# Repo deep dive (card #12): one-shot read-only mapping of the repo, stored
         as a brief and injected into worker prompts. The button greys→reds as the
         brief falls behind HEAD; a stale brief over-anchors, so it nags at 10+. %>
@@ -26,6 +23,9 @@
         🔍 Deep dive
       <% end %>
     <% end %>
+    <span id="repo-pull-status"></span>
+  </div>
+  <div class="topbar-right">
     <button type="button" class="theme-toggle"
             data-controller="theme" data-action="theme#toggle">☀ Light</button>
     <% if ENV["CARDINAL_AUTH"].present? %>
