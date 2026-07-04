@@ -2,10 +2,7 @@
   <%= link_to card_path(card), class: "card-link", data: { turbo_frame: "modal", turbo_action: "advance" } do %>
     <div class="card-title">
       <%= card.title %>
-      <span class="status-glyph"><%= { "working" => "⚡", "needs_input" => "❓", "failed" => "✖",
-                                       "work_complete" => "✅", "done" => "✓", "queued" => "⏳",
-                                       "discussing" => "💬", "in_review" => "👁", "approved" => "👍",
-                                       "changes_requested" => "🔁" }[card.status] %></span>
+      <span class="status-glyph"><%= card.status_glyph %></span>
     </div>
     <% if card.queued? %>
       <% ahead = card.column.cards.where(status: "queued").where("position < ?", card.position).count %>
