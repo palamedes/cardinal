@@ -7,11 +7,17 @@ class MergePrJob < ApplicationJob
     card = Card.find(card_id)
     return if card.pr_url.blank? || card.pr_state == "merged"
     return unless checks_green?(card)
+    return unless mergeable?(card)
 
     # Best-effort undraft — a QA column may already have done it, and gh
     # errors on an already-ready PR; the merge step is the real gate.
     Open3.capture2e("gh", "pr", "ready", card.pr_url)
-    run_step(card, ["gh", "pr", "merge", card.pr_url, "--squash", "--delete-branch"]) or return
+    unless run_step(card, ["gh", "pr", "merge", card.pr_url, "--squash", "--delete-branch"])
+      # The floor (card #55): a card whose merge failed must never sit in
+      # Done claiming done — block it so the attention dropdown surfaces it.
+      card.update!(status: "blocked")
+      return
+    end
 
     card.update!(pr_state: "merged")
     card.log!("status_change", text: "PR squash-merged and branch deleted — shipped 🎉")
@@ -38,6 +44,25 @@ class MergePrJob < ApplicationJob
     card.log!("error", text: reason)
     card.update!(status: "blocked")
     false
+  end
+
+  # A sibling card's merge can conflict this one after its CI ran (card #55) —
+  # mergeability is a separate axis from checks. Ask before attempting so the
+  # conflict parks with a clean reason instead of a raw gh error. UNKNOWN
+  # (GitHub still computing) and gh hiccups fall through to the merge attempt,
+  # which remains the authority.
+  def mergeable?(card)
+    out, status = Open3.capture2e("gh", "pr", "view", card.pr_url, "--json", "mergeable")
+    return true unless status.success?
+    return true unless JSON.parse(out)["mergeable"] == "CONFLICTING"
+
+    card.log!("error", text: "Merge conflict with #{card.board.default_branch} — not merged. " \
+                             "Another card's merge likely landed first. Drag this card back to " \
+                             "In Progress for a conflict-resolution run, then bring it back here.")
+    card.update!(status: "blocked")
+    false
+  rescue JSON::ParserError
+    true
   end
 
   def run_step(card, cmd)

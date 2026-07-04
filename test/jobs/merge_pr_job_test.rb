@@ -54,4 +54,29 @@ class MergePrJobTest < ActiveSupport::TestCase
     assert_equal "blocked", @card.status
     assert_match(/still running/, @card.events.last.payload["text"])
   end
+
+  # Card #55 floor: a sibling's merge conflicted this PR after its CI ran.
+  test "a conflicting PR blocks with a resolution hint, without attempting the merge" do
+    calls = with_gh(
+      "checks" => ["all passing", 0],
+      "view"   => ['{"mergeable":"CONFLICTING"}', 0]
+    ) { MergePrJob.perform_now(@card.id) }
+    assert_not_includes calls, "merge"
+    @card.reload
+    assert_equal "blocked", @card.status
+    assert_match(/Merge conflict/, @card.events.last.payload["text"])
+    assert_match(/conflict-resolution run/, @card.events.last.payload["text"])
+  end
+
+  test "a merge step failure blocks the card instead of leaving it done" do
+    with_gh(
+      "checks" => ["all passing", 0],
+      "view"   => ['{"mergeable":"MERGEABLE"}', 0],
+      "merge"  => ["X Pull request is not mergeable", 1]
+    ) { MergePrJob.perform_now(@card.id) }
+    @card.reload
+    assert_equal "blocked", @card.status
+    assert_not_equal "merged", @card.pr_state
+    assert_match(/Merge step failed/, @card.events.last.payload["text"])
+  end
 end
