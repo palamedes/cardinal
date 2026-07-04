@@ -45,6 +45,9 @@ cardinal
 The first time, a browser window asks **which Claude account this board should work as** —
 pick one, and it's remembered for this project only. Then open **http://localhost:4000**.
 
+Running boards on two projects at once? Give the second one its own port:
+`cardinal 4001` (or `-p 4001`).
+
 That's the whole setup. Now:
 
 1. **Add a card** for something you want done, in plain English.

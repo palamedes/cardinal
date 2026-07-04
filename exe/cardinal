@@ -4,6 +4,7 @@
 # cardinal — spin up a Cardinal AI board for the repo you're standing in.
 #
 #   cardinal            # or `cardinal up` — first run links a Claude account
+#   cardinal 4001       # same, on a different port (also: -p/--port 4001)
 #   cardinal login      # redo the account link (switch accounts)
 #   cardinal logout     # unlink this instance's account
 #
@@ -22,7 +23,24 @@ TOKEN_FILE = File.join(AUTH_DIR, "oauth-token")
 def say(msg) = puts("cardinal ▸ #{msg}")
 def die(msg) = abort("cardinal: #{msg}")
 
-cmd = ARGV[0] || "up"
+# Port: `cardinal 4001`, `-p 4001`, `--port 4001`, or `--port=4001`.
+# Explicit choice beats the PORT env var; default (4000) is applied later.
+args = ARGV.dup
+port = nil
+if (i = args.index("-p") || args.index("--port"))
+  args.delete_at(i)
+  port = args.delete_at(i) or die("#{ARGV[i]} needs a port number")
+elsif (flag = args.find { |a| a.start_with?("--port=") })
+  args.delete(flag)
+  port = flag.split("=", 2).last
+elsif (bare = args.find { |a| a.match?(/\A\d+\z/) })
+  args.delete(bare)
+  port = bare
+end
+die "invalid port: #{port}" if port && !port.match?(/\A\d+\z/)
+ENV["PORT"] = port if port
+
+cmd = args[0] || "up"
 unless File.directory?(File.join(TARGET, ".git"))
   # A brand-new project shouldn't need ceremony — cards are branches and PRs,
   # so a repo must exist, but Cardinal can lay that rail itself.
@@ -47,7 +65,7 @@ when "login"
   FileUtils.rm_f(TOKEN_FILE)
 when "up" # continue
 else
-  die "usage: cardinal [up|login|logout]"
+  die "usage: cardinal [up|login|logout] [-p PORT]"
 end
 
 # Hide .cardinal/ from the host repo without touching its .gitignore.
