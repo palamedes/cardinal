@@ -54,25 +54,27 @@ class ColumnFooterTest < ActiveSupport::TestCase
     assert_equal [], @col.footer_rows
   end
 
-  test "an AI column appends its active model as a final row" do
+  # De-magic: the model row is the "model" compute, not an auto-row — a
+  # column with no footer config shows nothing, whatever its AI settings.
+  test "no footer config means no rows, even with AI and a model set" do
     @col.update!(policy: @col.policy.merge("model" => "claude-sonnet-4-6"))
+    assert_equal [], @col.footer_rows
+  end
+
+  test "the model compute renders the column's active model" do
+    @col.update!(policy: @col.policy.merge(
+      "model"  => "claude-sonnet-4-6",
+      "footer" => [{ "label" => "Model:", "compute" => "model" }]
+    ))
     assert_equal [{ label: "Model:", value: "sonnet" }], @col.footer_rows
   end
 
-  test "the model row follows the configured footer rows" do
+  test "the model compute goes blank when AI is off" do
     @col.update!(policy: @col.policy.merge(
-      "model"  => "claude-sonnet-4-6",
-      "footer" => [{ "label" => "Cards:", "compute" => "count_cards" }]
+      "model" => "claude-sonnet-4-6", "ai" => false,
+      "footer" => [{ "label" => "Model:", "compute" => "model" }]
     ))
-    assert_equal [
-      { label: "Cards:", value: "0" },
-      { label: "Model:", value: "sonnet" }
-    ], @col.footer_rows
-  end
-
-  test "a non-AI column shows no model row" do
-    @col.update!(policy: @col.policy.merge("model" => "claude-sonnet-4-6", "ai" => false))
-    assert_equal [], @col.footer_rows
+    assert_equal [{ label: "Model:", value: "" }], @col.footer_rows
   end
 
   test "the inbox never shows a model row" do

@@ -40,7 +40,7 @@ class Column < ApplicationRecord
   # Aggregations a footer row may compute over the column's cards (card #18).
   # A compute key not listed here renders blank, so config that outruns the
   # code degrades gracefully instead of erroring.
-  FOOTER_COMPUTES = %w[sum_cost sum_tokens count_cards].freeze
+  FOOTER_COMPUTES = %w[sum_cost sum_tokens count_cards model].freeze
 
   # Only ever emit a validated hex color into inline styles.
   def safe_color
@@ -76,18 +76,15 @@ class Column < ApplicationRecord
   # {"label" => "Total cost:", "compute" => "sum_cost"} hashes; each row pairs
   # static label text with an optional computed aggregate over this column's
   # cards. Returns [] when unconfigured, so existing columns render no footer.
+  # No auto-rows (de-magic): the model row that used to be hardcoded for AI
+  # columns is now the "model" compute — visible in the gear, deletable.
   def footer_rows
-    rows = Array(footer).filter_map do |row|
+    Array(footer).filter_map do |row|
       label = row["label"].to_s
       value = footer_value(row["compute"])
       next if label.blank? && value.blank?
       { label:, value: }
     end
-    # AI columns advertise their active model as a final auto-row (card #32).
-    # Guarded on model presence so an AI column without one adds nothing,
-    # rather than emitting a "Model:" row with a blank value.
-    rows << { label: "Model:", value: model_short } if ai? && model.present?
-    rows
   end
 
   # Start the next queued card when a run slot frees up. A queued card whose
@@ -146,6 +143,10 @@ class Column < ApplicationRecord
       ActiveSupport::NumberHelper.number_to_delimited(column_runs.sum("input_tokens + output_tokens"))
     when "count_cards"
       cards.count.to_s
+    when "model"
+      # The column's active AI model, short form. Blank when AI is off or no
+      # model is set — the row then shows just its label, telling the truth.
+      ai? ? model_short.to_s : ""
     else
       ""
     end

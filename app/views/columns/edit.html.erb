@@ -134,7 +134,7 @@
           </div>
           <% end %>
 
-          <label>Footer <%= info_tip("A summary strip under the cards. One row per line as \"Label | compute\", where compute is sum_cost (total run cost), sum_tokens (total input+output tokens), count_cards, or blank for a static label. Example: \"Total cost: | sum_cost\".") %></label>
+          <label>Footer <%= info_tip("A summary strip under the cards. One row per line as \"Label | compute\", where compute is sum_cost (total run cost), sum_tokens (total input+output tokens), count_cards, model (this column's active AI model), or blank for a static label. Example: \"Model: | model\".") %></label>
           <%= f.text_area :footer_text, rows: 3, class: "mono",
                 value: footer_config_text(@column),
                 placeholder: "Total cost: | sum_cost" %>
