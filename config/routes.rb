@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       patch :move
       post :approve
       post :summarize
+      post :compact
     end
     resources :messages, only: [:create]
   end

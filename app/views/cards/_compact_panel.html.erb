@@ -1,0 +1,28 @@
+<div id="card_compact" class="summary-panel compact-panel" data-controller="autosave">
+  <div class="summary-head">
+    <h3>Technical compact <span class="autosave-status" data-autosave-target="status"></span></h3>
+    <% if card.compact_working? %>
+      <button type="button" class="deep-dive working summary-generate" disabled>
+        <span class="pulse-dot"></span> Generating…
+      </button>
+    <% else %>
+      <%= button_to compact_card_path(card), class: "deep-dive summary-generate",
+            title: "Distill everything this card did into a dense technical journal a resuming agent can read" do %>
+        ✨ <%= card.compact.present? ? "Regenerate" : "Generate compact" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <p class="hint summary-blurb">A dense, technical journal of what was built, decided, and blocked — the AI reads this to resume work without re-exploring the repo. Fully editable; your edits are respected when you regenerate.</p>
+
+  <%= form_with model: card, class: "summary-form",
+        data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
+    <%= hidden_field_tag :autosave, "1" %>
+    <%= f.text_area :compact, rows: 10, placeholder: "No compact yet — click Generate compact, or write your own technical notes.",
+          disabled: card.compact_working? %>
+  <% end %>
+
+  <% if card.compact_generated_at.present? %>
+    <p class="hint summary-stamp">Last generated <%= time_ago_in_words(card.compact_generated_at) %> ago</p>
+  <% end %>
+</div>

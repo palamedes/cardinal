@@ -31,7 +31,7 @@
       <div class="detail-panes">
         <section class="timeline" data-controller="scroll">
           <nav class="zoom-tabs">
-            <% %w[conversation activity debug summary].each do |zoom| %>
+            <% %w[conversation activity debug summary compact].each do |zoom| %>
               <%= link_to zoom.capitalize, card_path(@card, zoom: zoom),
                           class: ("active" if @zoom == zoom) %>
             <% end %>
@@ -40,6 +40,10 @@
           <% if @zoom == "summary" %>
             <div class="timeline-scroll">
               <%= render "cards/summary_panel", card: @card %>
+            </div>
+          <% elsif @zoom == "compact" %>
+            <div class="timeline-scroll">
+              <%= render "cards/compact_panel", card: @card %>
             </div>
           <% else %>
           <div class="timeline-scroll" data-scroll-target="scroller">

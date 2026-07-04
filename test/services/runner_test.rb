@@ -142,6 +142,20 @@ class RunnerBriefingTest < ActiveSupport::TestCase
     runner.instance_variable_get(:@card).board.define_singleton_method(:repo_brief) { nil }
     assert_no_match(/## Repo brief/, runner.send(:briefing_prompt))
   end
+
+  test "a technical compact is injected as resume context in both prompts" do
+    @card.update!(compact: "## Prior work\nAdded ThemeController; blocked on API key.")
+    runner = Agent::Runner.new(@run)
+    %i[briefing_prompt plan_prompt].each do |which|
+      prompt = runner.send(which)
+      assert_match(/## Technical resume context/, prompt, "#{which} should carry the compact section")
+      assert_match(/Added ThemeController; blocked on API key\./, prompt)
+    end
+  end
+
+  test "no resume context section when the card has no compact" do
+    assert_no_match(/## Technical resume context/, Agent::Runner.new(@run).send(:briefing_prompt))
+  end
 end
 
 class RunnerSalvagePrTest < ActiveSupport::TestCase

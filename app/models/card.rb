@@ -42,6 +42,10 @@ class Card < ApplicationRecord
   # A customer-friendly summary is being (re)generated in the background (§card #35).
   def summary_working? = summary_status == "working"
 
+  # A technical "compact" journal is being (re)generated in the background (§card
+  # #34) — the AI-readable context a resuming agent reads to skip re-exploration.
+  def compact_working? = compact_status == "working"
+
   def running? = %w[queued working needs_input].include?(status)
 
   # Latest one-line progress event, shown live on the card face (§6).
