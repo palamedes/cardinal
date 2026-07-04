@@ -60,10 +60,19 @@ class BoardsController < ApplicationController
   def pull
     board = Board.first!
     message, ok = pull_repo(board)
-    render turbo_stream: turbo_stream.update(
+    streams = [turbo_stream.update(
       "repo-pull-status",
       helpers.tag.span(message, class: ok ? "pull-ok" : "pull-err")
-    )
+    )]
+    if @pulled_commits
+      # New code often means new JS (Stimulus controllers, importmap entries)
+      # that an already-open tab will never fetch — Turbo morphs keep the page
+      # alive on stale assets forever. A pull is a deliberate "give me the new
+      # version", so finish the job with a full reload.
+      streams << turbo_stream.append("repo-pull-status",
+        helpers.tag.script("setTimeout(() => window.location.reload(), 1200)".html_safe))
+    end
+    render turbo_stream: streams
   end
 
   private
@@ -87,7 +96,8 @@ class BoardsController < ApplicationController
       count, = Open3.capture2e("git", "-C", repo, "rev-list", "--count", "#{before.strip}..#{after.strip}")
       migrated = run_pending_migrations
       note = migrated.positive? ? " · ran #{helpers.pluralize(migrated, "migration")}" : ""
-      ["Pulled #{helpers.pluralize(count.strip.to_i, "new commit")}#{note}", true]
+      @pulled_commits = true
+      ["Pulled #{helpers.pluralize(count.strip.to_i, "new commit")}#{note} · reloading…", true]
     end
   end
 

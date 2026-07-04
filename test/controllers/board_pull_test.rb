@@ -27,6 +27,8 @@ class BoardPullTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match "Pulled 1 new commit", response.body
     assert_match "pull-ok", response.body
+    # New code can carry new JS an open tab will never fetch — finish with a reload.
+    assert_match "location.reload", response.body
     local_head, = Open3.capture2e("git", "-C", @local, "rev-parse", "HEAD")
     other_head, = Open3.capture2e("git", "-C", @other, "rev-parse", "HEAD")
     assert_equal other_head, local_head
@@ -36,6 +38,7 @@ class BoardPullTest < ActionDispatch::IntegrationTest
     post pull_board_path, headers: { "Accept" => "text/vnd.turbo-stream.html" }
     assert_match "Already up to date", response.body
     assert_match "pull-ok", response.body
+    assert_no_match(/location.reload/, response.body)
   end
 
   test "a diverged checkout is reported, never merged or rebased" do
