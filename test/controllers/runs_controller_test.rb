@@ -42,6 +42,21 @@ class RunsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "failed", run.reload.status
   end
 
+  # Card #37: approving a plan resumes the run, then streams a self-dismissing
+  # flash so the modal minimizes back to the board.
+  test "approve advances a parked plan and streams a self-dismissing flash" do
+    card = create_card(@board, "execution", status: "needs_input")
+    run = create_run(card, status: "needs_input", phase: "plan")
+    card.log!("question", actor: "agent", run: run, text: "Here's my plan — approve to execute.")
+
+    assert_enqueued_with(job: ResumeRunJob) do
+      post approve_run_path(run), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_response :success
+    assert_match "plan-callout", response.body
+    assert_match 'data-controller="dismiss"', response.body
+  end
+
   test "restart is a no-op for a non-restartable run" do
     card = create_card(@board, "execution", status: "failed")
     run = create_run(card, status: "failed")

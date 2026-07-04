@@ -81,7 +81,20 @@ class CardsController < ApplicationController
       @card.update!(status: "approved")
       @card.log!("status_change", actor: "user", text: "Work approved — drag to Done to ship")
     end
-    redirect_to card_path(@card)
+
+    respond_to do |format|
+      # Flash the verdict in place, then let the dismiss controller minimize the
+      # modal. Patch the board face too — Turbo suppresses this tab's own refresh
+      # broadcast, so without this the card keeps its stale status once we close.
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(helpers.dom_id(@card), partial: "cards/card", locals: { card: @card }),
+          turbo_stream.replace("review-callout", partial: "cards/dismiss_flash",
+                                                  locals: { message: "Approved — closing…" })
+        ]
+      end
+      format.html { redirect_to card_path(@card) }
+    end
   end
 
   # Generate a customer-friendly summary on demand (card #35). Non-blocking,

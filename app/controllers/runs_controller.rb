@@ -21,7 +21,17 @@ class RunsController < ApplicationController
       card.log!("plan_approved", actor: "user", run: run, text: "Plan approved")
       ResumeRunJob.perform_later(run.id, "", approve: true)
     end
-    redirect_to card_path(card)
+
+    respond_to do |format|
+      # Flash the approval in place, then the dismiss controller minimizes the
+      # modal. The run advances asynchronously (ResumeRunJob), so there's no
+      # synchronous card state to morph here — just confirm and close.
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace("plan-callout", partial: "cards/dismiss_flash",
+                                                                  locals: { message: "Plan approved — running…" })
+      end
+      format.html { redirect_to card_path(card) }
+    end
   end
 
   # Restart a run that parked or failed on its turn budget / timeout. Mirrors
