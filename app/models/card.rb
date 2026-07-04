@@ -23,6 +23,15 @@ class Card < ApplicationRecord
   has_many :agent_sessions, dependent: :destroy
   has_many :runs, through: :agent_sessions
 
+  # Card-face status glyphs. Keyed on status, except `ready_for_approval?`
+  # (a derived plan-park state, not a status) which pre-empts the ❓ below.
+  STATUS_GLYPHS = {
+    "working" => "⚡", "needs_input" => "❓", "failed" => "✖",
+    "work_complete" => "✅", "done" => "✓", "queued" => "⏳",
+    "discussing" => "💬", "in_review" => "👁", "approved" => "👍",
+    "changes_requested" => "🔁"
+  }.freeze
+
   enum :status, STATUSES.index_by(&:itself)
 
   validates :title, presence: true
@@ -47,6 +56,20 @@ class Card < ApplicationRecord
   def compact_working? = compact_status == "working"
 
   def running? = %w[queued working needs_input].include?(status)
+
+  # The agent has proposed a plan and is parked waiting on the user's approve
+  # click — distinct from a genuine question. Same underlying `needs_input`
+  # status; the plan-phase park is the signal (mirrors the work panel, §detail).
+  # The status guard means the run query only fires for already-parked cards.
+  def ready_for_approval?
+    needs_input? && runs.needs_input.order(:id).last&.phase == "plan"
+  end
+
+  # Card-face glyph: a bell when a plan is awaiting approval, else the plain
+  # per-status mapping.
+  def status_glyph
+    ready_for_approval? ? "🔔" : STATUS_GLYPHS[status]
+  end
 
   # Latest one-line progress event, shown live on the card face (§6).
   def latest_progress
