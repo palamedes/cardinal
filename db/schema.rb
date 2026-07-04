@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_140000) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -50,6 +50,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_130000) do
     t.integer "board_id", null: false
     t.string "branch_name"
     t.integer "column_id", null: false
+    t.text "compact"
+    t.datetime "compact_generated_at"
+    t.string "compact_status"
     t.datetime "created_at", null: false
     t.text "description"
     t.integer "number", null: false

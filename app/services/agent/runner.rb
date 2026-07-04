@@ -356,7 +356,7 @@ module Agent
         ## Card conversation so far
         #{conversation_excerpt.presence || "(none)"}
 
-        #{"## Column instructions\n#{column.instructions}\n" if column.instructions.present?}
+        #{compact_section}#{"## Column instructions\n#{column.instructions}\n" if column.instructions.present?}
         #{execute_rules}
       PROMPT
     end
@@ -377,7 +377,7 @@ module Agent
         ## Card conversation so far
         #{conversation_excerpt.presence || "(none)"}
 
-        #{"## Column instructions\n#{column.instructions}\n" if column.instructions.present?}
+        #{compact_section}#{"## Column instructions\n#{column.instructions}\n" if column.instructions.present?}
         Explore the repository as needed, then present a short numbered plan-of-attack
         (files you'll touch, approach, how you'll verify) and stop. The user will approve
         or redirect before any changes are made.
@@ -396,6 +396,25 @@ module Agent
     def repo_brief_section
       brief = card.board.repo_brief.presence or return ""
       "## Repo brief\n#{brief.strip}\n\n"
+    end
+
+    # The user-generated technical "compact" (card #34), if one exists — a dense
+    # journal of prior work on this card written for a resuming agent. Injected so
+    # the agent picks up where the last session left off instead of re-deriving
+    # context. Explicitly framed as technical resume notes, distinct from the
+    # human conversation above and from the customer-facing summary. Empty string
+    # (not nil) when absent, so the heredoc stays clean.
+    def compact_section
+      compact = card.compact.presence or return ""
+      <<~SECTION
+        ## Technical resume context (compact from a prior work session)
+        The notes below were generated (and possibly hand-edited) to capture the
+        technical state of prior work on this card — what was built, decided, and
+        blocked. Treat them as an authoritative shortcut to avoid re-exploring the
+        repo; verify against the actual code before relying on any specific detail.
+        #{compact.strip}
+
+      SECTION
     end
 
     # The planning assistant's distilled "Ready for execution" brief, if the
