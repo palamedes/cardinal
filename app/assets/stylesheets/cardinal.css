@@ -216,9 +216,9 @@ body.dragging .drop-hint { display: block; }
 }
 .card-footer:hover .footer-pr { color: var(--blue); }
 .footer-left { min-width: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.footer-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.footer-cost { white-space: nowrap; }
-.footer-pr { color: var(--text-dim); }
+.footer-center { min-width: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.footer-cost { white-space: nowrap; flex-shrink: 0; }
+.footer-pr { color: var(--text-dim); flex-shrink: 0; }
 
 /* Open-card cost tally: sits at the foot of the work panel, live-updating. */
 .work-footer {

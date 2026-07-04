@@ -73,8 +73,8 @@ class CardCostFooterTest < ActionDispatch::IntegrationTest
     get root_path
     footer = css_select("[data-card-id='#{card.number}'] .card-footer").first
     assert footer, "a card with run cost should render a footer"
-    assert_equal "🤖 Opus - High", footer.css(".footer-left").text.strip
-    assert_equal "$12.34 · 350 out", footer.css(".footer-cost").text.strip
+    assert_equal "🤖 Opus - High", footer.css(".footer-center").text.strip
+    assert_equal "$12.34", footer.css(".footer-cost").text.strip
   end
 
   test "closed card footer shows both the cost tally and the PR link" do
@@ -85,7 +85,7 @@ class CardCostFooterTest < ActionDispatch::IntegrationTest
     get root_path
     footer = css_select("[data-card-id='#{card.number}'] .card-footer").first
     assert footer
-    assert_equal "$2.0 · 40 out", footer.css(".footer-cost").text.strip
+    assert_equal "$2.0", footer.css(".footer-cost").text.strip
     assert_includes footer.css(".footer-pr").text, "GitHub #7"
   end
 
