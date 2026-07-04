@@ -20,9 +20,6 @@
     <% end %>
     <div class="card-meta">
       <% card.tags.each do |tag| %><span class="tag"><%= tag %></span><% end %>
-      <% if card.running? && card.column.ai? && card.column.model %>
-        <span class="chip agent-chip">🤖 <%= card.column.model_short %><%= " · #{card.column.effort}" if card.column.effort %></span>
-      <% end %>
       <% if card.awaiting_assistant? %>
         <span class="chip agent-chip thinking-chip">🪶 <span class="typing-dots mini"><span></span><span></span><span></span></span></span>
       <% elsif card.discussing? && card.events.conversation.last&.actor == "assistant" %>
@@ -36,7 +33,7 @@
   <% has_cost = card.total_cost.positive? || card.total_output_tokens.positive? %>
   <% if has_cost || card.pr_url.present? %>
     <div class="card-footer">
-      <span class="footer-left"><%= card.column.model_label if has_cost %></span>
+      <span class="footer-left"><%= "🤖 #{card.column.model_label}" if has_cost && card.column.model_label %></span>
       <span class="footer-right">
         <% if has_cost %>
           <span class="footer-cost">$<%= card.total_cost.round(2) %> · <%= card.total_output_tokens %> out</span>

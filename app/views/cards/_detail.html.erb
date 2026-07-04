@@ -187,7 +187,7 @@
 
           <% if latest && (latest.cost.positive? || latest.output_tokens.positive?) %>
             <div class="work-footer">
-              <span class="footer-left"><%= @card.column.model_label %></span>
+              <span class="footer-left"><%= "🤖 #{@card.column.model_label}" if @card.column.model_label %></span>
               <span class="footer-cost">$<%= latest.cost.round(2) %> · <%= latest.output_tokens %> out</span>
             </div>
           <% end %>
