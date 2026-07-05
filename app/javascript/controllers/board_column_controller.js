@@ -36,6 +36,11 @@ export default class extends Controller {
   // card from THIS column gray out with a blocked hint. Server still rules.
   markBlockedColumns() {
     const sourceId = this.element.dataset.columnId
+    // The topbar 🗄 lights up as a drop bin when this column may archive by drag.
+    document.querySelectorAll(".archive-drop").forEach(bin => {
+      const allowed = (bin.dataset.accepts || "").split(",").filter(Boolean)
+      bin.classList.toggle("drop-ready", allowed.includes(sourceId))
+    })
     document.querySelectorAll(".column").forEach(section => {
       if (section.dataset.colId === sourceId) return // reorder within is always fine
       const allowed = (section.dataset.accepts || "").split(",").filter(Boolean)
@@ -45,6 +50,7 @@ export default class extends Controller {
 
   clearBlockedColumns() {
     document.querySelectorAll(".column.drop-blocked").forEach(s => s.classList.remove("drop-blocked"))
+    document.querySelectorAll(".archive-drop.drop-ready").forEach(s => s.classList.remove("drop-ready"))
   }
 
   disconnect() {

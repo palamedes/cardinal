@@ -99,8 +99,11 @@
       </details>
     <% end %>
     <% archived_count = @board.cards.archived.count %>
-    <%= link_to "🗄#{" #{archived_count}" if archived_count.positive?}", archive_board_path,
-          class: "theme-toggle", title: "Archive — archived cards, searchable and restorable" %>
+    <span class="archive-drop" data-controller="archive-drop"
+          data-accepts="<%= Array(@board.archive_accepts_from).join(",") %>">
+      <%= link_to "🗄#{" #{archived_count}" if archived_count.positive?}", archive_board_path,
+            class: "theme-toggle archive-link", title: "Archive — click to browse; drag a card here to archive it (allowed columns are set on the archive page)" %>
+    </span>
     <details class="new-column">
       <summary>+ Column</summary>
       <%= form_with url: columns_path, class: "new-column-form" do |f| %>

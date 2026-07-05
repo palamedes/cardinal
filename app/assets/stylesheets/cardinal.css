@@ -138,6 +138,20 @@ a { color: var(--blue); text-decoration: none; }
 
 .ready-chip { color: var(--green); border-color: var(--green); }
 
+/* 🗄 as a drag target: lit while a drag from an allowed column is live. */
+.archive-drop { display: inline-flex; border-radius: 6px; }
+.archive-drop.drop-ready .archive-link {
+  color: var(--amber); border-color: var(--amber);
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+.archive-drop .card, .archive-drop .card-ghost { display: none !important; }
+
+.archive-rails { margin: 0 0 16px; padding: 10px 12px; background: var(--surface);
+                 border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
+.archive-rails .rails-label { font-weight: 600; margin-right: 10px; }
+.archive-rails .inline-check { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; cursor: pointer; }
+.archive-rails .hint { display: block; margin-top: 6px; }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

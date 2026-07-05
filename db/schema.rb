@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_193935) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -54,6 +54,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_120001) do
     t.string "local_path"
     t.string "name", null: false
     t.string "repo_url"
+    t.json "settings", default: {}, null: false
     t.datetime "updated_at", null: false
   end
 

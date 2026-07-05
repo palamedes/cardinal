@@ -15,6 +15,23 @@
     <span class="hint"><%= pluralize(@cards.size, "archived card") %></span>
   </div>
 
+  <div class="archive-rails" data-controller="autosave">
+    <%= form_with url: board_path(autosave: 1), method: :patch,
+          data: { autosave_target: "form" } do %>
+      <%= hidden_field_tag "board[archive_accepts_from][]", "" %>
+      <span class="rails-label">Drag-to-archive from:
+        <span class="autosave-status" data-autosave-target="status"></span></span>
+      <% @board.columns.each do |column| %>
+        <label class="check-row inline-check">
+          <%= check_box_tag "board[archive_accepts_from][]", column.id,
+                @board.archive_accepts?(column), data: { action: "change->autosave#save" } %>
+          <%= column.name %>
+        </label>
+      <% end %>
+      <span class="hint">Checked columns can drop cards straight onto the 🗄 button on the board. Explicit only — nothing checked means no drag target. The card's own Archive button always works.</span>
+    <% end %>
+  </div>
+
   <% if @cards.any? %>
     <ul class="archive-list">
       <% @cards.each do |card| %>

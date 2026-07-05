@@ -59,3 +59,35 @@ class ArchiveTest < ActionDispatch::IntegrationTest
     assert_equal "1", @done.footer_value("count_cards")
   end
 end
+
+class ArchiveRailsTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "AR", default_branch: "main")
+    @done = @board.columns.create!(name: "Done", archetype: "terminal", position: 0, policy: {})
+    @plan = @board.columns.create!(name: "Planning", archetype: "planning", position: 1, policy: {})
+  end
+
+  test "the archive page offers drag-to-archive checkboxes and saves them" do
+    get archive_board_path
+    assert_select ".archive-rails input[type=checkbox]", 2
+
+    patch board_path(autosave: 1), params: { board: { archive_accepts_from: ["", @done.id.to_s] } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    @board.reload
+    assert @board.archive_accepts?(@done)
+    assert_not @board.archive_accepts?(@plan)
+  end
+
+  test "the topbar bin carries the whitelist for the drag layer" do
+    @board.update!(settings: { "archive_accepts_from" => [@done.id.to_s] })
+    get root_path
+    assert_select ".archive-drop[data-accepts=?]", @done.id.to_s
+  end
+
+  test "unchecking everything empties the whitelist without touching other settings" do
+    @board.update!(settings: { "archive_accepts_from" => [@done.id.to_s] })
+    patch board_path(autosave: 1), params: { board: { archive_accepts_from: [""] } },
+          headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    assert_equal [], @board.reload.archive_accepts_from
+  end
+end

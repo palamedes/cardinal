@@ -51,6 +51,16 @@ class Board < ApplicationRecord
     end
   end
 
+  # Board-level knobs. archive_accepts_from: column ids (strings) whose cards
+  # may be DRAGGED onto the topbar 🗄 (explicit-only, like column rails —
+  # empty means the archive is not a drop target). The Advanced-panel archive
+  # button is always available; this governs only the drag affordance.
+  store_accessor :settings, :archive_accepts_from
+
+  def archive_accepts?(column)
+    Array(archive_accepts_from).map(&:to_s).include?(column.id.to_s)
+  end
+
   has_many :columns, -> { order(:position) }, dependent: :destroy
   has_many :cards, dependent: :destroy
 
