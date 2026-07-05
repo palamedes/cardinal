@@ -127,7 +127,7 @@ a { color: var(--blue); text-decoration: none; }
 .archive-meta { display: block; font-size: 11px; color: var(--text-dim); margin-top: 3px; }
 .restore-btn { white-space: nowrap; }
 
-.note-toggle { display: block; font-size: 11px; color: var(--text-dim); margin-top: 4px; cursor: pointer; }
+.note-toggle { display: block; font-size: 11px; color: var(--text-dim); margin: 0 0 2px; cursor: pointer; }
 .note-toggle input { accent-color: var(--amber); }
 .note-flag { font-size: 10px; color: var(--amber); border: 1px solid var(--amber); border-radius: 8px; padding: 0 6px; margin-right: 4px; }
 
