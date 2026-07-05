@@ -16,7 +16,8 @@
           use "Copy task link"). Cardinal pulls the title, description, and tags into a new
           Tasks card that links back to Asana.</p>
 
-          <%= form_with url: asana_import_path, class: "card-edit" do |f| %>
+          <%= form_with url: asana_import_path, class: "card-edit",
+                data: { turbo_frame: "_top" } do |f| %>
             <label>Asana task URL</label>
             <%= f.text_field :url, required: true, autofocus: true,
                   placeholder: "https://app.asana.com/0/1200000000000000/1205000000000000" %>

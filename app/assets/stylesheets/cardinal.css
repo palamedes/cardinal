@@ -127,12 +127,9 @@ a { color: var(--blue); text-decoration: none; }
 .archive-meta { display: block; font-size: 11px; color: var(--text-dim); margin-top: 3px; }
 .restore-btn { white-space: nowrap; }
 
-.composer-box { position: relative; flex: 1; }
+.composer-box { flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .composer-box textarea { width: 100%; }
-.note-toggle {
-  position: absolute; top: 3px; right: 8px; font-size: 11px; color: var(--text-dim);
-  cursor: pointer; background: var(--surface-2); padding: 1px 6px; border-radius: 6px;
-}
+.note-toggle { font-size: 11px; color: var(--text-dim); cursor: pointer; align-self: flex-start; }
 .note-toggle input { accent-color: var(--amber); }
 .note-flag { font-size: 10px; color: var(--amber); border: 1px solid var(--amber); border-radius: 8px; padding: 0 6px; margin-right: 4px; }
 
