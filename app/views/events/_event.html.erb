@@ -13,7 +13,7 @@
     <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>
     <div class="event-body">
       <% if event.text %>
-        <%= render_markdown event.text %>
+        <%= render_with_attachments event.text %>
       <% else %>
         <code class="event-kind"><%= event.kind %></code>
       <% end %>

@@ -51,7 +51,7 @@
           <% else %>
           <div class="timeline-scroll" data-scroll-target="scroller">
             <% if @card.description.present? %>
-              <div class="event event-description"><%= render_markdown @card.description %></div>
+              <div class="event event-description"><%= render_with_attachments @card.description %></div>
             <% end %>
 
             <div id="card_events">
@@ -74,7 +74,7 @@
 
           <%= form_with url: card_messages_path(@card), class: "message-form" do |f| %>
             <%= f.text_area "message[text]", rows: 2, required: true,
-                  data: { controller: "composer", action: "keydown->composer#keydown" },
+                  data: { controller: "composer attach", action: "keydown->composer#keydown paste->attach#paste" },
                   placeholder: (@card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…") + " (Enter sends, Shift+Enter for a new line)" %>
           <% end %>
           <% end %>
@@ -91,7 +91,8 @@
               <label>Tags</label>
               <%= render "cards/tag_picker", board: @card.board, tags: @card.tags %>
               <label>Description</label>
-              <%= f.text_area :description, rows: 6 %>
+              <%= f.text_area :description, rows: 6,
+                    data: { controller: "attach", action: "paste->attach#paste" } %>
               <label>Branch <span class="hint">— optional</span></label>
               <% if @card.branch_name.present? %>
                 <%# Locked once set — by the user here or by the agent on run start. %>

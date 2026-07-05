@@ -1,5 +1,5 @@
 <article class="card status-<%= card.status %>" id="<%= dom_id(card) %>" data-card-id="<%= card.number %>"
-         data-search="<%= [card.title, "##{card.number}", Array(card.tags).join(" "), card.description.to_s.truncate(400)].join(" ").downcase %>">
+         data-search="<%= [card.title, "##{card.number}", Array(card.tags).join(" "), strip_attachment_tokens(card.description).truncate(400)].join(" ").downcase %>">
   <%= link_to card_path(card), class: "card-link", data: { turbo_frame: "modal", turbo_action: "advance" } do %>
     <div class="card-title">
       <%= card.title %>

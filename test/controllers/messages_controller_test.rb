@@ -25,4 +25,17 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_equal "discussing", card.reload.status
   end
+
+  test "a pasted attachment token survives into the message and renders as a thumbnail" do
+    card = @board.cards.create!(column: @board.columns.find_by!(archetype: "planning"),
+                                title: "attachme", status: "discussing")
+    token = %([[cardinal:file name="bug.png" mime="image/png" size="1234"]]iVBORw0KGgo=[[/cardinal:file]])
+    post card_messages_path(card), params: { message: { text: "repro:\n\n#{token}" } }
+
+    event = card.events.where(kind: "user_message").last
+    assert_includes event.text, token # full base64 stored verbatim for the agent
+    get card_path(card)
+    assert_match %r{<img[^>]+src="data:image/png;base64,iVBORw0KGgo="}, @response.body
+    assert_no_match(/cardinal:file/, @response.body) # raw token never reaches the timeline
+  end
 end
