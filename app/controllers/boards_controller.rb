@@ -45,6 +45,12 @@ class BoardsController < ApplicationController
     end
   end
 
+  # The archive browser (card #42): everything archived, searchable, restorable.
+  def archive
+    @board = Board.first!
+    @cards = @board.cards.archived.includes(:column).order(updated_at: :desc)
+  end
+
   # Inspect the repo brief: what the deep dive wrote, when, from which SHA.
   def brief
     @board = Board.first!

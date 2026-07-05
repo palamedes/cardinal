@@ -110,6 +110,23 @@ a { color: var(--blue); text-decoration: none; }
 
 .assistant-spend { margin-left: auto; font-size: 11px; color: var(--text-dim); cursor: default; }
 
+/* Quick-add (card #42) */
+.quick-add input[type="text"] {
+  width: 100%; margin: 0 0 8px; font-size: 12px;
+  background: var(--surface-2); border: 1px dashed var(--border); border-radius: 6px;
+  color: var(--text); padding: 5px 8px;
+}
+.quick-add input[type="text"]:focus { border-style: solid; }
+
+/* Archive browser (card #42) */
+.archive-page { padding: 18px; max-width: 900px; margin: 0 auto; }
+.archive-tools { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.archive-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.archive-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: default; }
+.archive-title { font-weight: 600; }
+.archive-meta { display: block; font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.restore-btn { white-space: nowrap; }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

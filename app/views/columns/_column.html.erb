@@ -18,6 +18,13 @@
   <input type="search" class="col-search" placeholder="Filter <%= column.name %>…"
          data-col-id="<%= column.id %>"
          data-action="input->filter#column keydown->filter#clear">
+  <% if column.inbox? %>
+    <%# Quick-add (card #42): title, Enter, done — the modal stays for real write-ups. %>
+    <%= form_with url: cards_path, class: "quick-add", data: { turbo_frame: "_top" } do |f| %>
+      <%= f.text_field "card[title]", placeholder: "Quick add — type a title, press Enter",
+            autocomplete: "off", required: true %>
+    <% end %>
+  <% end %>
   <p class="drop-hint">→ <%= column.drag_hint %></p>
   <div class="cards<%= " cards-clickable" if column.inbox? %>"
        data-controller="board-column"
@@ -25,7 +32,7 @@
        <% if column.inbox? %>data-action="click->board-column#newCard"
        data-board-column-new-url-value="<%= new_card_path %>"<% end %>
        data-column-id="<%= column.id %>">
-    <% column.cards.each do |card| %>
+    <% column.cards.active.each do |card| %>
       <%= render "cards/card", card: card %>
     <% end %>
   </div>

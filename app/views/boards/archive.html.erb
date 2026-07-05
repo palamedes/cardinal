@@ -1,0 +1,39 @@
+<header class="topbar">
+  <div class="topbar-left">
+    <h1><%= link_to "Cardinal AI", root_path %> <span class="sep">▸</span> <%= @board.name %> <span class="sep">▸</span> Archive</h1>
+  </div>
+  <div class="topbar-right">
+    <%= link_to "← Back to board", root_path, class: "theme-toggle" %>
+  </div>
+</header>
+
+<main class="archive-page" data-controller="filter">
+  <div class="archive-tools">
+    <input type="search" class="global-search" placeholder="Search the archive…  /"
+           data-filter-target="global"
+           data-action="input->filter#global keydown->filter#clear">
+    <span class="hint"><%= pluralize(@cards.size, "archived card") %></span>
+  </div>
+
+  <% if @cards.any? %>
+    <ul class="archive-list">
+      <% @cards.each do |card| %>
+        <li class="card archive-row" data-search="<%= [card.title, "##{card.number}", Array(card.tags).join(" "), card.description.to_s.truncate(400)].join(" ").downcase %>">
+          <div class="archive-main">
+            <span class="archive-title">#<%= card.number %> <%= card.title %></span>
+            <span class="archive-meta">
+              <% card.tags.each do |tag| %><span class="tag"><%= tag %></span><% end %>
+              from <%= card.column.name %> · archived <%= card.updated_at.strftime("%b %-d") %>
+              <% if card.total_cost.positive? %> · $<%= card.total_cost.round(2) %><% end %>
+              <% if card.pr_url.present? %> · <a href="<%= card.pr_url %>" target="_blank" rel="noopener">PR ↗</a><% end %>
+            </span>
+          </div>
+          <%= button_to "↩ Restore", unarchive_card_path(card), class: "theme-toggle restore-btn",
+                title: "Back to #{card.column.name}" %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="empty">Nothing archived yet. Cards can be archived from their detail view (Advanced) once they're done.</p>
+  <% end %>
+</main>

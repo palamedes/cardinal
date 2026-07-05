@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  before_action :set_card, only: [:show, :update, :move, :approve, :summarize, :compact, :destroy]
+  before_action :set_card, only: [:show, :update, :move, :approve, :summarize, :compact, :destroy, :archive, :unarchive]
 
   def new
     @board = Board.first!
@@ -138,6 +138,26 @@ class CardsController < ApplicationController
     else
       render json: { error: result.error }, status: :unprocessable_entity
     end
+  end
+
+  # Archive (card #42): off the board, never gone — /board/archive lists,
+  # searches, and restores. Running cards can't be archived out from under
+  # their agent.
+  def archive
+    if @card.running?
+      redirect_to card_path(@card), alert: "Card is running — cancel or finish the run first."
+    else
+      @card.update!(status: "archived")
+      @card.log!("status_change", actor: "user", text: "Archived")
+      redirect_to root_path
+    end
+  end
+
+  def unarchive
+    restore = Card::ARCHIVE_RESTORE.fetch(@card.column.archetype, "draft")
+    @card.update!(status: restore, position: (@card.column.cards.active.maximum(:position) || -1) + 1)
+    @card.log!("status_change", actor: "user", text: "Restored from the archive to #{@card.column.name} (#{restore.humanize.downcase})")
+    redirect_to archive_board_path
   end
 
   private

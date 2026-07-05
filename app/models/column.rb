@@ -139,7 +139,7 @@ class Column < ApplicationRecord
       ActiveSupport::NumberHelper.number_to_delimited(
         column_runs.sum("input_tokens + output_tokens") + column_ai_calls.sum("input_tokens + output_tokens"))
     when "count_cards"
-      cards.count.to_s
+      cards.active.count.to_s
     when "model"
       # The column's active AI model, short form. Blank when AI is off or no
       # model is set — the row then shows just its label, telling the truth.
@@ -195,11 +195,11 @@ class Column < ApplicationRecord
 
   # Every run belonging to a card in this column, for footer aggregation.
   def column_runs
-    Run.joins(agent_session: :card).where(cards: { column_id: id })
+    Run.joins(agent_session: :card).where(cards: { column_id: id }).where.not(cards: { status: "archived" })
   end
 
   # One-shot AI spend (assistant/ai_task/summary/…) of this column's cards.
   def column_ai_calls
-    AiCall.where(card_id: cards.select(:id))
+    AiCall.where(card_id: cards.active.select(:id))
   end
 end

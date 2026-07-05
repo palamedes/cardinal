@@ -96,6 +96,9 @@
         </div>
       </details>
     <% end %>
+    <% archived_count = @board.cards.archived.count %>
+    <%= link_to "🗄#{" #{archived_count}" if archived_count.positive?}", archive_board_path,
+          class: "theme-toggle", title: "Archive — archived cards, searchable and restorable" %>
     <details class="new-column">
       <summary>+ Column</summary>
       <%= form_with url: columns_path, class: "new-column-form" do |f| %>

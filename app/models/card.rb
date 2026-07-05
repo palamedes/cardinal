@@ -48,6 +48,15 @@ class Card < ApplicationRecord
   after_commit -> { broadcast_refresh_to board }
 
   scope :attention, -> { where(status: %w[needs_input blocked failed work_complete]) }
+  # The board shows active cards; archived ones live in /board/archive.
+  scope :active,   -> { where.not(status: "archived") }
+  scope :archived, -> { where(status: "archived") }
+
+  # Where an unarchived card lands: back in its column, in that column's most
+  # inert legal status — nothing fires, no agent starts.
+  ARCHIVE_RESTORE = { "inbox" => "draft", "planning" => "discussing",
+                      "execution" => "work_complete", "review" => "in_review",
+                      "terminal" => "done" }.freeze
 
   def needs_attention? = %w[needs_input blocked failed work_complete].include?(status)
 

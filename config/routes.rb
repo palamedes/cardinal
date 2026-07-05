@@ -5,11 +5,14 @@ Rails.application.routes.draw do
     post :deep_dive
     post :pull
     get :brief
+    get :archive
   end
   resources :cards, only: [:new, :create, :show, :update, :destroy] do
     member do
       patch :move
       post :approve
+      post :archive
+      post :unarchive
       post :summarize
       post :compact
     end

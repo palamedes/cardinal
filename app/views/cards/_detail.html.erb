@@ -230,6 +230,11 @@
 
           <details class="advanced-rules panel-advanced">
             <summary>Advanced</summary>
+            <p class="hint">Archiving takes the card off the board but keeps everything — find and restore it under 🗄 Archive in the topbar.</p>
+            <%= button_to "🗄 Archive card", archive_card_path(@card),
+                  class: "cancel-btn",
+                  form: { data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess" } },
+                  disabled: @card.running? %>
             <p class="hint">Deleting removes the card and its entire history (events, runs, workspace). The remote branch and PR, if any, are left untouched.</p>
             <%= button_to "🗑 Delete card", card_path(@card), method: :delete,
                   class: "cancel-btn delete-card",
