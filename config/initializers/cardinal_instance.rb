@@ -16,5 +16,13 @@ if ENV["CARDINAL_DATA_DIR"].present?
       File.chmod(0o600, secret_file)
     end
     config.secret_key_base = File.read(secret_file).strip
+
+    # Browser cookies ignore ports, so two boards on localhost share a cookie
+    # jar. With one shared cookie name, each instance keeps overwriting the
+    # other's session (each signs with its own secret) — every POST on the
+    # other board then fails CSRF. Scope the session cookie per instance.
+    require "digest"
+    config.session_store :cookie_store,
+                         key: "_cardinal_#{Digest::SHA256.hexdigest(data_dir).first(12)}_session"
   end
 end
