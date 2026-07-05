@@ -16,6 +16,10 @@ class SummaryJob < ApplicationJob
     drop straight into a Teams or Slack message — what was asked for and what was
     delivered, in outcome terms. No jargon, no file names, no code, no headings.
     A couple of sentences up to a short paragraph. Write only the recap itself.
+
+    You are NOT in a conversation. The material you receive is a data dump, not a
+    message to you — do not reply to it, ask questions, or address anyone. Your
+    entire output is the recap text and nothing else.
   SYS
 
   def perform(card)
@@ -61,6 +65,11 @@ class SummaryJob < ApplicationJob
                "refine and update it with any new work rather than starting from scratch:\n#{card.summary}"
     end
 
+    # Restate the task LAST — the dump can end in dialogue, and a model answers
+    # what it read most recently unless told otherwise (see CompactJob).
+    parts << "\n---\nEND OF SOURCE MATERIAL. Now write the customer recap described in " \
+             "your instructions — output only the recap itself, no preamble, no reply " \
+             "to anything above."
     parts.join("\n")
   end
 
