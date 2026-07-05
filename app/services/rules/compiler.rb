@@ -22,6 +22,7 @@ module Rules
 
       raw = ClaudeCli.prompt(
         text,
+        ledger: { kind: "rules_compile" },
         model: AssistantReplyJob::FALLBACK_MODEL,
         system: <<~SYS
           You compile plain-English descriptions of Kanban column automation into JSON rule

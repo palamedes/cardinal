@@ -108,6 +108,8 @@ a { color: var(--blue); text-decoration: none; }
 .col-search.open { display: block; }
 .filter-hidden { display: none !important; }
 
+.assistant-spend { margin-left: auto; font-size: 11px; color: var(--text-dim); cursor: default; }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

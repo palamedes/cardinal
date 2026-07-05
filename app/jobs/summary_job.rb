@@ -22,7 +22,8 @@ class SummaryJob < ApplicationJob
     return clear_working(card) unless ClaudeCli.available?
 
     model = card.board.columns.find_by(archetype: "planning")&.model.presence || FALLBACK_MODEL
-    summary = ClaudeCli.prompt(build_prompt(card), system: SYSTEM, model: model, max_turns: 1)
+    summary = ClaudeCli.prompt(build_prompt(card), system: SYSTEM, model: model, max_turns: 1,
+                               ledger: { kind: "summary", card: card })
 
     card.update!(summary: summary.to_s.strip, summary_generated_at: Time.current, summary_status: nil)
     card.broadcast_replace_to card, target: "card_summary",

@@ -44,7 +44,8 @@ class DeepDiveJob < ApplicationJob
     sha = board.head_sha
     model = board.columns.find_by(archetype: "planning")&.model.presence || FALLBACK_MODEL
 
-    brief = ClaudeCli.prompt(PROMPT, model:, tools: "Read,Glob,Grep", cwd: repo, max_turns: MAX_TURNS)
+    brief = ClaudeCli.prompt(PROMPT, model:, tools: "Read,Glob,Grep", cwd: repo, max_turns: MAX_TURNS,
+                             ledger: { kind: "deep_dive" })
 
     File.write(board.brief_path, brief.to_s)
     board.update!(brief_sha: sha, brief_generated_at: Time.current,

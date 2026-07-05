@@ -57,6 +57,7 @@ class AssistantReplyJob < ApplicationJob
         # affirming reply ("yes, that approach") must not escalate the
         # planner into implementing.
         return ClaudeCli.prompt(unheard_messages(card), resume: card.assistant_session_id,
+                                 ledger: { kind: "assistant", card: card },
                                 system: ROLE_REMINDER, **common)
       rescue ClaudeCli::Error
         card.update!(assistant_session_id: nil) # stale/expired — start fresh below
@@ -64,7 +65,7 @@ class AssistantReplyJob < ApplicationJob
     end
 
     opener = kickoff ? kickoff_prompt(card) : transcript_prompt(card)
-    ClaudeCli.prompt(opener, system: system_prompt(card), **common)
+    ClaudeCli.prompt(opener, system: system_prompt(card), ledger: { kind: "assistant", card: card }, **common)
   end
 
   def kickoff_prompt(card)

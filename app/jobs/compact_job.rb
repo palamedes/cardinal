@@ -28,7 +28,8 @@ class CompactJob < ApplicationJob
     return clear_working(card) unless ClaudeCli.available?
 
     model = card.board.columns.find_by(archetype: "planning")&.model.presence || FALLBACK_MODEL
-    compact = ClaudeCli.prompt(build_prompt(card), system: SYSTEM, model: model, max_turns: 1)
+    compact = ClaudeCli.prompt(build_prompt(card), system: SYSTEM, model: model, max_turns: 1,
+                               ledger: { kind: "compact", card: card })
 
     card.update!(compact: compact.to_s.strip, compact_generated_at: Time.current, compact_status: nil)
     card.broadcast_replace_to card, target: "card_compact",

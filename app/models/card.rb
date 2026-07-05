@@ -23,6 +23,7 @@ class Card < ApplicationRecord
                       dependent: :nullify, inverse_of: :parent
   has_many :events, -> { order(:created_at, :id) }, dependent: :destroy
   has_many :agent_sessions, dependent: :destroy
+  has_many :ai_calls, dependent: :delete_all
   has_many :runs, through: :agent_sessions
 
   # Card-face status glyphs. Keyed on status, except `ready_for_approval?`
@@ -101,8 +102,12 @@ class Card < ApplicationRecord
 
   # Running tally across every run on the card — the closed-card cost footer
   # (card #20). Sums stopped/restarted segments so the total reflects real spend.
-  def total_cost = runs.sum(:cost)
-  def total_output_tokens = runs.sum(:output_tokens)
+  # Honest money: worker runs PLUS every one-shot call made on this card's
+  # behalf (planning assistant, ai_task, summary/compact) — see AiCall.
+  def total_cost = runs.sum(:cost) + ai_calls.sum(:cost)
+  def total_output_tokens = runs.sum(:output_tokens) + ai_calls.sum(:output_tokens)
+
+  def assistant_cost = ai_calls.where(kind: "assistant").sum(:cost)
 
   # Is the planning assistant expected to post next? True right after entering
   # a planning column (kickoff inspection pending) or after a user message.

@@ -18,6 +18,8 @@
             Generated <%= @board.brief_generated_at&.strftime("%b %-d, %H:%M") %>
             from <code><%= @board.brief_sha&.first(7) %></code>
             with <%= @board.brief_model %>
+            <% dive_cost = AiCall.where(kind: "deep_dive").order(:id).last&.cost.to_f %>
+            <% if dive_cost.positive? %> for $<%= sprintf("%.2f", dive_cost) %><% end %>
             <% behind = @board.commits_behind_brief %>
             <% if behind&.positive? %>
               · <span class="brief-behind"><%= pluralize(behind, "commit") %> behind HEAD</span>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_231436) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -20,6 +20,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_231436) do
     t.datetime "updated_at", null: false
     t.string "workspace_ref"
     t.index ["card_id"], name: "index_agent_sessions_on_card_id"
+  end
+
+  create_table "ai_calls", force: :cascade do |t|
+    t.integer "card_id"
+    t.decimal "cost", precision: 10, scale: 6, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.string "kind", null: false
+    t.string "model"
+    t.integer "output_tokens", default: 0, null: false
+    t.index ["card_id"], name: "index_ai_calls_on_card_id"
+    t.index ["kind"], name: "index_ai_calls_on_kind"
   end
 
   create_table "artifacts", force: :cascade do |t|
@@ -120,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_231436) do
   end
 
   add_foreign_key "agent_sessions", "cards"
+  add_foreign_key "ai_calls", "cards"
   add_foreign_key "artifacts", "runs"
   add_foreign_key "cards", "boards"
   add_foreign_key "cards", "cards", column: "parent_id"

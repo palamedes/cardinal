@@ -35,6 +35,9 @@
               <%= link_to zoom.capitalize, card_path(@card, zoom: zoom),
                           class: ("active" if @zoom == zoom) %>
             <% end %>
+            <% if (spend = @card.assistant_cost).positive? %>
+              <span class="assistant-spend" title="What this card's planning conversation has cost so far (assistant replies — separate from agent runs)">🪶 $<%= sprintf("%.2f", spend) %></span>
+            <% end %>
           </nav>
 
           <% if @zoom == "summary" %>

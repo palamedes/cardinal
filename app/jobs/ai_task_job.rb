@@ -17,7 +17,8 @@ class AiTaskJob < ApplicationJob
     text = ClaudeCli.prompt(
       prompt,
       system: "You are a maintenance agent on a Cardinal board performing one bounded task on card ##{card.number}. Be concise; your output is posted directly to the card's timeline.",
-      model: model.presence || AssistantReplyJob::FALLBACK_MODEL
+      model: model.presence || AssistantReplyJob::FALLBACK_MODEL,
+      ledger: { kind: "ai_task", card: card }
     )
     card.log!("assistant_message", actor: "assistant", text: text) if text.present?
   rescue ClaudeCli::Error => e

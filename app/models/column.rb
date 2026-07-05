@@ -134,9 +134,10 @@ class Column < ApplicationRecord
   def footer_value(compute)
     case compute.to_s
     when "sum_cost"
-      "$%.2f" % column_runs.sum(:cost)
+      "$%.2f" % (column_runs.sum(:cost) + column_ai_calls.sum(:cost))
     when "sum_tokens"
-      ActiveSupport::NumberHelper.number_to_delimited(column_runs.sum("input_tokens + output_tokens"))
+      ActiveSupport::NumberHelper.number_to_delimited(
+        column_runs.sum("input_tokens + output_tokens") + column_ai_calls.sum("input_tokens + output_tokens"))
     when "count_cards"
       cards.count.to_s
     when "model"
@@ -195,5 +196,10 @@ class Column < ApplicationRecord
   # Every run belonging to a card in this column, for footer aggregation.
   def column_runs
     Run.joins(agent_session: :card).where(cards: { column_id: id })
+  end
+
+  # One-shot AI spend (assistant/ai_task/summary/…) of this column's cards.
+  def column_ai_calls
+    AiCall.where(card_id: cards.select(:id))
   end
 end

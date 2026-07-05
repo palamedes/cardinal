@@ -34,11 +34,15 @@ module ClaudeCli
   # resume: continue an existing claude session (context carries over).
   # with_session: return [text, session_id] instead of just text, so callers
   # can keep a continuing conversation (the planning assistant does).
+  # ledger: { kind:, card: } — record this call's tokens/cost as an AiCall
+  # (§ money honesty: planning conversations and maintenance calls spend real
+  # dollars; only worker runs used to be counted).
   def self.prompt(text, system: nil, model: nil, tools: nil, cwd: nil, max_turns: 1,
-                  resume: nil, with_session: false)
+                  resume: nil, with_session: false, ledger: nil)
     raise Error.new("claude CLI not found on PATH") unless available?
 
     json = invoke(text, system:, model:, tools:, cwd:, max_turns:, resume:)
+    record_usage!(json, ledger, model)
     if success?(json)
       return with_session ? [json["result"].to_s, json["session_id"]] : json["result"].to_s
     end
@@ -47,6 +51,7 @@ module ClaudeCli
     # force an answer from the context it already gathered.
     if json["subtype"] == "error_max_turns" && json["session_id"].present?
       wrapped = invoke(WRAP_UP, model:, cwd:, tools: "", max_turns: 2, resume: json["session_id"])
+      record_usage!(wrapped, ledger, model)
       if success?(wrapped)
         return with_session ? [wrapped["result"].to_s, wrapped["session_id"] || json["session_id"]] : wrapped["result"].to_s
       end
@@ -55,6 +60,23 @@ module ClaudeCli
     end
 
     raise Error.new(friendly_failure(json), detail: json.to_json)
+  end
+
+  # Best-effort by design: a ledger failure must never break the AI call that
+  # already succeeded. Failed calls are recorded too — they cost money.
+  def self.record_usage!(json, ledger, model)
+    return unless ledger.is_a?(Hash) && ledger[:kind].present?
+    usage = json["usage"] || {}
+    AiCall.create!(
+      card: ledger[:card],
+      kind: ledger[:kind].to_s,
+      model: json["model"] || model,
+      input_tokens: usage["input_tokens"].to_i,
+      output_tokens: usage["output_tokens"].to_i,
+      cost: json["total_cost_usd"].to_f
+    )
+  rescue StandardError => e
+    Rails.logger.warn("AiCall ledger write failed: #{e.class}: #{e.message}")
   end
 
   def self.success?(json)
