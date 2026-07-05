@@ -36,6 +36,60 @@ module ApplicationHelper
     MARKDOWN.render(text.to_s).html_safe
   end
 
+  # Pasted files live inline in message/description text as attachment tokens
+  # (card #21). Format, kept in sync with attach_controller.js:
+  #   [[cardinal:file name="foo.png" mime="image/png" size="12345"]]<base64>[[/cardinal:file]]
+  # The regex is anchored on delimiters base64 can never contain ([, ], ").
+  ATTACHMENT_TOKEN =
+    /\[\[cardinal:file name="([^"]*)" mime="([^"]*)" size="(\d+)"\]\]([A-Za-z0-9+\/=\s]*?)\[\[\/cardinal:file\]\]/
+
+  # Only these render as an inline <img> off a data: URL. Anything else — including
+  # a spoofed mime like text/html — falls through to an inert badge, never an image.
+  ATTACHMENT_IMAGE_MIMES = %w[image/png image/jpeg image/gif image/webp].freeze
+
+  # Render text that may carry attachment tokens: markdown for the prose, a
+  # thumbnail (images) or a badge (everything else) for each attachment. Tokens
+  # are pulled out BEFORE markdown so the raw base64 never floods the timeline and
+  # a token can never be interpreted as HTML.
+  def render_with_attachments(text)
+    text = text.to_s
+    return render_markdown(text) unless text.match?(ATTACHMENT_TOKEN)
+
+    html = +""
+    last = 0
+    text.scan(ATTACHMENT_TOKEN) do
+      match = Regexp.last_match
+      html << render_markdown(text[last...match.begin(0)])
+      html << render_attachment(match[1], match[2], match[3].to_i, match[4].gsub(/\s+/, ""))
+      last = match.end(0)
+    end
+    html << render_markdown(text[last..])
+    html.html_safe
+  end
+
+  # One attachment's HTML. All interpolated values are escaped; the base64 is
+  # only ever used as an <img> data: URL for a whitelisted image mime.
+  def render_attachment(name, mime, size, base64)
+    caption = "#{name} · #{number_to_human_size(size)}"
+    if ATTACHMENT_IMAGE_MIMES.include?(mime) && base64.present?
+      tag.figure(class: "attachment attachment-image") do
+        image_tag("data:#{mime};base64,#{base64}", alt: name, class: "attachment-thumb") +
+          tag.figcaption(caption)
+      end
+    else
+      tag.span(class: "attachment attachment-file", title: caption) do
+        tag.span("📄", class: "attachment-icon") + tag.span(caption, class: "attachment-name")
+      end
+    end
+  end
+
+  # Strip attachment tokens down to just their filename for plain-text contexts
+  # like the card-face search haystack — a pasted image must not turn a card's
+  # searchable text into base64 noise (card #21).
+  def strip_attachment_tokens(text)
+    text.to_s.gsub(ATTACHMENT_TOKEN) { Regexp.last_match(1) }
+  end
+
   # Render a column's stored footer config (array of {label, compute} hashes)
   # back into the "Label | compute" line format the gear textarea edits.
   def footer_config_text(column)

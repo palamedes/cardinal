@@ -472,6 +472,22 @@ body.dragging .drop-hint { display: block; }
 .actor-agent .event-body p { color: #b9c3d8; }
 [data-theme="light"] .actor-agent .event-body p { color: #3a4a63; }
 
+/* Pasted attachments (card #21): image thumbnails and file badges, inline in
+   descriptions and timeline messages. */
+.attachment { margin: 6px 0; }
+.attachment-image { display: inline-block; margin: 6px 8px 6px 0; }
+.attachment-thumb {
+  display: block; max-width: 120px; max-height: 120px; width: auto; height: auto;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2);
+}
+.attachment-image figcaption { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.attachment-file {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+  font-size: 12px; color: var(--text-dim);
+}
+.attachment-icon { font-size: 14px; }
+
 .empty { color: var(--text-dim); font-style: italic; }
 
 /* AI typing indicator */

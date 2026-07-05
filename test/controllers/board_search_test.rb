@@ -24,6 +24,19 @@ class BoardSearchTest < ActionDispatch::IntegrationTest
     assert_equal hay, hay.downcase
   end
 
+  test "a pasted attachment does not pollute the searchable haystack with base64" do
+    b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    token = %([[cardinal:file name="diagram.png" mime="image/png" size="1234"]]#{b64}[[/cardinal:file]])
+    @board.cards.create!(column: @board.columns.first, title: "Layout bug",
+                         description: "see attached #{token} for the overlap")
+    get root_path
+    hay = css_select("[data-search]").first["data-search"]
+    assert_includes hay, "layout bug"
+    assert_includes hay, "diagram.png" # filename stays searchable
+    assert_includes hay, "for the overlap"
+    assert_not_includes hay, b64.downcase # base64 noise is stripped
+  end
+
   test "the board renders the global search box and a scoped filter per column" do
     get root_path
     assert_select "#global-search[data-filter-target=global]"
