@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_193935) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_225451) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -59,6 +59,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_193935) do
   end
 
   create_table "cards", force: :cascade do |t|
+    t.string "asana_url"
     t.string "assistant_session_id"
     t.integer "board_id", null: false
     t.string "branch_name"

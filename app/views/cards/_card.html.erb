@@ -34,10 +34,12 @@
     </div>
   <% end %>
   <% has_cost = card.total_cost.positive? || card.total_output_tokens.positive? %>
-  <% if has_cost || card.pr_url.present? %>
+  <% if has_cost || card.pr_url.present? || card.asana_url.present? %>
     <div class="card-footer">
       <% if card.pr_url.present? %>
         <a class="footer-pr" href="<%= card.pr_url %>" target="_blank" rel="noopener" title="Open the pull request on GitHub">GitHub #<%= card.pr_url[%r{/pull/(\d+)}, 1] %> ↗</a>
+      <% elsif card.asana_url.present? %>
+        <a class="footer-pr" href="<%= card.asana_url %>" target="_blank" rel="noopener" title="Open the source task on Asana">◯ Asana ↗</a>
       <% else %>
         <span class="footer-pr"></span>
       <% end %>

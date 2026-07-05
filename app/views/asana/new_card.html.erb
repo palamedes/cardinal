@@ -1,0 +1,58 @@
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal modal-sm">
+      <header class="modal-header">
+        <h1>◯ New from Asana</h1>
+        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+      </header>
+      <div class="modal-body">
+        <% if @error.present? %><p class="form-error"><%= @error %></p><% end %>
+
+        <% if @connected %>
+          <% if @just_connected.present? %>
+            <p class="hint asana-connected">✅ Connected as <strong><%= @just_connected %></strong> — you won't need to do that again.</p>
+          <% end %>
+          <p class="hint">Paste the Asana task's URL (open the task, copy the address bar or
+          use "Copy task link"). Cardinal pulls the title, description, and tags into a new
+          Tasks card that links back to Asana.</p>
+
+          <%= form_with url: asana_import_path, class: "card-edit" do |f| %>
+            <label>Asana task URL</label>
+            <%= f.text_field :url, required: true, autofocus: true,
+                  placeholder: "https://app.asana.com/0/1200000000000000/1205000000000000" %>
+            <div class="card-edit-actions">
+              <button type="button" class="btn-cancel" data-action="modal#close">Cancel</button>
+              <%= f.submit "Import task" %>
+            </div>
+          <% end %>
+          <details class="advanced-rules">
+            <summary>Connection</summary>
+            <p class="hint">Your Asana token lives in <code>.cardinal/asana-token</code> on this machine only.</p>
+            <%= button_to "Unlink Asana", asana_disconnect_path, class: "btn-cancel",
+                  form: { data: { turbo_frame: "modal" } } %>
+          </details>
+
+        <% else %>
+          <p class="hint"><strong>One-time setup:</strong> Cardinal talks to Asana with a
+          Personal Access Token that stays on this machine
+          (<code>.cardinal/asana-token</code>, never committed, never in the database).</p>
+          <ol class="asana-steps">
+            <li>Open <a href="https://app.asana.com/0/my-apps" target="_blank" rel="noopener">app.asana.com/0/my-apps</a> (Asana → Settings → Apps → Developer console)</li>
+            <li>Click <strong>Create new token</strong>, name it something like <code>cardinal</code></li>
+            <li>Copy the token and paste it below</li>
+          </ol>
+
+          <%= form_with url: asana_connect_path, class: "card-edit" do |f| %>
+            <label>Personal Access Token</label>
+            <%= f.password_field :token, required: true, autofocus: true,
+                  placeholder: "1/1234567890:abcdef…", autocomplete: "off" %>
+            <div class="card-edit-actions">
+              <button type="button" class="btn-cancel" data-action="modal#close">Cancel</button>
+              <%= f.submit "Connect Asana" %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -152,6 +152,12 @@ a { color: var(--blue); text-decoration: none; }
 .archive-rails .inline-check { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; cursor: pointer; }
 .archive-rails .hint { display: block; margin-top: 6px; }
 
+.asana-entry { margin-right: auto; font-size: 12px; color: var(--text-dim); align-self: center; }
+.asana-entry:hover { color: var(--text); }
+.asana-steps { font-size: 13px; margin: 8px 0 14px; padding-left: 20px; }
+.asana-steps li { margin: 4px 0; }
+.asana-connected { color: var(--green); }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

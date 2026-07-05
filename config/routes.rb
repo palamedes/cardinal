@@ -20,6 +20,11 @@ Rails.application.routes.draw do
     end
     resources :messages, only: [:create]
   end
+  get  "asana/new"        => "asana#new_card",   as: :asana_new_card
+  post "asana/connect"    => "asana#connect",    as: :asana_connect
+  post "asana/import"     => "asana#import",     as: :asana_import
+  post "asana/disconnect" => "asana#disconnect", as: :asana_disconnect
+
   resources :columns, only: [:create, :edit, :update, :destroy]
   resources :runs, only: [] do
     member do

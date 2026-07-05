@@ -25,6 +25,9 @@
           <%= f.text_field "card[pr_url]", placeholder: "https://github.com/owner/repo/pull/123" %>
           <p class="hint">Leave blank and the agent picks a branch. Set either to point work at an existing branch or PR.</p>
           <div class="card-edit-actions">
+            <%= link_to "◯ New from Asana", asana_new_card_path, class: "asana-entry",
+                  data: { turbo_frame: "modal" },
+                  title: "Import an Asana task as a card — first use walks you through connecting" %>
             <button type="button" class="btn-cancel" data-action="modal#close">Cancel</button>
             <%= f.submit "Save" %>
           </div>
