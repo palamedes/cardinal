@@ -168,6 +168,9 @@ a { color: var(--blue); text-decoration: none; }
 .asana-steps li { margin: 4px 0; }
 .asana-connected { color: var(--green); }
 
+.summary-share { display: flex; align-items: center; margin-top: 8px; flex-shrink: 0; }
+.share-spacer { flex: 1; }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

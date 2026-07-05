@@ -54,14 +54,26 @@ module Asana
     card
   end
 
-  def self.request(path, auth)
+  # Post text to the task as a comment (an Asana "story").
+  def self.comment!(task_url, text)
+    request("/tasks/#{task_gid(task_url)}/stories", token,
+            method: :post, body: { data: { text: text } })
+  end
+
+  def self.request(path, auth, method: :get, body: nil)
     uri = URI("#{API}#{path}")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     http.open_timeout = 10
     http.read_timeout = 15
-    response = http.get(uri.request_uri, { "Authorization" => "Bearer #{auth}" })
-    unless response.code.to_i == 200
+    headers = { "Authorization" => "Bearer #{auth}" }
+    response =
+      if method == :post
+        http.post(uri.request_uri, body.to_json, headers.merge("Content-Type" => "application/json"))
+      else
+        http.get(uri.request_uri, headers)
+      end
+    unless [200, 201].include?(response.code.to_i)
       raise Error, "Asana said no (HTTP #{response.code}) — check the token, and that it can see this task"
     end
     JSON.parse(response.body)["data"]

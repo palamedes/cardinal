@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  before_action :set_card, only: [:show, :update, :move, :approve, :summarize, :compact, :destroy, :archive, :unarchive]
+  before_action :set_card, only: [:show, :update, :move, :approve, :summarize, :compact, :destroy, :archive, :unarchive, :share_summary]
 
   def new
     @board = Board.first!
@@ -138,6 +138,33 @@ class CardsController < ApplicationController
     else
       render json: { error: result.error }, status: :unprocessable_entity
     end
+  end
+
+  # Push the customer summary outward: to the source Asana task as a comment,
+  # or to the card's PR. The summary was written for exactly this audience.
+  def share_summary
+    summary = @card.summary.to_s.strip
+    if summary.blank?
+      @card.log!("error", text: "Nothing to share — the summary is empty.")
+      return redirect_to card_path(@card, zoom: "summary")
+    end
+
+    case params[:to]
+    when "asana"
+      Asana.comment!(@card.asana_url, "Update from Cardinal:\n\n#{summary}")
+      @card.log!("status_change", actor: "user", text: "Summary posted to the Asana task as a comment")
+    when "pr"
+      out, status = Open3.capture2e("gh", "pr", "comment", @card.pr_url, "--body", summary)
+      if status.success?
+        @card.log!("status_change", actor: "user", text: "Summary posted as a PR comment")
+      else
+        @card.log!("error", text: "Couldn't comment on the PR: #{out.truncate(160)}")
+      end
+    end
+    redirect_to card_path(@card, zoom: "summary")
+  rescue Asana::Error => e
+    @card.log!("error", text: "Couldn't post to Asana: #{e.message}")
+    redirect_to card_path(@card, zoom: "summary")
   end
 
   # Archive (card #42): off the board, never gone — /board/archive lists,

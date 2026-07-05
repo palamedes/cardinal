@@ -15,6 +15,7 @@ Rails.application.routes.draw do
       post :approve
       post :archive
       post :unarchive
+      post :share_summary
       post :summarize
       post :compact
     end

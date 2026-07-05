@@ -90,3 +90,59 @@ class AsanaFlowTest < ActionDispatch::IntegrationTest
     assert_select ".card-edit-actions a.asana-entry[href=?]", asana_new_card_path
   end
 end
+
+class SummaryShareTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "SS", default_branch: "main")
+    col = @board.columns.create!(name: "Review", archetype: "review", position: 0, policy: {})
+    @card = @board.cards.create!(column: col, title: "share me", status: "in_review",
+                                 summary: "We fixed the login loop.",
+                                 asana_url: "https://app.asana.com/0/1/1205000000000000",
+                                 pr_url: "https://github.com/o/r/pull/3")
+  end
+
+  test "the summary panel shows share buttons only for connected destinations" do
+    Asana.stub(:connected?, true) do
+      get card_path(@card, zoom: "summary"), headers: { "Turbo-Frame" => "modal" }
+    end
+    assert_match "Comment on the Asana task", response.body
+    assert_match "Comment on the PR", response.body
+
+    Asana.stub(:connected?, false) do
+      get card_path(@card, zoom: "summary"), headers: { "Turbo-Frame" => "modal" }
+    end
+    assert_no_match(/Comment on the Asana task/, response.body)
+    assert_match "Comment on the PR", response.body
+  end
+
+  test "sharing to asana posts a comment and logs it" do
+    sent = []
+    Asana.stub(:comment!, ->(url, text) { sent << [url, text] }) do
+      post share_summary_card_path(@card, to: "asana")
+    end
+    assert_equal [@card.asana_url], sent.map(&:first)
+    assert_match(/We fixed the login loop/, sent.first.last)
+    assert_match(/posted to the Asana task/, @card.events.last.payload["text"])
+  end
+
+  test "sharing to the PR shells to gh and logs failure honestly" do
+    ok = Struct.new(:exitstatus) { def success? = exitstatus.zero? }
+    calls = []
+    fake = ->(*cmd) { calls << cmd; ["", ok.new(0)] }
+    Open3.stub(:capture2e, fake) { post share_summary_card_path(@card, to: "pr") }
+    assert_equal ["gh", "pr", "comment", @card.pr_url, "--body", "We fixed the login loop."], calls.first
+    assert_match(/posted as a PR comment/, @card.events.last.payload["text"])
+
+    failing = ->(*_) { ["gh: no auth", ok.new(1)] }
+    Open3.stub(:capture2e, failing) { post share_summary_card_path(@card, to: "pr") }
+    assert_match(/Couldn't comment on the PR/, @card.events.last.payload["text"])
+  end
+
+  test "an empty summary refuses to share" do
+    @card.update!(summary: "")
+    Asana.stub(:comment!, ->(*) { flunk "must not post" }) do
+      post share_summary_card_path(@card, to: "asana")
+    end
+    assert_match(/Nothing to share/, @card.events.last.payload["text"])
+  end
+end
