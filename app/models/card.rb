@@ -123,6 +123,7 @@ class Card < ApplicationRecord
   def awaiting_assistant?
     return false unless column.planning? && column.ai?
     last = events.where(kind: %w[user_message assistant_message error column_move]).order(:id).last
+    return false if last&.payload&.[]("note") # a note-only message expects no reply
     last.present? && %w[user_message column_move].include?(last.kind)
   end
 

@@ -32,6 +32,14 @@ class ResumeRunJob < ApplicationJob
       message = [pending["message"], message].compact_blank.join("\n\n")
       approve ||= pending["approve"]
     end
+
+    # Steering notes queued while the agent streamed (card #47) ride along on
+    # whatever resumes the session — an answer, plan feedback, or an approval.
+    if (steering = Array(run.briefing["steering"])).any?
+      run.update!(briefing: run.briefing.except("steering"))
+      notes = "Notes the user left while you were working:\n- #{steering.join("\n- ")}"
+      message = [notes, message].compact_blank.join("\n\n")
+    end
     Agent::Runner.resume(run, message, approve: approve)
   end
 end

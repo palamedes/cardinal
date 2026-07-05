@@ -76,6 +76,9 @@
             <%= f.text_area "message[text]", rows: 2, required: true,
                   data: { controller: "composer attach", action: "keydown->composer#keydown paste->attach#paste" },
                   placeholder: (@card.column.planning? ? "Discuss this card with the planning assistant…" : "Add a note to this card…") + " (Enter sends, Shift+Enter for a new line)" %>
+            <label class="note-toggle" title="Record this message without asking any AI to respond. Future agents (the next column's assistant or worker) still read it as context — perfect for a parting instruction right before you drag the card onward.">
+              <%= f.check_box "message[note]", {}, "1", "0" %> 📝 note only — no AI reply
+            </label>
           <% end %>
           <% end %>
         </section>

@@ -267,6 +267,10 @@ module Agent
         ensure_pull_request(workspace)
       end
 
+      if (undelivered = Array(run.briefing["steering"])).any?
+        card.log!("status_change", run: run,
+                  text: "#{undelivered.size} queued note(s) never reached the agent — the run finished before its next check-in. They stay in the conversation, so the next run will see them.")
+      end
       run.update!(status: "succeeded", finished_at: Time.current,
                   result_summary: report.presence&.truncate(2000))
       card.log!("final_report", actor: "agent", run: run,

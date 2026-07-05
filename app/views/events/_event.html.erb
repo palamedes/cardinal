@@ -13,6 +13,7 @@
     <span class="event-actor"><%= { "user" => "👤", "agent" => "🤖", "assistant" => "🪶", "system" => "·" }[event.actor] || event.actor %></span>
     <div class="event-body">
       <% if event.text %>
+        <% if event.payload["note"] %><span class="note-flag" title="Note only — no AI was asked to reply; future agents read it as context">📝 note</span><% end %>
         <%= render_with_attachments event.text %>
       <% else %>
         <code class="event-kind"><%= event.kind %></code>
