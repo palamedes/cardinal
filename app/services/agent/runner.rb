@@ -74,8 +74,12 @@ module Agent
       begin_segment!
       if run.phase == "plan" && approve
         run.update!(phase: "execute")
-        stream_agent(prompt: "Your plan is approved — execute it now.\n\n#{execute_rules}",
-                     mode: "execute", resuming: true)
+        # Approve-with-notes: an approval may carry final adjustments — fold
+        # them into the execute prompt instead of silently dropping them.
+        prompt = ["Your plan is approved — execute it now.",
+                  (message.present? ? "Notes from the user to fold in as you execute:\n\n#{message}" : nil),
+                  execute_rules].compact.join("\n\n")
+        stream_agent(prompt: prompt, mode: "execute", resuming: true)
       elsif run.phase == "plan"
         stream_agent(prompt: "Feedback on your plan:\n\n#{message}\n\nRevise the plan accordingly, present it, and stop again for approval. Stay in read-only mode.",
                      mode: "plan", resuming: true)

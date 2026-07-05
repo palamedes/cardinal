@@ -236,3 +236,38 @@ class RunnerBudgetTest < ActiveSupport::TestCase
     assert_equal "failed", @run.reload.status
   end
 end
+
+class ApproveWithNotesTest < ActiveSupport::TestCase
+  test "approval notes ride into the execute prompt instead of being dropped" do
+    board = create_board
+    card = create_card(board, "execution", status: "queued")
+    run = create_run(card, status: "needs_input", phase: "plan")
+
+    runner = Agent::Runner.new(run)
+    prompts = []
+    runner.stub(:begin_segment!, nil) do
+      runner.stub(:stream_agent, ->(prompt:, mode:, resuming: false) { prompts << prompt }) do
+        runner.resume("Also strip attachment tokens from data-search.", approve: true)
+      end
+    end
+    assert_match(/approved — execute it now/, prompts.first)
+    assert_match(/strip attachment tokens from data-search/, prompts.first)
+    assert_match(/## Rules/, prompts.first)
+    assert_equal "execute", run.reload.phase
+  end
+
+  test "approval without notes keeps the plain prompt" do
+    board = create_board
+    card = create_card(board, "execution", status: "queued")
+    run = create_run(card, status: "needs_input", phase: "plan")
+
+    runner = Agent::Runner.new(run)
+    prompts = []
+    runner.stub(:begin_segment!, nil) do
+      runner.stub(:stream_agent, ->(prompt:, mode:, resuming: false) { prompts << prompt }) do
+        runner.resume("", approve: true)
+      end
+    end
+    assert_no_match(/Notes from the user/, prompts.first)
+  end
+end
