@@ -14,8 +14,7 @@ module RunSweeper
   def self.fail_dead_runs
     Run.where(status: %w[queued running]).find_each do |run|
       next if alive?(run)
-      next if run.heartbeat_at && run.heartbeat_at > HEARTBEAT_GRACE.ago
-      next if run.heartbeat_at.nil? && run.created_at > HEARTBEAT_GRACE.ago
+      next if recently_active?(run)
 
       run.update!(status: "failed", finished_at: Time.current,
                   result_summary: "Runner died without finishing (swept)")
@@ -32,7 +31,11 @@ module RunSweeper
   def self.repair_stuck_cards
     Card.where(status: "working").find_each do |card|
       next unless card.column.ai? # non-AI columns: "working" means a human is
-      next if card.runs.where(status: %w[queued running needs_input]).any? { |r| r.needs_input? || alive?(r) }
+      # Same grace as fail_dead_runs: a freshly started run has no pid until
+      # AFTER workspace provisioning (clone/fetch) — recency is its proof of
+      # life, or every just-dragged card risks a bogus "stuck" verdict.
+      next if card.runs.where(status: %w[queued running needs_input])
+                  .any? { |r| r.needs_input? || alive?(r) || recently_active?(r) }
       card.update!(status: "failed")
       card.log!("error", text: "Card was stuck working with no live run; marked failed.")
     end
@@ -40,6 +43,12 @@ module RunSweeper
 
   def self.kick_queues
     Column.where(archetype: "execution").find_each(&:kick_queue)
+  end
+
+  # Between state writes (provisioning, spawn) a live run has no pid yet —
+  # a recent heartbeat or recent birth counts as alive.
+  def self.recently_active?(run)
+    (run.heartbeat_at || run.created_at) > HEARTBEAT_GRACE.ago
   end
 
   def self.alive?(run)

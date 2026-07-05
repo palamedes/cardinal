@@ -25,6 +25,26 @@ class RunSweeperTest < ActiveSupport::TestCase
     assert_equal "running", run.reload.status
   end
 
+  # The provisioning window: a just-started run has no pid until the claude
+  # process spawns (after clone/fetch). The card must not be declared stuck.
+  test "a freshly dragged card provisioning its workspace is not swept" do
+    card = create_card(@board, "execution", status: "working")
+    create_run(card) # status running, no pid, no heartbeat — just born
+
+    RunSweeper.sweep
+    assert_equal "working", card.reload.status
+  end
+
+  test "a working card whose only run is long dead with no pid is repaired" do
+    card = create_card(@board, "execution", status: "working")
+    run = create_run(card)
+    run.update!(created_at: 20.minutes.ago, heartbeat_at: nil)
+
+    RunSweeper.sweep
+    assert_equal "failed", card.reload.status
+    assert_match(/stuck working|lost its runner/, card.events.last.payload["text"])
+  end
+
   test "kicks the queue when slots are free" do
     col = column(@board, "execution")
     card = create_card(@board, "execution", status: "queued")
