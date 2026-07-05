@@ -1,6 +1,10 @@
 <div id="card_summary" class="summary-panel" data-controller="autosave">
   <div class="summary-head">
     <h3>Customer summary <span class="autosave-status" data-autosave-target="status"></span></h3>
+    <div class="summary-head-right">
+    <% if card.summary_generated_at.present? %>
+      <span class="summary-stamp">generated <%= time_ago_in_words(card.summary_generated_at) %> ago</span>
+    <% end %>
     <% if card.summary_working? %>
       <button type="button" class="deep-dive working summary-generate" disabled>
         <span class="pulse-dot"></span> Generating…
@@ -11,6 +15,7 @@
         ✨ <%= card.summary.present? ? "Regenerate" : "Generate summary" %>
       <% end %>
     <% end %>
+    </div>
   </div>
 
   <p class="hint summary-blurb">A plain-language recap of what this card delivered — ready to drop into a customer chat. Fully editable; your edits are respected when you regenerate.</p>
@@ -22,7 +27,4 @@
           disabled: card.summary_working? %>
   <% end %>
 
-  <% if card.summary_generated_at.present? %>
-    <p class="hint summary-stamp">Last generated <%= time_ago_in_words(card.summary_generated_at) %> ago</p>
-  <% end %>
 </div>
