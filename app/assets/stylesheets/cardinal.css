@@ -136,6 +136,8 @@ a { color: var(--blue); text-decoration: none; }
              padding: 8px 4px; border-bottom: 1px solid var(--border); }
 .issue-row:last-child { border-bottom: 0; }
 
+.ready-chip { color: var(--green); border-color: var(--green); }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

@@ -45,3 +45,25 @@ class SteeringNotesTest < ActionDispatch::IntegrationTest
     assert_nil run.reload.briefing["steering"], "delivered notes must not redeliver"
   end
 end
+
+class PlanningReadyChipTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "R", default_branch: "main")
+    %w[inbox planning].each_with_index do |arch, i|
+      @board.columns.create!(name: arch.capitalize, archetype: arch, position: i, policy: {})
+    end
+    @card = @board.cards.create!(column: @board.columns.find_by!(archetype: "planning"),
+                                 title: "brief me", status: "discussing")
+  end
+
+  test "an ordinary assistant reply shows replied, a ready brief flips to ready" do
+    @card.log!("assistant_message", actor: "assistant", text: "Two questions first…")
+    get root_path
+    assert_match "🪶 replied", response.body
+    assert_no_match(/🪶 ready</, response.body)
+
+    @card.log!("assistant_message", actor: "assistant", text: "## Ready for Execution\nScope: …")
+    get root_path
+    assert_match "🪶 ready", response.body
+  end
+end

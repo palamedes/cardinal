@@ -23,6 +23,8 @@
       <% card.tags.each do |tag| %><span class="tag"><%= tag %></span><% end %>
       <% if card.awaiting_assistant? %>
         <span class="chip agent-chip thinking-chip">🪶 <span class="typing-dots mini"><span></span><span></span><span></span></span></span>
+      <% elsif card.planning_ready? %>
+        <span class="chip agent-chip ready-chip" title="The assistant has posted a Ready-for-execution brief — drag onward when you are">🪶 ready</span>
       <% elsif card.discussing? && card.events.conversation.last&.actor == "assistant" %>
         <span class="chip agent-chip">🪶 replied</span>
       <% end %>

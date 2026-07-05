@@ -127,6 +127,15 @@ class Card < ApplicationRecord
     last.present? && %w[user_message column_move].include?(last.kind)
   end
 
+  # Planning chip state (card #25): the assistant ends discussion by posting
+  # a "Ready for execution" brief — the SAME marker Agent::Runner promotes
+  # into worker briefings. When that's the assistant's latest word, the card
+  # face flips from "replied" to "ready".
+  def planning_ready?
+    discussing? &&
+      events.where(kind: "assistant_message").order(:id).last&.text.to_s.match?(/ready for execution/i)
+  end
+
   # Some AI is expected to write to this card imminently.
   def thinking?
     awaiting_assistant? || working?
