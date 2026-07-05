@@ -339,13 +339,20 @@ module Agent
 
     def base_sha = run.briefing.fetch("base_sha")
 
+    # "Closes #N" makes GitHub close the source issue on merge (card #49).
+    def pr_body
+      [("Closes ##{card.issue_number}" if card.issue_number.present?),
+       "Automated work by Cardinal card ##{card.number}'s agent.",
+       card.description].compact.join("\n\n")
+    end
+
     def ensure_pull_request(workspace)
       return if card.pr_url.present?
       out, status = Open3.capture2e(
         "gh", "pr", "create", "--draft",
         "--head", card.branch_name,
         "--title", "##{card.number} #{card.title}",
-        "--body", "Automated work by Cardinal card ##{card.number}'s agent.\n\n#{card.description}",
+        "--body", pr_body,
         chdir: workspace.path.to_s
       )
       if status.success? && (url = out[%r{https://github\.com/\S+/pull/\d+}])

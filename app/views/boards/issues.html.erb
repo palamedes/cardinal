@@ -1,0 +1,41 @@
+<%= turbo_frame_tag "modal", data: { turbo_permanent: true } do %>
+  <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop">
+    <div class="modal modal-sm">
+      <header class="modal-header">
+        <h1>⬇ GitHub Issues</h1>
+        <button type="button" class="modal-close" data-action="modal#close" title="Close (Esc)">✕</button>
+      </header>
+      <div class="modal-body">
+        <p class="hint">
+          Open issues on <code><%= @board.repo_url.presence || "(no remote)" %></code>. Importing
+          creates a Tasks card carrying the issue body and labels; the card's pull request will
+          say <code>Closes #N</code>, so merging through Done closes the issue on GitHub.
+        </p>
+
+        <% if @issues.any? %>
+          <ul class="issue-list">
+            <% @issues.each do |issue| %>
+              <li class="issue-row">
+                <div>
+                  <strong>#<%= issue.number %></strong> <%= issue.title %>
+                  <% issue.labels.first(4).each do |label| %><span class="tag"><%= label %></span><% end %>
+                </div>
+                <% if (card_number = @imported[issue.number]) %>
+                  <%= link_to "card ##{card_number}", card_path(card_number),
+                        class: "hint", data: { turbo_frame: "modal", turbo_action: "advance" } %>
+                <% else %>
+                  <%= button_to "Import", import_issue_board_path(number: issue.number),
+                        form: { data: { turbo_frame: "modal" } } %>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% elsif !GithubIssues.available?(@board) %>
+          <p class="empty">This board's repo has no GitHub remote — nothing to sync.</p>
+        <% else %>
+          <p class="empty">No open issues found (or gh isn't authenticated — try <code>gh auth status</code>).</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

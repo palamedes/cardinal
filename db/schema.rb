@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_120001) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -68,6 +68,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "effort"
+    t.integer "issue_number"
     t.string "model"
     t.integer "number", null: false
     t.integer "parent_id"

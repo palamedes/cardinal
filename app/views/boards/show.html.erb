@@ -96,6 +96,8 @@
         </div>
       </details>
     <% end %>
+    <%= link_to "⬇ Issues", issues_board_path, data: { turbo_frame: "modal" },
+          class: "theme-toggle", title: "Import open GitHub issues as cards" %>
     <% archived_count = @board.cards.archived.count %>
     <%= link_to "🗄#{" #{archived_count}" if archived_count.positive?}", archive_board_path,
           class: "theme-toggle", title: "Archive — archived cards, searchable and restorable" %>

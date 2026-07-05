@@ -45,6 +45,23 @@ class BoardsController < ApplicationController
     end
   end
 
+  # GitHub Issues sync (card #49): list open issues, one click imports one as
+  # an inbox card; the card's eventual PR carries "Closes #N".
+  def issues
+    @board = Board.first!
+    redirect_to root_path and return unless turbo_frame_request?
+    @issues = GithubIssues.available?(@board) ? GithubIssues.list(@board) : []
+    @imported = @board.cards.where.not(issue_number: nil).pluck(:issue_number, :number).to_h
+  end
+
+  def import_issue
+    board = Board.first!
+    card = GithubIssues.import!(board, params.require(:number))
+    redirect_to card_path(card)
+  rescue ArgumentError => e
+    redirect_to root_path, alert: e.message
+  end
+
   # The archive browser (card #42): everything archived, searchable, restorable.
   def archive
     @board = Board.first!

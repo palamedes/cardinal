@@ -6,6 +6,8 @@ Rails.application.routes.draw do
     post :pull
     get :brief
     get :archive
+    get :issues
+    post :import_issue
   end
   resources :cards, only: [:new, :create, :show, :update, :destroy] do
     member do
