@@ -9,6 +9,8 @@
     <%= button_to "⇣ Pull", pull_board_path, form_class: "pull-form",
           form: { title: "git pull --ff-only in #{@board.local_path} — fetch what Done has merged" },
           data: { turbo_submits_with: "⇣ Pulling…" }, class: "theme-toggle" %>
+    <%= link_to "⬇ Issues", issues_board_path, data: { turbo_frame: "modal" },
+          class: "theme-toggle", title: "Import open GitHub issues as cards" %>
     <%# Repo deep dive (card #12): one-shot read-only mapping of the repo, stored
         as a brief and injected into worker prompts. The button greys→reds as the
         brief falls behind HEAD; a stale brief over-anchors, so it nags at 10+.
@@ -96,8 +98,6 @@
         </div>
       </details>
     <% end %>
-    <%= link_to "⬇ Issues", issues_board_path, data: { turbo_frame: "modal" },
-          class: "theme-toggle", title: "Import open GitHub issues as cards" %>
     <% archived_count = @board.cards.archived.count %>
     <%= link_to "🗄#{" #{archived_count}" if archived_count.positive?}", archive_board_path,
           class: "theme-toggle", title: "Archive — archived cards, searchable and restorable" %>
