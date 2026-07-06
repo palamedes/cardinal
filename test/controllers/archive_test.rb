@@ -91,3 +91,30 @@ class ArchiveRailsTest < ActionDispatch::IntegrationTest
     assert_equal [], @board.reload.archive_accepts_from
   end
 end
+
+class ArrivalsOnCreateTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "AC", default_branch: "main")
+    @tasks = @board.columns.create!(name: "Tasks", archetype: "inbox", position: 0,
+                                    policy: { "arrivals" => "top" })
+  end
+
+  test "new cards land at the top of an arrivals-top column, oldest sink" do
+    first = @board.cards.create!(column: @tasks, title: "oldest")
+    second = @board.cards.create!(column: @tasks, title: "newer")
+    post cards_path, params: { card: { title: "newest" } }
+
+    titles = @tasks.cards.reload.order(:position).map(&:title)
+    assert_equal %w[newest newer oldest], titles
+    assert_equal (0..2).to_a, @tasks.cards.order(:position).map(&:position)
+    assert_equal [first, second].map(&:title).reverse + [], titles.last(2)
+  end
+
+  test "a column without arrivals still appends" do
+    plain = @board.columns.create!(name: "Plain", archetype: "review", position: 1, policy: {})
+    a = @board.cards.create!(column: plain, title: "a")
+    b = @board.cards.create!(column: plain, title: "b")
+    assert_equal %w[a b], plain.cards.order(:position).map(&:title)
+    assert_operator a.position, :<, b.position
+  end
+end

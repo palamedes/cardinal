@@ -4,7 +4,7 @@ class Board < ApplicationRecord
   # by install_default_columns! (ids don't exist until creation).
   DEFAULT_COLUMNS = [
     { name: "Tasks",       archetype: "inbox",
-      policy: { "plan_approval" => false,
+      policy: { "plan_approval" => false, "arrivals" => "top",
                 "accepts_from_names" => ["Planning", "Review", "QA", "Done"] } },
     { name: "Planning",    archetype: "planning",
       policy: { "ai" => true, "model" => "claude-haiku-4-5-20251001", "plan_approval" => false,
