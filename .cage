@@ -1,0 +1,116 @@
+## 2026-07-03
+_Created cardinal.md — feature alignment doc for Cardinal, an AI-agent Kanban app (domain model, card lifecycle state machine, column-as-policy design, safety rails, MVP scope, Rails+Hotwire architecture). Next: resolve open questions in §12 (work domain, agent runtime, workspace model) and start scaffolding._
+
+## 2026-07-03 (later)
+_Resolved the 5 open design questions (logged in cardinal.md §15) and scaffolded the Rails 8.1 app: full domain model (Board/Column/Card/Event/AgentSession/Run/Artifact), CardTransition service with archetype enter/exit policies, Hotwire board UI with SortableJS drag-drop + morph refresh, seeds. Pushed to github.com/palamedes/cardinal. Container setup: Fullstaq Ruby 3.4.9 (apt repo), Postgres 15 (`sudo service postgresql start; sudo -u postgres createuser -s cage`), gems vendored in vendor/bundle. Server runs at 0.0.0.0:4000. TODO next: column gear modal, planning assistant job, then the agent runner. Note: .github/workflows is gitignored — push token lacks workflow scope._
+
+## 2026-07-03 (evening)
+_Fixed broken JS entrypoint (importmap pins/application.js missing from failed rails new — drag-drop now works). Built: near-fullscreen card modal with editing, +Card moved into inbox columns, Ideas→Tasks, model/effort chips, full-height columns, + Column button. Added §16 to cardinal.md: portable per-repo instances (.cardinal/ files + SQLite) — awaiting user decision on adoption + SQLite switch._
+
+## 2026-07-03 (night)
+_Built new-card modal (full-width button in inbox columns) and wired gear icons to stub column-settings modals. Portable instances adopted in cardinal.md §16: .cardinal/ is local-only (excluded via .git/info/exclude at spin-up), boards are personal, no sign-in. Open: SQLite-in-.cardinal vs Postgres — walkthrough given, awaiting decision._
+
+## 2026-07-03 (late night)
+_Switched Postgres → SQLite at .cardinal/cardinal.db (jsonb→json, tags→json, portable SQL); verified running with postgresql service stopped — zero service deps now. Doc + memory updated. Next bricks: gear modal controls, planning assistant, agent runner, cardinal CLI._
+
+## 2026-07-03 (late)
+_README with elevator pitch. Built the planning assistant: anthropic gem, AssistantReplyJob (model from column policy), message box in card modal with live turbo-stream appends. NOTE: ANTHROPIC_API_KEY is passed into cage but EMPTY — live replies need the user to provide a key (fallback message verified; 401 error path verified). Next: agent runner or gear modal controls._
+
+## 2026-07-03 (runner)
+_Built the agent runner v1 + column rules engine (cardinal.md §17): Rules dispatcher (on_entry action lists, archetype defaults), AiTaskJob one-shot maintenance agents, Agent::Workspace (isolated clone in .cardinal/workspaces), Agent::Runner (claude -p stream-json subprocess, budgets, event translation, gh draft PR, credential-stripped env). PROVEN LIVE: card #4 → draft PR palamedes/cardinal#2, $0.08 Sonnet. Gaps: needs_input resume, plan approval, heartbeat sweeper, cage-container workspaces, merge-on-Done._
+
+## 2026-07-04 (overnight)
+_Shipped all ten roadmap steps: (1) heartbeats + RunSweeper, (2) needs_input resume via claude --resume w/ QUESTION: protocol, (3) plan-approval gate (read-only plan phase; --permission-mode plan hangs headless → --tools Read,Glob,Grep), (4) review loop w/ revision runs, (5) merge-on-Done (PR #2 squash-merged live), (6) 31-test engine suite, (7) gear modal = real policy editor, (8) drag hints + face chips, (9) Workspace Local/Container strategies + docker/agent image, (10) bin/cardinal portable instances w/ Board.bootstrap! (credential-sanitized URLs — gotcha: Ruby 3.4 URI userinfo= is a no-op; git insteadOf rewrites embed tokens in get-url). Board state for demo: card #5 work_complete w/ PR #3 open (drag through Review→Done to ship it). Server running on :4000 w/ sweeper live._
+
+## 2026-07-04 (later)
+_Closed the resume WIP-bypass (pending_resume + queue rejoin; kick_queue prefers pending resumes), added card deletion (modal, confirm, working-guard, workspace cleanup), fixed new-card-not-appearing (Turbo self-refresh suppression — form now targets _top). 39 tests green._
+
+## 2026-07-04 (ui)
+_Card-edit staleness fixed (turbo_stream response patches face+modal in originating tab), Save buttons float right, Delete card moved behind Advanced twisty at bottom of details panel. 39 tests green._
+
+## 2026-07-04 (greeting)
+_Planning greeting made contextual (kickoff mode on AssistantReplyJob reads the card, asks targeted questions; canned line only when no API key). 40 tests green. Reminder: cage passes ANTHROPIC_API_KEY empty, so in-cage the fallback line still shows — works for real once a key is present._
+
+## 2026-07-04 (auth+priority)
+_Auth unified on claude CLI (ClaudeCli service; anthropic gem dropped; assistant/compiler/ai_task verified LIVE in-cage — contextual greeting works here now). Same-column drag = priority reorder (CardTransition#reposition!). 42 tests green._
+
+## 2026-07-04 (typing)
+_Typing indicator added (Card#thinking?; dots in modal timeline removed by resolving broadcast; mini chip on faces). Planning defaults now visible in gear modal. Live-verified end to end in-cage. 47 tests green._
+
+## 2026-07-04 (chat polish)
+_Near-bottom scroll + new-messages pill; Enter-to-send composer (Shift+Enter newline, Send button removed). Timeline modal now three fixed zones (header/scroll/composer). 47 tests green._
+
+## 2026-07-04 (repo eyes)
+_Planning assistant now has read-only repo access (Read/Glob/Grep, cwd=board.local_path, 10 turns) — fixes the "give me a moment to check the code" hallucination the user hit (tool-less turn ended, nothing happened). Board.local_path backfilled on dev board. Live-verified: assistant accurately described the gear modal from source. 47 tests green._
+
+## 2026-07-04 (drag feedback)
+_Move endpoint now returns turbo-stream column replacements (fixes originator staleness on drop — queued styling/tickers appear instantly). Queue-position lines on queued faces, spinner+border pulse on working faces. 50 tests green._
+
+## 2026-07-04 (activity+forensics)
+_Attention dropdown upgraded to activity inbox (needs-you/working w/ pulse-dot/queued w/ position). Runner failure forensics: timeout detection + stderr tail + salvage-push of local commits on failure (user hit a 56-min "exit 1" on a theme card — likely the 30-min watchdog; was undiagnosable before this). 50 tests green._
+
+## 2026-07-04 (salvage)
+_In Progress timeout → 90min. Card #6 retry exposed dirty-tree provision failure (timed-out run left uncommitted edits); Workspace#salvage_dirty_tree! now WIP-commits+pushes before checkout. Retry #2: plan phase FOUND the salvaged work ("verify-and-finish, not rebuild") — card #6 parked awaiting approval + 2 answers (manual verify? squash WIP?). Confirmed to user: all AI usage bills the Claude subscription via CLI OAuth (five_hour rate-limit windows), not metered API._
+
+## 2026-07-04 (accounts+cost)
+_bin/cardinal: per-instance Claude account link (setup-token → .cardinal/claude, login/logout subcommands, inherit escape hatch, topbar auth chip) — OAuth roundtrip needs first HOST-run validation (can't browser-auth in cage). Runner: live token tally in heartbeat writes (killed segments no longer record $0); face chips show cost + live out-tokens. NOTE: card #6 theme run in-flight on old code — improvements apply to next segments._
+
+## 2026-07-04 (conversation spine)
+_Review simplified per user model: no request-changes form — a message on an in_review card marks changes_requested (feedback = conversation); Approve is the only button; column_move events now render as stage dividers. 54 tests green._
+
+## 2026-07-04 (markdown)
+_Fixed timeline render bug (agent's ERB code fence injected a real <div> via simple_format's permissive sanitizer, wrecking layout). Timeline + descriptions now render Markdown via redcarpet (escape_html, safe_links_only); code/table/blockquote styles added. 57 tests green. NOTE: card numbers ≠ record ids after deletions (card #6 = /cards/8)._
+
+## 2026-07-04 (modal+lifecycle)
+_Modal frames data-turbo-permanent (job-thread board morphs were closing open modals on send — user-reported). Plan/execute prompts now explain the agent's own tool lifecycle (read-only only during planning; full shell after approval; merge origin default on conflict) — card #6 agent had asked "who runs git merge?" from plan-mode myopia. 57 tests green._
+
+## 2026-07-04 (autosave)
+_Card details autosave (debounced, face-only turbo_stream so modal keeps focus, blank-title guard) with coalescing changelog entries in Activity view (user realized the timeline IS the changelog mechanism). Approve buttons float right. 61 tests green._
+
+## 2026-07-04 (QA default)
+_QA column (review archetype, mark_pr_ready on-entry rule) added to Board::DEFAULT_COLUMNS — new instances bootstrap with 6 columns. User merged card #6 flow manually validated; doc updated. All pushed._
+
+## 2026-07-04 (gem name reserved)
+_cardinal-ai 0.0.1 placeholder live on RubyGems (pushed by user from host via pacman ruby; RVM+fish incompatibility sidestepped). Gemspec + lib/cardinal committed. Key learning: cage is git-isolated from host (NOT a bind mount — user started in empty dir; everything syncs through GitHub). Host now has clone at ~/Projects/cardinal + ruby installed. Next: host validation of bin/cardinal (OAuth link, docker workspaces), then 0.1.0 packaging session; LICENSE choice pending before real release._
+
+## 2026-07-04 (host dogfood round 1)
+_Host validation live: OAuth link worked (after tee /dev/tty fix — setup-token prompts were swallowed by capture; TUI also ate Ctrl-C, pkill needed). User's engine clone had stray "init" commit (phase-1 cmds ran in wrong dir) — reset. First host bugs fixed: stale thinking chip on faces (assistant_message now in REFRESHES_BOARD), execution ticker removed, In Progress tinted green. 63 tests green._
+
+## 2026-07-04 (HOST VALIDATION PASSED)
+_Full lifecycle worked end-to-end on the user's machine: cardinal up in a foreign testbed repo — OAuth account link, board bootstrap, planning conversation, plan gate, agent work, PR, review/QA/merge. The §16 portable-instance promise is real. Remaining unchecked: Phase 4 (CARDINAL_WORKSPACE=container docker strategy) unless user ran it. Next: 0.1.0 packaging session (+ LICENSE decision)._
+
+## 2026-07-04 (0.1.0 + board cards, autonomous)
+_0.1.0 PACKAGED AND E2E-VERIFIED: gem install → cardinal up in scratch repo → board boots, zero writes to gem dir (dual-mode boot, explicit stdlib requires, puma-direct launch, log/secret/pid in .cardinal). MIT LICENSE. Board cards done → Review: #11 Cardinal AI rebrand + nontechnical README, #10 numbers out of titles, #8 tag multi-select picker, #9 parent/child v1. #7 Asana left in Tasks with questions for user (needs PAT + design choices). 66 tests green. User action pending: gem build + gem push 0.1.0 from host._
+
+## 2026-07-04 (arrivals)
+_Column "arrivals" policy added (top/bottom/where-dropped; Done defaults to top — newest-done-first feed). Gear modal select + tooltip; 69 tests green._
+
+## 2026-07-05 (budgets)
+_Turn budget philosophy fixed after #15 hit the cap: execute 25→80 default (+live), plan 10→20; execute cap now parks with continue?-question (salvage first, resume = fresh budget), plan cap gets one tool-less wrap-up. Assistant continuity + number-URLs + description-flex + pre-wrap fixes earlier today. 79 tests green._
+
+## 2026-07-03 (continued)
+_Finished the de-magic pass: archetypes are now creation-time templates (ARCHETYPE_TEMPLATES stamps on_entry/text/instructions; switching archetype in the gear modal re-stamps + refreshes the modal; Rules::DEFAULTS runtime fallback removed) and accept rails are explicit-only (empty accepts_from = accepts nothing; Done now accepts from Planning as the close-without-work lane). Test helper lays full-mesh rails; 126 tests green; pushed to main (6c7f34d). TODO: next "build and push" → gem 0.2.4; user still needs to gem push 0.2.x from host._
+
+## 2026-07-04
+_Shipped: blank git fields normalized (ghost "GitHub #" footer fix), topbar ⇣ Pull button (ff-only + auto-migrations), deep-dive brief now inspectable in a modal with re-run guard + CARDINAL_DATA_DIR fix, CI merge gate on Done (gh pr checks; blocked status legal in terminal), README deep-dive/CI docs. Gem 0.2.4/0.2.5 built (user pushes from host). Suite 168 green. TODO cards discussed: SolidQueue, board settings surface (default_branch), localhost binding for gem mode, container-by-default for workers._
+
+## 2026-07-04 (later)
+_Hardening batch shipped: localhost-only binding for cardinal up (CARDINAL_HOST to expose), SolidQueue+SolidCable (durable jobs, cross-process broadcasts), shell-access checkbox on worker columns (CLI tool-list enforced, runner commits for shell-less agents), board settings gear + remote default-branch detection, atomic CAS claims in Start/ResumeRunJob. 0.2.6 went live on RubyGems (verified by installing the public gem in-container). Security audit: tree/history/published-gem clean; removed unused credentials.yml.enc and key-proofed the gemspec globs. Model footer de-magicked into a "model" compute. 0.2.7 built; user pushes gem from host. Suite 190 green._
+
+## 2026-07-04 (evening)
+_Releases 0.2.7–0.2.10 (user pushes gems from host). Shipped: merge floor for card #55 (conflicted/failed merges block, never claim done; mergeability pre-check), board search & filter #51 (global center box + per-column 🔍, morph-resilient state), pull-button auto-reload (stale-JS fix — approve-close "bug" was old JS in tab), cardinal offers git init in fresh dirs, model footer as "model" compute. Filed cards #40–#55 (notifications, budget enforcement, quick-add/archive, diff viewer, post-merge verify, digest, structured questions, mid-run steering, CI dots, Issues sync, cardinal add, stats, blocked-by, auto-retry, sibling conflicts). Answered #33's planning questions; agent shipped it (PR #24). Suite 220 green. TODO: #55 layers 2-3, remote-less repo worker behavior maybe a card._
+
+## 2026-07-05
+_0.2.11–0.2.13: port selection (cardinal 4001/-p/--port), git-init offer in fresh dirs, README PATH gotcha, second defaults capture from live board (Done accepts Tasks + cost footer), per-instance session cookies (two boards on localhost were clobbering each other's CSRF sessions — surfaced as InvalidAuthenticityToken on a big paste, size was innocent). Explained gem-update semantics (defaults are birth-certificate only). Suite 220 green._
+
+## 2026-07-05 (later)
+_Big feature day, 0.2.14–0.2.15: AI usage ledger (ai_calls — planning/one-shot spend counted everywhere, 🪶 chip, footers honest), sweeper provisioning grace, compact/summary anti-chat prompt hardening, archive + quick-add (#42), mid-run steering + 📝 note-only messages (#47), GitHub Issues sync w/ Closes #N (#49), ready chip (#25), approve-with-notes, summary/compact panel flex-fill + inline stamps, Issues button beside Pull. Cards 42/47/49/25 closed on board. Suite 251 green. Migrations: ai_calls, issue_number._
+
+## 2026-07-05 (night)
+_0.2.16–0.2.17: drag-to-archive (🗄 drop bin + per-column rails in board.settings), Asana import shipped for card #7 (PAT wizard → .cardinal/asana-token 0600, URL-paste import w/ dedupe, footer backlink, _top redirect fix for board staleness), composer polish (note toggle row above textarea, aligned), summary/compact panel fills + inline stamps, Issues button beside Pull. Cards 7/42/47/49/25 all closed. Suite 261 green. Migrations: settings on boards, asana_url on cards._
+
+## 2026-07-06
+_0.2.18: summary share bar (Post as comment on Asana task / on PR — Asana.comment! story endpoint, gh pr comment, conditional + visibly-disabled buttons, Posting…→✓/✗ flash feedback), label polish. Suite 267 green._
+
+## 2026-07-06 (later)
+_0.2.21: ask-first permission mode — MCP permission shim (lib/cardinal/permission_shim.rb), PermissionRequest model + chat/button verdicts, pattern pre-approval (column gear + allow-similar), watchdog/sweeper waiting exemptions, board tri-mode select + card override. Verified shim e2e against live server. Also 0.2.19–0.2.20 (board autonomy default, arrivals-top on create). Suite 281 green. Migrations: permission_mode on cards, permission_requests table._
