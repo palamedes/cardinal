@@ -111,6 +111,11 @@
                 Shell access — the agent may run commands (tests, builds, git)
                 <%= info_tip("Unchecked: the agent gets file tools only (read, search, edit, write) and physically cannot execute anything — Cardinal commits and pushes its edits for it. Safer, but it can't run your tests or generators, and the agent process runs on this machine either way.") %>
               </label>
+
+              <label>Pre-approved commands <%= info_tip("Only matters in ask-first permission mode: commands starting with any line here run WITHOUT asking. One pattern per line — e.g. \"bundle exec rails test\" or \"git commit\". Everything else still pauses for your verdict.") %></label>
+              <%= f.text_area :allowed_commands_text, rows: 2, class: "mono",
+                    value: Array(@column.policy["allowed_commands"]).join("\n"),
+                    placeholder: "bundle exec rails test\ngit commit" %>
             <% end %>
 
             </div>

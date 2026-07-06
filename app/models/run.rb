@@ -4,6 +4,7 @@ class Run < ApplicationRecord
   belongs_to :agent_session
   has_one :card, through: :agent_session
   has_many :artifacts, dependent: :destroy
+  has_many :permission_requests, dependent: :destroy
   has_many :events, dependent: :nullify
 
   enum :status, STATUSES.index_by(&:itself)

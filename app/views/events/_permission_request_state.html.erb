@@ -1,0 +1,17 @@
+<div id="permission_request_<%= request.id %>" class="panel-callout callout-permission<%= " resolved" unless request.pending? %>">
+  <% if request.pending? %>
+    <p><strong>🔐 The agent wants to run:</strong></p>
+    <p><code class="perm-command"><%= request.describe %></code></p>
+    <div class="perm-actions">
+      <%= button_to "✅ Allow", answer_permission_request_path(request, verdict: "allow"), class: "approve-btn" %>
+      <%= button_to "✅ Allow similar for this run", answer_permission_request_path(request, verdict: "allow", always: "1"),
+            class: "theme-toggle", title: "Also pre-approves anything starting with this command for the rest of the run" %>
+      <%= button_to "❌ Deny", answer_permission_request_path(request, verdict: "deny"), class: "cancel-btn" %>
+    </div>
+    <p class="hint">Or reply in the chat: “yes” approves — anything else denies, with your words as the reason the agent reads.</p>
+  <% else %>
+    <p>🔐 <%= request.describe %> —
+      <strong><%= { "allowed" => "approved", "denied" => "denied", "auto_denied" => "auto-denied (no answer in time)" }[request.status] %></strong><%= " · “#{request.message}”" if request.message.present? %>
+    </p>
+  <% end %>
+</div>

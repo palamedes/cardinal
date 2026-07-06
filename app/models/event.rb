@@ -5,7 +5,7 @@ class Event < ApplicationRecord
     question answer progress
     tool_call tool_result artifact_created
     run_started run_finished final_report error
-  ].freeze
+   permission_request].freeze
 
   # Which timeline zoom level an event first appears at (§7).
   CONVERSATION_KINDS = %w[user_message agent_message assistant_message question answer

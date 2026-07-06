@@ -3,6 +3,11 @@
     <span><%= event.payload["from"] %> → <%= event.payload["to"] %></span>
     <time><%= event.created_at.strftime("%b %-d %H:%M") %></time>
   </div>
+<% elsif event.kind == "permission_request" %>
+  <% request = PermissionRequest.find_by(id: event.payload["request_id"]) %>
+  <% if request %>
+    <%= render "events/permission_request_state", request: request %>
+  <% end %>
 <% elsif event.kind == "move_rejected" %>
   <div class="move-rejected-row">
     <span>⤺ <%= event.text %></span>

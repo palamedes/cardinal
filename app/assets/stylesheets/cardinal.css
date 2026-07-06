@@ -176,6 +176,13 @@ a { color: var(--blue); text-decoration: none; }
 .share-status.share-err { color: var(--red); animation: none; }
 @keyframes share-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 
+/* Ask-first permission callouts (§ permissions) */
+.callout-permission { border-color: var(--amber); }
+.callout-permission.resolved { opacity: .75; }
+.perm-command { display: block; padding: 6px 8px; background: var(--surface); border-radius: 6px;
+                margin: 6px 0; overflow-wrap: anywhere; }
+.perm-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
+
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }
 #repo-pull-status .pull-ok  { color: var(--green); }

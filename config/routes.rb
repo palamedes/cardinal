@@ -21,6 +21,10 @@ Rails.application.routes.draw do
     end
     resources :messages, only: [:create]
   end
+  resources :permission_requests, only: [:create, :show] do
+    member { post :answer }
+  end
+
   get  "asana/new"        => "asana#new_card",   as: :asana_new_card
   post "asana/connect"    => "asana#connect",    as: :asana_connect
   post "asana/import"     => "asana#import",     as: :asana_import

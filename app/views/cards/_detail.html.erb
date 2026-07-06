@@ -180,9 +180,10 @@
                   <div>
                     <label>Permissions <%= info_tip("Overrides the board's autonomy default for THIS card. Full autonomy: the worker runs shell commands without asking. Restricted: file tools only — it cannot execute anything, and Cardinal commits its edits. A column whose Shell access is off stays restricted regardless.") %></label>
                     <%= f.select :permission_mode,
-                          [["Board default (#{@card.board.permission_bypass? ? "full autonomy" : "restricted"})", ""],
+                          [["Board default (#{{ "bypass" => "full autonomy", "ask" => "ask first", "restricted" => "file tools only" }[@card.board.permission_mode_default]})", ""],
                            ["Full autonomy — acts without asking", "bypass"],
-                           ["Restricted — file tools only", "ask"]],
+                           ["Ask first — commands pause for your 👍", "ask"],
+                           ["File tools only — cannot execute", "restricted"]],
                           selected: @card.permission_mode.to_s %>
                   </div>
                 </div>

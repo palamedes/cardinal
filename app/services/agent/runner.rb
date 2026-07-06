@@ -45,6 +45,23 @@ module Agent
       - Finish with a concise report: what you did, what to check, any open questions.
     RULES
 
+    # Ask-first mode: full toolset, but shell commands pause for the user's
+    # approval (routed through the Cardinal permission shim).
+    ASK_EXECUTE_RULES = <<~RULES.freeze
+      ## Rules
+      - You have the full toolset, but shell commands PAUSE for the user's approval.
+        A denial comes with their reason — adapt to it rather than retrying the same thing.
+      - Approvals can take a while; the user may also pre-approve a pattern so similar
+        commands run without asking again.
+      - Work only inside this repository checkout (you are already on the card's branch).
+      - Commit your work as you go with clear messages (commits need approval like any
+        command). Do NOT push — the runner pushes for you.
+      - Stay strictly within the card's scope. Prefer the smallest reasonable interpretation and note assumptions.
+      - If denials leave you genuinely blocked, output a single line starting with
+        "QUESTION:" followed by the question, then stop immediately.
+      - Finish with a concise report: what you did, what to check, any open questions.
+    RULES
+
     def self.start(run) = new(run).start
     def self.resume(run, message, approve: false) = new(run).resume(message, approve: approve)
 
@@ -113,8 +130,17 @@ module Agent
       workspace = resuming ? Workspace.attach(card) : Workspace.provision(card)
       remember_base_sha(workspace) if mode == "execute"
 
-      cmd = ["claude", "-p", prompt, "--output-format", "stream-json", "--verbose",
-             "--permission-mode", "bypassPermissions"]
+      cmd = ["claude", "-p", prompt, "--output-format", "stream-json", "--verbose"]
+      if ask_mode? && mode != "plan" && mode != "plan_wrap"
+        # Ask-first: permission requests route to our MCP shim, which parks
+        # them on the card for a chat/button verdict. The claude process
+        # stays alive, blocked, until the answer arrives.
+        cmd += ["--permission-mode", "default",
+                "--permission-prompt-tool", "mcp__cardinal__permission",
+                "--mcp-config", permission_shim_config]
+      else
+        cmd += ["--permission-mode", "bypassPermissions"]
+      end
       case mode
       when "plan"
         # Read-only exploration for the plan phase. (--permission-mode plan
@@ -147,7 +173,17 @@ module Agent
         run.agent_session.update!(status: "ready", config: run.agent_session.config.merge("pid" => wait.pid))
         timeout_min = (column.timeout_minutes.presence || 30).to_i
         watchdog = Thread.new do
-          sleep timeout_min * 60
+          deadline = Time.current + timeout_min * 60
+          loop do
+            sleep 15
+            # Waiting on a human is not running away — a pending permission
+            # request resets the clock instead of counting against it.
+            waiting = ActiveRecord::Base.connection_pool.with_connection do
+              PermissionRequest.where(run_id: run.id, status: "pending").exists?
+            end
+            deadline = Time.current + timeout_min * 60 if waiting
+            break if Time.current > deadline
+          end
           @timed_out = true
           Process.kill("TERM", wait.pid) rescue nil
         end
@@ -381,14 +417,37 @@ module Agent
     end
 
     def execute_rules
-      restricted_tools? ? RESTRICTED_EXECUTE_RULES : EXECUTE_RULES
+      return RESTRICTED_EXECUTE_RULES if restricted_tools?
+      ask_mode? ? ASK_EXECUTE_RULES : EXECUTE_RULES
+    end
+
+    # Ask-first applies when resolved mode is "ask" and the column's shell
+    # toggle hasn't already restricted the agent to file tools.
+    def ask_mode?
+      column.shell_access? && card.effective_permission_mode == "ask"
+    end
+
+    def permission_shim_config
+      {
+        mcpServers: {
+          cardinal: {
+            command: RbConfig.ruby,
+            args: [Rails.root.join("lib", "cardinal", "permission_shim.rb").to_s],
+            env: {
+              "CARDINAL_URL" => "http://127.0.0.1:#{ENV.fetch("PORT", "3000")}",
+              "CARDINAL_RUN_ID" => run.id.to_s,
+              "CARDINAL_PERMISSION_TIMEOUT" => "600"
+            }
+          }
+        }
+      }.to_json
     end
 
     # Three voices, one verdict: the column's shell toggle, the board's
     # permission default, and the card's own override (which beats the board
     # but never re-opens a column that turned shell off).
     def restricted_tools?
-      !column.shell_access? || !card.effective_permission_bypass?
+      !column.shell_access? || card.effective_permission_mode == "restricted"
     end
 
     def plan_prompt

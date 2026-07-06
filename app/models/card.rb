@@ -92,16 +92,16 @@ class Card < ApplicationRecord
   # default", so existing cards are unaffected. Read fresh at every segment
   # spawn (start, restart, resume) by the runner and the planning assistant, so
   # a change takes effect on the next segment — never on an already-running one.
-  # Permission override (nil = board default): "bypass" forces full autonomy
-  # for this card, "ask" forces the restricted file-tools mode.
-  PERMISSION_MODES = ["bypass", "ask"].freeze
+  # Permission override (nil = board default): bypass / ask / restricted —
+  # see Board::PERMISSION_MODES for what each means.
+  PERMISSION_MODES = Board::PERMISSION_MODES
+
+  def effective_permission_mode
+    permission_mode.presence_in(PERMISSION_MODES) || board.permission_mode_default
+  end
 
   def effective_permission_bypass?
-    case permission_mode
-    when "bypass" then true
-    when "ask"    then false
-    else board.permission_bypass?
-    end
+    effective_permission_mode == "bypass"
   end
 
   def effective_model  = model.presence || column.model

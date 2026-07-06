@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_002904) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_06_141319) do
   create_table "agent_sessions", force: :cascade do |t|
     t.integer "card_id", null: false
     t.json "config", default: {}, null: false
@@ -117,6 +117,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_002904) do
     t.index ["run_id"], name: "index_events_on_run_id"
   end
 
+  create_table "permission_requests", force: :cascade do |t|
+    t.datetime "answered_at"
+    t.text "command"
+    t.datetime "created_at", null: false
+    t.json "input", default: {}
+    t.text "message"
+    t.integer "run_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "tool_name", null: false
+    t.index ["run_id", "status"], name: "index_permission_requests_on_run_id_and_status"
+    t.index ["run_id"], name: "index_permission_requests_on_run_id"
+  end
+
   create_table "runs", force: :cascade do |t|
     t.integer "agent_session_id", null: false
     t.json "briefing", default: {}, null: false
@@ -144,5 +157,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_002904) do
   add_foreign_key "columns", "boards"
   add_foreign_key "events", "cards"
   add_foreign_key "events", "runs"
+  add_foreign_key "permission_requests", "runs"
   add_foreign_key "runs", "agent_sessions"
 end

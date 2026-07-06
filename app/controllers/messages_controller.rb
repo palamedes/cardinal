@@ -5,11 +5,23 @@ class MessagesController < ApplicationController
     parked_run = card.runs.where(status: "needs_input").order(:id).last
     live_run = card.runs.where(status: "running").order(:id).last
 
+    pending_permission = live_run && live_run.permission_requests.pending.order(:id).first
+
     if params.dig(:message, :note) == "1"
       # Note only (card #47): on the record for any FUTURE reader — the next
       # column's assistant or worker sees it in conversation context — but no
       # AI is invoked now and no verdict changes. Type, drag, done.
       card.log!("user_message", actor: "user", text: text, note: true)
+    elsif pending_permission
+      # A chat reply while the agent waits on permission IS the verdict:
+      # a plain yes approves; anything else denies, with the user's words as
+      # the reason the agent reads (deny-with-reason is steering).
+      card.log!("user_message", actor: "user", run: live_run, text: text)
+      if text.strip.match?(/\A(y|yes|ok|okay|allow|approve|👍)\z/i)
+        pending_permission.resolve!("allowed")
+      else
+        pending_permission.resolve!("denied", message: text)
+      end
     elsif parked_run
       # Answer / plan feedback: goes back into the same agent session.
       kind = parked_run.phase == "plan" ? "user_message" : "answer"

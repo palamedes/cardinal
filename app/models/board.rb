@@ -57,12 +57,20 @@ class Board < ApplicationRecord
   # button is always available; this governs only the drag affordance.
   store_accessor :settings, :archive_accepts_from, :permission_bypass
 
-  # Board default for worker autonomy (§ permissions): true (default) lets
-  # agents act without asking — full shell inside their workspace. false
-  # restricts workers to file tools (read/search/edit/write; Cardinal commits
-  # for them) unless a card explicitly overrides back to full autonomy.
+  # Board default for worker autonomy (§ permissions), three honest modes:
+  #   bypass     — agents act without asking (full shell)
+  #   ask        — shell commands pause for your 👍 in the card chat
+  #   restricted — file tools only; agents cannot execute anything
+  # (Back-compat: the earlier boolean permission_bypass=false maps to restricted.)
+  PERMISSION_MODES = %w[bypass ask restricted].freeze
+
+  def permission_mode_default
+    settings["permission_mode"].presence_in(PERMISSION_MODES) ||
+      (settings["permission_bypass"] == false ? "restricted" : "bypass")
+  end
+
   def permission_bypass?
-    settings["permission_bypass"] != false
+    permission_mode_default == "bypass"
   end
 
   def archive_accepts?(column)
