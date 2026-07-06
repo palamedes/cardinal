@@ -146,3 +146,31 @@ class SummaryShareTest < ActionDispatch::IntegrationTest
     assert_match(/Nothing to share/, @card.events.last.payload["text"])
   end
 end
+
+class ShareFlashTest < ActionDispatch::IntegrationTest
+  setup do
+    @board = Board.create!(name: "SF", default_branch: "main")
+    col = @board.columns.create!(name: "Review", archetype: "review", position: 0, policy: {})
+    @card = @board.cards.create!(column: col, title: "flash", status: "in_review",
+                                 summary: "Done and dusted.",
+                                 asana_url: "https://app.asana.com/0/1/1205000000000000")
+  end
+
+  test "a turbo-stream share re-renders the panel with a ✓ flash" do
+    Asana.stub(:comment!, ->(*) {}) do
+      post share_summary_card_path(@card, to: "asana"),
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_match 'target="card_summary"', response.body
+    assert_match "✓ Posted to Asana", response.body
+  end
+
+  test "a failed share flashes the error state" do
+    Asana.stub(:comment!, ->(*) { raise Asana::Error, "HTTP 401" }) do
+      post share_summary_card_path(@card, to: "asana"),
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+    assert_match "share-err", response.body
+    assert_match "Asana refused", response.body
+  end
+end

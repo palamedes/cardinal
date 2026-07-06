@@ -149,22 +149,26 @@ class CardsController < ApplicationController
       return redirect_to card_path(@card, zoom: "summary")
     end
 
+    flash_text, flash_error = nil, false
     case params[:to]
     when "asana"
       Asana.comment!(@card.asana_url, "Update from Cardinal:\n\n#{summary}")
       @card.log!("status_change", actor: "user", text: "Summary posted to the Asana task as a comment")
+      flash_text = "✓ Posted to Asana"
     when "pr"
       out, status = Open3.capture2e("gh", "pr", "comment", @card.pr_url, "--body", summary)
       if status.success?
         @card.log!("status_change", actor: "user", text: "Summary posted as a PR comment")
+        flash_text = "✓ Posted to the PR"
       else
         @card.log!("error", text: "Couldn't comment on the PR: #{out.truncate(160)}")
+        flash_text, flash_error = "✗ PR comment failed — see the timeline", true
       end
     end
-    redirect_to card_path(@card, zoom: "summary")
+    respond_with_share_flash(flash_text, flash_error)
   rescue Asana::Error => e
     @card.log!("error", text: "Couldn't post to Asana: #{e.message}")
-    redirect_to card_path(@card, zoom: "summary")
+    respond_with_share_flash("✗ Asana refused — see the timeline", true)
   end
 
   # Archive (card #42): off the board, never gone — /board/archive lists,
@@ -188,6 +192,20 @@ class CardsController < ApplicationController
   end
 
   private
+
+  # In-place feedback on the Summary tab: replace the panel with a transient
+  # ✓/✗ flash next to the share buttons (falls back to a redirect for plain
+  # HTML requests).
+  def respond_with_share_flash(text, error)
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace("card_summary",
+          partial: "cards/summary_panel",
+          locals: { card: @card.reload, share_status: text, share_error: error })
+      end
+      format.html { redirect_to card_path(@card, zoom: "summary") }
+    end
+  end
 
   def set_card
     @card = Board.first!.cards.find_by!(number: params[:id])

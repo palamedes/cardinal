@@ -170,7 +170,11 @@ a { color: var(--blue); text-decoration: none; }
 
 .summary-share { display: flex; align-items: center; margin-top: 8px; flex-shrink: 0; }
 .summary-share button[disabled] { opacity: .4; cursor: not-allowed; pointer-events: none; }
-.share-spacer { flex: 1; }
+.share-spacer { flex: 1; text-align: center; }
+.share-status { font-size: 12px; font-weight: 600; color: var(--green);
+                animation: share-fade 4s ease forwards; }
+.share-status.share-err { color: var(--red); animation: none; }
+@keyframes share-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 
 .pull-form { display: inline; }
 #repo-pull-status { font-size: 0.85rem; }

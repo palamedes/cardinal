@@ -34,14 +34,18 @@
       <% if can_asana %>
         <%= button_to "◯ Post as comment on Asana task", share_summary_card_path(card, to: "asana"),
               class: "theme-toggle", disabled: card.summary.blank?,
-              form: { data: { turbo_frame: "modal" } },
+              data: { turbo_submits_with: "Posting…" },
               title: "Post this summary as a comment on #{card.asana_url}" %>
       <% end %>
-      <span class="share-spacer"></span>
+      <span class="share-spacer">
+        <% if local_assigns[:share_status].present? %>
+          <span class="share-status<%= " share-err" if local_assigns[:share_error] %>"><%= share_status %></span>
+        <% end %>
+      </span>
       <% if can_pr %>
         <%= button_to "💬 Post as comment on PR", share_summary_card_path(card, to: "pr"),
               class: "theme-toggle", disabled: card.summary.blank?,
-              form: { data: { turbo_frame: "modal" } },
+              data: { turbo_submits_with: "Posting…" },
               title: "Post this summary as a comment on #{card.pr_url}" %>
       <% end %>
     </div>
