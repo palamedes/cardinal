@@ -111,7 +111,7 @@ class ArrivalsOnCreateTest < ActionDispatch::IntegrationTest
   end
 
   test "a column without arrivals still appends" do
-    plain = @board.columns.create!(name: "Plain", archetype: "review", position: 1, policy: {})
+    plain = @board.columns.create!(name: "Plain", archetype: "planning", position: 1, policy: {})
     a = @board.cards.create!(column: plain, title: "a")
     b = @board.cards.create!(column: plain, title: "b")
     assert_equal %w[a b], plain.cards.order(:position).map(&:title)

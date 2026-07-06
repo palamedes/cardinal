@@ -169,7 +169,16 @@ class Card < ApplicationRecord
 
   def assign_number_and_position
     self.number ||= (board.cards.maximum(:number) || 0) + 1
-    self.position ||= (column.cards.maximum(:position) || -1) + 1
+    return if position.present?
+
+    # Creation honors the column's arrivals policy, same as drags do — a
+    # column set to "top" puts newborns first (freshest work up top).
+    if column&.arrivals == "top"
+      column.cards.update_all("position = position + 1")
+      self.position = 0
+    else
+      self.position = (column.cards.maximum(:position) || -1) + 1
+    end
   end
 
   def status_legal_for_column
