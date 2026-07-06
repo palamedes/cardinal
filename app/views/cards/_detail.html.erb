@@ -176,7 +176,17 @@
                     <%= f.select :effort, [["Use column default", ""], "low", "medium", "high", "max"], selected: @card.effort %>
                   </div>
                 </div>
-                <p class="hint">Overrides this card's model and effort. Only model + effort — budget, timeout, and concurrency are column policy. Takes effect on the next run segment (a run already going finishes on the model it started with).</p>
+                <div class="field-row">
+                  <div>
+                    <label>Permissions <%= info_tip("Overrides the board's autonomy default for THIS card. Full autonomy: the worker runs shell commands without asking. Restricted: file tools only — it cannot execute anything, and Cardinal commits its edits. A column whose Shell access is off stays restricted regardless.") %></label>
+                    <%= f.select :permission_mode,
+                          [["Board default (#{@card.board.permission_bypass? ? "full autonomy" : "restricted"})", ""],
+                           ["Full autonomy — acts without asking", "bypass"],
+                           ["Restricted — file tools only", "ask"]],
+                          selected: @card.permission_mode.to_s %>
+                  </div>
+                </div>
+                <p class="hint">Overrides this card's model, effort, and permissions. Budget, timeout, and concurrency are column policy. Takes effect on the next run segment (a run already going finishes on the settings it started with).</p>
               </details>
             <% end %>
           </div>

@@ -10,12 +10,18 @@
         <div id="board-form-errors"></div>
 
         <%= form_with model: @board, url: board_path(autosave: 1), class: "card-edit",
-              data: { autosave_target: "form" } do |f| %>
+              data: { autosave_target: "form", action: "input->autosave#save change->autosave#save" } do |f| %>
           <label>Board name</label>
           <%= f.text_field :name %>
 
           <label>Default branch <%= info_tip("The branch agents fork card branches from and Done merges pull requests toward. Detected from the repo at first boot; fix it here if that guess was wrong.") %></label>
           <%= f.text_field :default_branch, placeholder: "main" %>
+
+          <label class="check-row">
+            <%= f.check_box :permission_bypass, { checked: @board.permission_bypass? }, "1", "0" %>
+            Agents act without asking (full autonomy)
+            <%= info_tip("On (default): worker agents run shell commands — tests, builds, git — inside their workspace without permission prompts. Off: workers get file tools only (read, search, edit, write); they cannot execute anything, and Cardinal commits their edits for them. Each card can override this in its 🧠 panel; a column whose Shell access is off stays restricted regardless.") %>
+          </label>
         <% end %>
 
         <label>Repository</label>

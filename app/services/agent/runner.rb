@@ -125,9 +125,10 @@ module Agent
         cmd += ["--max-turns", "3", "--tools", ""]
       else
         cmd += ["--max-turns", (column.max_turns.presence || DEFAULT_EXECUTE_TURNS).to_s]
-        # Shell access off: restrict to file tools — the sandbox is the tool
-        # list itself, not a request in the prompt.
-        cmd += ["--tools", "Read,Glob,Grep,Edit,Write"] unless column.shell_access?
+        # Restricted agents (column shell toggle, or board/card permission
+        # setting) get file tools only — the sandbox is the tool list itself,
+        # not a request in the prompt.
+        cmd += ["--tools", "Read,Glob,Grep,Edit,Write"] if restricted_tools?
       end
       # Effective (possibly card-overridden) config, read fresh here at spawn
       # time — so a mid-run override takes effect on the next segment (start,
@@ -232,7 +233,7 @@ module Agent
       accumulate_usage(result)
       # A shell-less agent cannot commit its own edits — do it for it before
       # any commit counting or salvage below.
-      unless column.shell_access?
+      if restricted_tools?
         workspace.commit_all!("Card ##{card.number}: #{card.title.truncate(60)}\n\nCommitted by Cardinal for a shell-less agent.")
       end
       unless result[:success]
@@ -380,7 +381,14 @@ module Agent
     end
 
     def execute_rules
-      column.shell_access? ? EXECUTE_RULES : RESTRICTED_EXECUTE_RULES
+      restricted_tools? ? RESTRICTED_EXECUTE_RULES : EXECUTE_RULES
+    end
+
+    # Three voices, one verdict: the column's shell toggle, the board's
+    # permission default, and the card's own override (which beats the board
+    # but never re-opens a column that turned shell off).
+    def restricted_tools?
+      !column.shell_access? || !card.effective_permission_bypass?
     end
 
     def plan_prompt

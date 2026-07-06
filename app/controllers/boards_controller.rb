@@ -29,8 +29,9 @@ class BoardsController < ApplicationController
 
   def update
     board = Board.first!
-    attrs = params.require(:board).permit(:name, :default_branch, archive_accepts_from: [])
+    attrs = params.require(:board).permit(:name, :default_branch, :permission_bypass, archive_accepts_from: [])
     board.archive_accepts_from = attrs[:archive_accepts_from].to_a.map(&:to_s).reject(&:blank?) if attrs.key?(:archive_accepts_from)
+    board.permission_bypass = (attrs[:permission_bypass] == "1") if attrs.key?(:permission_bypass)
     board.update!(
       name: attrs[:name].presence || board.name,
       default_branch: attrs[:default_branch].presence || board.default_branch

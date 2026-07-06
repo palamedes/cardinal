@@ -212,7 +212,8 @@ class CardsController < ApplicationController
   end
 
   def card_params
-    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url, :summary, :compact, :model, :effort)
+    attrs = params.require(:card).permit(:title, :description, :tags, :branch_name, :pr_url, :summary, :compact, :model, :effort, :permission_mode)
+    attrs[:permission_mode] = attrs[:permission_mode].presence_in(Card::PERMISSION_MODES) if attrs.key?(:permission_mode)
     attrs[:tags] = attrs[:tags].to_s.split(",").map(&:strip).reject(&:blank?) if attrs.key?(:tags)
     # Blank model/effort from the "Use column default" option mean "no override" —
     # store nil so effective_* falls back to the column (card #33).

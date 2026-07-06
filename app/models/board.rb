@@ -55,7 +55,15 @@ class Board < ApplicationRecord
   # may be DRAGGED onto the topbar 🗄 (explicit-only, like column rails —
   # empty means the archive is not a drop target). The Advanced-panel archive
   # button is always available; this governs only the drag affordance.
-  store_accessor :settings, :archive_accepts_from
+  store_accessor :settings, :archive_accepts_from, :permission_bypass
+
+  # Board default for worker autonomy (§ permissions): true (default) lets
+  # agents act without asking — full shell inside their workspace. false
+  # restricts workers to file tools (read/search/edit/write; Cardinal commits
+  # for them) unless a card explicitly overrides back to full autonomy.
+  def permission_bypass?
+    settings["permission_bypass"] != false
+  end
 
   def archive_accepts?(column)
     Array(archive_accepts_from).map(&:to_s).include?(column.id.to_s)
