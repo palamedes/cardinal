@@ -169,6 +169,7 @@ a { color: var(--blue); text-decoration: none; }
 .asana-connected { color: var(--green); }
 
 .summary-share { display: flex; align-items: center; margin-top: 8px; flex-shrink: 0; }
+.summary-share button[disabled] { opacity: .4; cursor: not-allowed; pointer-events: none; }
 .share-spacer { flex: 1; }
 
 .pull-form { display: inline; }

@@ -32,14 +32,14 @@
   <% if can_asana || can_pr %>
     <div class="summary-share">
       <% if can_asana %>
-        <%= button_to "◯ Comment on the Asana task", share_summary_card_path(card, to: "asana"),
+        <%= button_to "◯ Post as comment on Asana task", share_summary_card_path(card, to: "asana"),
               class: "theme-toggle", disabled: card.summary.blank?,
               form: { data: { turbo_frame: "modal" } },
               title: "Post this summary as a comment on #{card.asana_url}" %>
       <% end %>
       <span class="share-spacer"></span>
       <% if can_pr %>
-        <%= button_to "💬 Comment on the PR", share_summary_card_path(card, to: "pr"),
+        <%= button_to "💬 Post as comment on PR", share_summary_card_path(card, to: "pr"),
               class: "theme-toggle", disabled: card.summary.blank?,
               form: { data: { turbo_frame: "modal" } },
               title: "Post this summary as a comment on #{card.pr_url}" %>

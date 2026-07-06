@@ -105,14 +105,14 @@ class SummaryShareTest < ActionDispatch::IntegrationTest
     Asana.stub(:connected?, true) do
       get card_path(@card, zoom: "summary"), headers: { "Turbo-Frame" => "modal" }
     end
-    assert_match "Comment on the Asana task", response.body
-    assert_match "Comment on the PR", response.body
+    assert_match "Post as comment on Asana task", response.body
+    assert_match "Post as comment on PR", response.body
 
     Asana.stub(:connected?, false) do
       get card_path(@card, zoom: "summary"), headers: { "Turbo-Frame" => "modal" }
     end
-    assert_no_match(/Comment on the Asana task/, response.body)
-    assert_match "Comment on the PR", response.body
+    assert_no_match(/Post as comment on Asana task/, response.body)
+    assert_match "Post as comment on PR", response.body
   end
 
   test "sharing to asana posts a comment and logs it" do
