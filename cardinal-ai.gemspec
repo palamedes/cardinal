@@ -39,12 +39,15 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "rails", "~> 8.1"
-  spec.add_dependency "propshaft"
+  # Floors matter: in gem mode RubyGems (not Bundler) resolves these, and an
+  # unconstrained dep is "satisfied" by whatever stale version the host gemset
+  # already has (e.g. importmap-rails 1.x lacks stale_when_importmap_changes).
+  spec.add_dependency "propshaft", "~> 1.0"
   spec.add_dependency "sqlite3", ">= 2.1"
   spec.add_dependency "puma", ">= 6.0"
-  spec.add_dependency "importmap-rails"
-  spec.add_dependency "turbo-rails"
-  spec.add_dependency "stimulus-rails"
+  spec.add_dependency "importmap-rails", "~> 2.1"
+  spec.add_dependency "turbo-rails", "~> 2.0"
+  spec.add_dependency "stimulus-rails", "~> 1.3"
   spec.add_dependency "redcarpet", "~> 3.6"
   spec.add_dependency "solid_queue", "~> 1.0"
   spec.add_dependency "solid_cable", "~> 3.0"
