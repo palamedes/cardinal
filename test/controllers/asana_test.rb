@@ -156,19 +156,25 @@ class ShareFlashTest < ActionDispatch::IntegrationTest
                                  asana_url: "https://app.asana.com/0/1/1205000000000000")
   end
 
+  # The share bar (and its flash slot) only renders when Asana is connected —
+  # stub it, or these tests silently depend on a token file in the checkout.
   test "a turbo-stream share re-renders the panel with a ✓ flash" do
-    Asana.stub(:comment!, ->(*) {}) do
-      post share_summary_card_path(@card, to: "asana"),
-           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    Asana.stub(:connected?, true) do
+      Asana.stub(:comment!, ->(*) {}) do
+        post share_summary_card_path(@card, to: "asana"),
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      end
     end
     assert_match 'target="card_summary"', response.body
     assert_match "✓ Posted to Asana", response.body
   end
 
   test "a failed share flashes the error state" do
-    Asana.stub(:comment!, ->(*) { raise Asana::Error, "HTTP 401" }) do
-      post share_summary_card_path(@card, to: "asana"),
-           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    Asana.stub(:connected?, true) do
+      Asana.stub(:comment!, ->(*) { raise Asana::Error, "HTTP 401" }) do
+        post share_summary_card_path(@card, to: "asana"),
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      end
     end
     assert_match "share-err", response.body
     assert_match "Asana refused", response.body
