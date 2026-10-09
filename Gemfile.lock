@@ -106,7 +106,7 @@ GEM
       activesupport (>= 6.1)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
-    image_processing (2.0.2)
+    image_processing (2.2.0)
     importmap-rails (2.2.3)
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
@@ -335,7 +335,7 @@ DEPENDENCIES
   brakeman
   bundler-audit
   debug
-  image_processing (~> 2.0)
+  image_processing (~> 2.2)
   importmap-rails
   jbuilder
   minitest-mock (~> 5.27)
